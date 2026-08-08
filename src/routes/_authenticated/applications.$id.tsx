@@ -39,6 +39,8 @@ type Appeal = {
   filed_date: string | null;
   due_date: string | null;
   created_at: string;
+  registration_number: string | null;
+  portal_ground: string | null;
 };
 
 const inputClass =
@@ -50,8 +52,14 @@ function Detail() {
   const makeAppeal = useServerFn(generateAppealDraft);
   const [busy, setBusy] = useState(false);
   const [filedDate, setFiledDate] = useState(today());
+  const [regNumber, setRegNumber] = useState("");
   const [replyDate, setReplyDate] = useState(today());
   const [replyNotes, setReplyNotes] = useState("");
+  const [transferDate, setTransferDate] = useState(today());
+  const [transferTo, setTransferTo] = useState("");
+  const [transferReg, setTransferReg] = useState("");
+  const [appealReg, setAppealReg] = useState<Record<string, string>>({});
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["application", id],
