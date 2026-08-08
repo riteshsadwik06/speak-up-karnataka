@@ -15,7 +15,7 @@ export function WardMap({
 }: {
   selectedId: string;
   onSelect: (wardId: string) => void;
-  highlightIds?: string[];
+  highlightIds?: string[] | undefined;
 }) {
   const [data, setData] = useState<Shapes | null>(null);
   const [hover, setHover] = useState<string>("");
