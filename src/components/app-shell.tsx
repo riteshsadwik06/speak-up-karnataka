@@ -21,10 +21,10 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
           </Link>
 
           <nav className="mt-8 space-y-1">
-            <Link to="/dashboard" className={navLink} activeProps={{ className: `${navLink} ${navLinkActive}` }}>
+            <Link to="/dashboard" className={navIdle} activeProps={{ className: navActive }}>
               Registry
             </Link>
-            <Link to="/new" className={navLink} activeProps={{ className: `${navLink} ${navLinkActive}` }}>
+            <Link to="/new" className={navIdle} activeProps={{ className: navActive }}>
               New filing
             </Link>
             <button
@@ -32,7 +32,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
                 await supabase.auth.signOut();
                 router.navigate({ to: "/auth" });
               }}
-              className={`${navLink} w-full text-left`}
+              className={`${navIdle} w-full text-left`}
             >
               Sign out
             </button>
