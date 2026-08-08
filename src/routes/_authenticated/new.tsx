@@ -51,6 +51,7 @@ function NewApplication() {
   const [draft, setDraft] = useState<RtiDraft | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const [dismissedAuthorityHint, setDismissedAuthorityHint] = useState(false);
 
   const authority =
     authorityId === "other"
@@ -66,11 +67,20 @@ function NewApplication() {
     return pool.slice(0, 12);
   }, [wardQuery]);
 
-  async function generate() {
+  const suggested = draft?.suggested_authority?.trim() ?? "";
+  const authorityMismatch =
+    !!suggested && !dismissedAuthorityHint && !sameAuthority(authority, suggested);
+
+  async function generate(overrideAuthority?: string) {
     setBusy(true);
     try {
       const result = await run({
-        data: { grievance, authority, ward: ward?.ward_name ?? null, language },
+        data: {
+          grievance,
+          authority: overrideAuthority ?? authority,
+          ward: ward?.ward_name ?? null,
+          language,
+        },
       });
       setDraft(result.draft);
       setBody(result.body);
@@ -81,6 +91,22 @@ function NewApplication() {
       setBusy(false);
     }
   }
+
+  function switchToSuggested() {
+    const match = AUTHORITIES.find((a) => sameAuthority(a.name, suggested));
+    if (match) {
+      setAuthorityId(match.id);
+      setOtherAuthority("");
+    } else {
+      setAuthorityId("other");
+      setOtherAuthority(suggested);
+    }
+    setPioName("");
+    setPioAddress("");
+    setDismissedAuthorityHint(false);
+    void generate(match ? match.name : suggested);
+  }
+
 
   async function save(markFiled: boolean, filedDate?: string) {
     setSaving(true);
