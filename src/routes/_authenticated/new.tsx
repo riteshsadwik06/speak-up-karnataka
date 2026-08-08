@@ -315,7 +315,34 @@ function NewApplication() {
 
       {step === 3 && draft && (
         <div className="mt-6 space-y-5">
+          {authorityMismatch && (
+            <div className="paper-card border-destructive bg-destructive/10 p-5">
+              <p className="rule-heading text-destructive">This may be the wrong public authority</p>
+              <p className="mt-2 text-sm">
+                You selected {authority}. Based on your grievance, these records are likely held by{" "}
+                {suggested}. Filing with the wrong authority means it must be transferred under
+                Section 6(3), which adds at least 5 days and restarts the 30-day clock.
+              </p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button
+                  disabled={busy}
+                  onClick={switchToSuggested}
+                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
+                >
+                  {busy ? "Redrafting…" : `Switch to ${suggested} and redraft`}
+                </button>
+                <button
+                  onClick={() => setDismissedAuthorityHint(true)}
+                  className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
+                >
+                  Keep {authority}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
+
             <div className="paper-card border-destructive/30 p-5">
               <p className="rule-heading text-destructive">What you wrote — a PIO can refuse this</p>
               <p className="mt-3 whitespace-pre-wrap font-display text-lg leading-snug">{grievance}</p>
