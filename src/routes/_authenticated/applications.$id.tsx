@@ -331,7 +331,19 @@ function Detail() {
               <TimelineRow label="Created" value={String(app.created_at).slice(0, 10)} />
               <TimelineRow label="Filed" value={app.filed_date ?? "—"} />
               {app.registration_number && (
-                <TimelineRow label="Registration number" value={app.registration_number} />
+                <>
+                  <TimelineRow label="Registration number" value={app.registration_number} />
+                  <li className="text-xs">
+                    <a
+                      href={PORTAL_LINKS.onlineRequestStatus}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent underline underline-offset-4"
+                    >
+                      Check status on the portal
+                    </a>
+                  </li>
+                </>
               )}
               {app.transfer_date && (
                 <TimelineRow label="Transferred (Section 6(3))" value={app.transfer_date} />
