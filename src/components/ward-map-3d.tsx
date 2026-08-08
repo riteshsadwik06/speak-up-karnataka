@@ -1,0 +1,570 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import asset from "@/assets/gba-wards-3d.json.asset.json";
+import { portalZoneForGbaZone, PORTAL_AUTHORITIES } from "@/lib/rti-data";
+import { WardMap } from "@/components/ward-map";
+
+type RawWard = {
+  id: string;
+  n: string;
+  kn: string;
+  c: string;
+  z: string;
+  a: string;
+  pop: number;
+  w: string;
+  p: number[][][][];
+};
+
+export type WardInfo = {
+  id: string;
+  name: string;
+  nameKn: string;
+  corporation: string;
+  zone: string;
+  assembly: string;
+  population: number;
+  number: string;
+};
+
+export const CORP_COLOR: Record<string, string> = {
+  Central: "#1f1d1a",
+  North: "#8a6220",
+  East: "#2c5c4f",
+  South: "#8c3626",
+  West: "#3b4a6b",
+};
+
+const PORTAL_ZONE_COLOR: Record<string, string> = {
+  Mahadevapura: "#2c5c4f",
+  Yelahanka: "#8a6220",
+  Bommanahalli: "#8c3626",
+  Rajarajeshwarinagar: "#3b4a6b",
+};
+
+const GREY = "#a9a396";
+
+function hasWebGL(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+function easeInOut(t: number) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const modeRef = useRef(mode);
+  const [webgl, setWebgl] = useState<boolean | null>(null);
+  const [ready, setReady] = useState(false);
+  const [hover, setHover] = useState<{ w: WardInfo; x: number; y: number } | null>(null);
+  const [selected, setSelected] = useState<WardInfo | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const setModeColorsRef = useRef<((m: "gba" | "portal") => void) | null>(null);
+
+  useEffect(() => setWebgl(hasWebGL()), []);
+
+  useEffect(() => {
+    modeRef.current = mode;
+    setModeColorsRef.current?.(mode);
+  }, [mode]);
+
+  useEffect(() => {
+    if (webgl !== true) return;
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    let disposed = false;
+    const cleanups: (() => void)[] = [];
+
+    (async () => {
+      const THREE = await import("three");
+      const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
+      const raw: { wards: RawWard[] } = await fetch(asset.url).then((r) => r.json());
+      if (disposed) return;
+
+      const small = window.innerWidth < 768;
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("#f3efe6");
+
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+      camera.position.set(60, 78, 92);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: !small, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, small ? 1.5 : 2));
+      renderer.shadowMap.enabled = false;
+      mount.appendChild(renderer.domElement);
+      renderer.domElement.style.width = "100%";
+      renderer.domElement.style.height = "100%";
+      renderer.domElement.style.display = "block";
+      renderer.domElement.style.touchAction = "none";
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.enablePan = false;
+      controls.minDistance = 40;
+      controls.maxDistance = 260;
+      controls.maxPolarAngle = Math.PI / 2 - 0.06;
+      controls.target.set(0, 0, 0);
+
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xbfb8a8, 1.05));
+      const dir = new THREE.DirectionalLight(0xffffff, 0.75);
+      dir.position.set(60, 120, 40);
+      dir.castShadow = false;
+      scene.add(dir);
+
+      // projection
+      let minLon = 1e9,
+        maxLon = -1e9,
+        minLat = 1e9,
+        maxLat = -1e9;
+      for (const w of raw.wards)
+        for (const poly of w.p)
+          for (const ring of poly)
+            for (const [lon, lat] of ring) {
+              if (lon! < minLon) minLon = lon!;
+              if (lon! > maxLon) maxLon = lon!;
+              if (lat! < minLat) minLat = lat!;
+              if (lat! > maxLat) maxLat = lat!;
+            }
+      const lon0 = (minLon + maxLon) / 2;
+      const lat0 = (minLat + maxLat) / 2;
+      const k = Math.cos((lat0 * Math.PI) / 180);
+      const spanX = (maxLon - minLon) * k;
+      const spanY = maxLat - minLat;
+      const SCALE = 100 / Math.max(spanX, spanY);
+      const px = (lon: number) => (lon - lon0) * k * SCALE;
+      const py = (lat: number) => (lat - lat0) * SCALE;
+
+      const pops = raw.wards.map((w) => w.pop).filter((p) => p > 0);
+      const minPop = Math.min(...pops);
+      const maxPop = Math.max(...pops);
+
+      type WardMesh = InstanceType<typeof THREE.Mesh> & {
+        userData: {
+          info: WardInfo;
+          zone: string;
+          corp: string;
+          baseColor: InstanceType<typeof THREE.Color>;
+          fromColor: InstanceType<typeof THREE.Color>;
+          toColor: InstanceType<typeof THREE.Color>;
+          fromOpacity: number;
+          toOpacity: number;
+          delay: number;
+          targetY: number;
+        };
+      };
+
+      const meshes: WardMesh[] = [];
+      const corpCounts: Record<string, number> = {};
+
+      for (const w of raw.wards) {
+        const shapes: InstanceType<typeof THREE.Shape>[] = [];
+        for (const poly of w.p) {
+          const outer = poly[0];
+          if (!outer || outer.length < 3) continue;
+          const shape = new THREE.Shape();
+          outer.forEach(([lon, lat], i) => {
+            const x = px(lon!);
+            const y = py(lat!);
+            if (i === 0) shape.moveTo(x, y);
+            else shape.lineTo(x, y);
+          });
+          for (let h = 1; h < poly.length; h++) {
+            const ring = poly[h]!;
+            const path = new THREE.Path();
+            ring.forEach(([lon, lat], i) => {
+              const x = px(lon!);
+              const y = py(lat!);
+              if (i === 0) path.moveTo(x, y);
+              else path.lineTo(x, y);
+            });
+            shape.holes.push(path);
+          }
+          shapes.push(shape);
+        }
+        if (!shapes.length) continue;
+
+        const t = maxPop > minPop ? (Math.max(w.pop, minPop) - minPop) / (maxPop - minPop) : 0;
+        const depth = 0.5 + t * 5.5;
+        const geo = new THREE.ExtrudeGeometry(shapes, { depth, bevelEnabled: false });
+        geo.computeBoundingBox();
+        const color = new THREE.Color(CORP_COLOR[w.c] ?? GREY);
+        const mat = new THREE.MeshLambertMaterial({ color: color.clone(), transparent: true, opacity: 1 });
+        const mesh = new THREE.Mesh(geo, mat) as WardMesh;
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.scale.z = 0.001;
+
+        const bb = geo.boundingBox!;
+        const cx = (bb.min.x + bb.max.x) / 2;
+        const cy = (bb.min.y + bb.max.y) / 2;
+        const dist = Math.hypot(cx, cy);
+
+        mesh.userData = {
+          info: {
+            id: w.id,
+            name: w.n,
+            nameKn: w.kn,
+            corporation: `Bengaluru ${w.c} City Corporation`,
+            zone: w.z,
+            assembly: w.a,
+            population: w.pop,
+            number: w.w,
+          },
+          zone: w.z,
+          corp: w.c,
+          baseColor: color,
+          fromColor: color.clone(),
+          toColor: color.clone(),
+          fromOpacity: 1,
+          toOpacity: 1,
+          delay: Math.min(dist / 70, 1) * 0.45,
+          targetY: 0,
+        };
+        corpCounts[w.c] = (corpCounts[w.c] ?? 0) + 1;
+        scene.add(mesh);
+        meshes.push(mesh);
+      }
+      setCounts(corpCounts);
+
+      // ---- colour + camera transition state
+      let colorT = 1;
+      let colorDur = 700;
+      let colorStart = 0;
+      const camFrom = new THREE.Vector3();
+      const camTo = new THREE.Vector3();
+      let camT = 1;
+
+      const CAM_A = new THREE.Vector3(60, 78, 92);
+      const CAM_B = new THREE.Vector3(48, 118, 74);
+
+      function targetFor(m: WardMesh, md: "gba" | "portal") {
+        if (md === "gba") return { c: new THREE.Color(CORP_COLOR[m.userData.corp] ?? GREY), o: 1 };
+        const pz = PORTAL_ZONE_COLOR[m.userData.zone];
+        return pz ? { c: new THREE.Color(pz), o: 1 } : { c: new THREE.Color(GREY), o: 0.45 };
+      }
+
+      function applyMode(md: "gba" | "portal", animate = true) {
+        for (const m of meshes) {
+          const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
+          const t = targetFor(m, md);
+          m.userData.fromColor = mat.color.clone();
+          m.userData.fromOpacity = mat.opacity;
+          m.userData.toColor = t.c;
+          m.userData.toOpacity = t.o;
+        }
+        colorStart = performance.now();
+        colorDur = animate ? 700 : 1;
+        colorT = 0;
+        camFrom.copy(camera.position);
+        camTo.copy(md === "portal" ? CAM_B : CAM_A);
+        camT = 0;
+      }
+      setModeColorsRef.current = (md) => applyMode(md);
+      applyMode(modeRef.current, false);
+
+      // ---- interaction
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      let hoveredId: string | null = null;
+      let selectedId: string | null = null;
+      let pointerActive = false;
+      let lastClient = { x: 0, y: 0 };
+
+      function pick() {
+        raycaster.setFromCamera(pointer, camera);
+        const hit = raycaster.intersectObjects(meshes, false)[0];
+        return (hit?.object as WardMesh | undefined) ?? null;
+      }
+
+      function onPointerMove(e: PointerEvent) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        lastClient = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        pointerActive = true;
+      }
+      function onPointerLeave() {
+        pointerActive = false;
+        hoveredId = null;
+        for (const m of meshes) m.userData.targetY = 0;
+        setHover(null);
+      }
+      function onClick() {
+        const m = pick();
+        if (!m) return;
+        selectedId = m.userData.info.id;
+        setSelected(m.userData.info);
+      }
+      renderer.domElement.addEventListener("pointermove", onPointerMove);
+      renderer.domElement.addEventListener("pointerleave", onPointerLeave);
+      renderer.domElement.addEventListener("click", onClick);
+
+      // ---- sizing
+      function resize() {
+        const w = mount!.clientWidth;
+        const h = mount!.clientHeight;
+        if (!w || !h) return;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      const ro = new ResizeObserver(resize);
+      ro.observe(mount);
+
+      // ---- loop gating
+      let visible = !document.hidden;
+      let onScreen = true;
+      let rafId = 0;
+      let running = false;
+      const introStart = performance.now() + 120;
+
+      function loop() {
+        if (!running) return;
+        rafId = requestAnimationFrame(loop);
+        const now = performance.now();
+
+        // intro
+        for (const m of meshes) {
+          const p = (now - introStart) / 1000 - m.userData.delay;
+          const s = Math.max(0.001, Math.min(1, easeInOut(Math.max(0, Math.min(1, p / 1.2)))));
+          if (m.scale.z < 1) m.scale.z = s;
+        }
+
+        // colour transition
+        if (colorT < 1) {
+          colorT = Math.min(1, (now - colorStart) / colorDur);
+          const e = easeInOut(colorT);
+          for (const m of meshes) {
+            const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
+            mat.color.copy(m.userData.fromColor).lerp(m.userData.toColor, e);
+            mat.opacity = m.userData.fromOpacity + (m.userData.toOpacity - m.userData.fromOpacity) * e;
+          }
+        }
+        if (camT < 1) {
+          camT = Math.min(1, camT + 0.02);
+          const e = easeInOut(camT);
+          camera.position.lerpVectors(camFrom, camTo, e);
+        }
+
+        // hover
+        if (pointerActive) {
+          const m = pick();
+          const id = m?.userData.info.id ?? null;
+          if (id !== hoveredId) {
+            hoveredId = id;
+            for (const mm of meshes) mm.userData.targetY = mm.userData.info.id === id ? 0.6 : 0;
+            setHover(m ? { w: m.userData.info, x: lastClient.x, y: lastClient.y } : null);
+          } else if (m) {
+            setHover((h) => (h ? { ...h, x: lastClient.x, y: lastClient.y } : h));
+          }
+        }
+        for (const m of meshes) {
+          const target = m.userData.targetY + (m.userData.info.id === selectedId ? 0.35 : 0);
+          m.position.y += (target - m.position.y) * 0.18;
+          const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
+          const wantEmissive = m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
+          mat.emissive.setScalar(wantEmissive ? 0.14 : 0);
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      function sync() {
+        const should = visible && onScreen;
+        if (should && !running) {
+          running = true;
+          rafId = requestAnimationFrame(loop);
+        } else if (!should && running) {
+          running = false;
+          cancelAnimationFrame(rafId);
+        }
+      }
+      const onVis = () => {
+        visible = !document.hidden;
+        sync();
+      };
+      document.addEventListener("visibilitychange", onVis);
+      const io = new IntersectionObserver(
+        (entries) => {
+          onScreen = entries[0]?.isIntersecting ?? true;
+          sync();
+        },
+        { threshold: 0.01 },
+      );
+      io.observe(mount);
+      sync();
+      setReady(true);
+
+      cleanups.push(() => {
+        running = false;
+        cancelAnimationFrame(rafId);
+        document.removeEventListener("visibilitychange", onVis);
+        io.disconnect();
+        ro.disconnect();
+        renderer.domElement.removeEventListener("pointermove", onPointerMove);
+        renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
+        renderer.domElement.removeEventListener("click", onClick);
+        controls.dispose();
+        for (const m of meshes) {
+          m.geometry.dispose();
+          (m.material as InstanceType<typeof THREE.MeshLambertMaterial>).dispose();
+          scene.remove(m);
+        }
+        renderer.dispose();
+        if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
+        setModeColorsRef.current = null;
+      });
+    })();
+
+    return () => {
+      disposed = true;
+      for (const c of cleanups) c();
+    };
+  }, [webgl]);
+
+  const legend = useMemo(() => {
+    if (mode === "gba") {
+      return Object.keys(CORP_COLOR).map((c) => ({
+        color: CORP_COLOR[c]!,
+        label: `Bengaluru ${c}`,
+        note: `${counts[c] ?? 0} wards`,
+      }));
+    }
+    return Object.keys(PORTAL_ZONE_COLOR).map((z) => ({
+      color: PORTAL_ZONE_COLOR[z]!,
+      label: z,
+      note: "verified portal zone",
+    }));
+  }, [mode, counts]);
+
+  if (webgl === false) {
+    return (
+      <div className="p-6">
+        <p className="mb-3 text-xs text-muted-foreground">
+          Your browser cannot render 3D graphics, so this is the flat ward map instead.
+        </p>
+        <WardMap selectedId="" onSelect={() => undefined} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col lg:flex-row">
+      <div className="min-w-0 flex-1 border-b border-border lg:border-b-0 lg:border-r">
+        <div className="relative">
+          <div ref={mountRef} className="h-[360px] w-full sm:h-[520px]" />
+          {!ready && (
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+              Building the city…
+            </div>
+          )}
+          {hover && (
+            <div
+              className="pointer-events-none absolute z-10 border border-foreground bg-background px-2 py-1"
+              style={{ left: Math.min(hover.x + 12, 9999), top: hover.y + 12 }}
+            >
+              <p className="font-display text-xs font-bold">{hover.w.name}</p>
+              <p className="mono-stamp">
+                Ward {hover.w.number} · {hover.w.corporation.replace("Bengaluru ", "").replace(" City Corporation", "")}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border p-3">
+          {legend.map((l) => (
+            <span key={l.label} className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3" style={{ backgroundColor: l.color }} />
+              <span className="text-[11px]">{l.label}</span>
+              <span className="mono-stamp">{l.note}</span>
+            </span>
+          ))}
+          {mode === "portal" && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 opacity-50" style={{ backgroundColor: GREY }} />
+              <span className="text-[11px] text-muted-foreground">
+                No verified portal equivalent — you must choose the BBMP zone yourself when filing.
+              </span>
+            </span>
+          )}
+        </div>
+        <p className="border-t border-border p-3 text-[11px] text-muted-foreground sm:hidden">
+          Rotate with one finger, pinch to zoom.
+        </p>
+      </div>
+
+      <aside className="w-full shrink-0 p-5 lg:w-80">
+        {!selected && (
+          <>
+            <p className="rule-heading">Ward detail</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Tap a ward to see how it is administered today and how the RTI portal still files it.
+            </p>
+          </>
+        )}
+        {selected && <WardPanel ward={selected} />}
+      </aside>
+    </div>
+  );
+}
+
+function WardPanel({ ward }: { ward: WardInfo }) {
+  const portal = portalZoneForGbaZone(ward.zone);
+  return (
+    <div>
+      <p className="rule-heading">Ward {ward.number}</p>
+      <h3 className="mt-1 font-display text-lg leading-tight">{ward.name}</h3>
+      <p className="text-sm text-muted-foreground">{ward.nameKn}</p>
+
+      <dl className="mt-4 space-y-2 text-xs">
+        {[
+          ["Corporation", ward.corporation],
+          ["Assembly", ward.assembly],
+          ["GBA zone", ward.zone],
+          ["Population", ward.population ? ward.population.toLocaleString("en-IN") : "—"],
+        ].map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3 border-b border-border pb-1.5">
+            <dt className="rule-heading">{k}</dt>
+            <dd className="text-right">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="mt-4 border border-foreground p-3">
+        <p className="rule-heading text-foreground">On the RTI portal</p>
+        {portal ? (
+          <p className="mt-1.5 text-xs">{portal}</p>
+        ) : (
+          <>
+            <p className="mt-1.5 text-xs">
+              No verified mapping. The portal has no entry for {ward.zone}; pick the closest BBMP zone yourself:
+            </p>
+            <ul className="mt-2 space-y-0.5">
+              {PORTAL_AUTHORITIES.bbmpZones.map((z) => (
+                <li key={z} className="mono-stamp leading-snug">
+                  {z}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+
+      <Link
+        to="/new"
+        search={{ ward: ward.id }}
+        className="mt-4 block bg-foreground px-4 py-2 text-center font-display text-sm font-bold text-background"
+      >
+        DRAFT AN RTI FOR THIS WARD
+      </Link>
+    </div>
+  );
+}
