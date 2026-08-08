@@ -4,7 +4,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, SectionLabel, StatusPill } from "@/components/app-shell";
-import { addDays, clockFor, daysBetween, LEGAL, STATUS_LABEL, today } from "@/lib/rti-data";
+import {
+  addDays,
+  appealGroundLabel,
+  clockFor,
+  daysBetween,
+  LEGAL,
+  PORTAL_MAX_CHARS,
+  SPLIT_ADVISORY,
+  STATUS_LABEL,
+  today,
+  toPortalSafe,
+} from "@/lib/rti-data";
 import { generateAppealDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
 
