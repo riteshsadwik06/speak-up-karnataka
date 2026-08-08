@@ -29,7 +29,7 @@ Under Section 6(1) of the Right to Information Act, 2005, I request the followin
 
 ${reqs.map((r, i) => `${i + 1}. ${r.text}`).join("\n\n")}
 
-The prescribed application fee of ₹10 is enclosed. I undertake to pay the copying charges of ₹2 per A4 page on demand.
+The prescribed application fee of Rs. 10 is enclosed. I undertake to pay the copying charges of Rs. 2 per A4 page on demand.
 
 If any part is refused, please state the specific exemption under Section 8 or 9 relied upon, along with the particulars of the First Appellate Authority under Section 19(1), as required by Section 7(8).
 
@@ -175,7 +175,7 @@ const SEEDS: SeedApp[] = [
     filed_offset: -40,
     reply_offset: -12,
     reply_notes:
-      "BESCOM replied to point 1 only, providing a partial outage log for March–May 2025. Points 2 and 3 were not answered and no exemption was cited. This is an incomplete reply under Section 7(8).",
+      "BESCOM replied to point 1 only, providing a partial outage log for March-May 2025. Points 2 and 3 were not answered and no exemption was cited. This is an incomplete reply under Section 7(8).",
   },
 ];
 
