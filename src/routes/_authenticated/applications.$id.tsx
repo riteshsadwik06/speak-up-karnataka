@@ -79,7 +79,7 @@ function Detail() {
   }
 
   const app = data.app;
-  const clock = clockFor(app);
+  const clock = clockFor(app, data.appeals);
   const requests = (app.generated_requests as { text: string; rationale: string }[]) ?? [];
   const firstAppeal = data.appeals.find((a) => a.tier === "first");
   const secondAppeal = data.appeals.find((a) => a.tier === "second");
@@ -108,7 +108,9 @@ function Detail() {
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusPill tone={clock.tone}>{clock.label}</StatusPill>
-        <span className="rule-heading">{STATUS_LABEL[app.status] ?? app.status}</span>
+        {clock.tone !== "danger" && (
+          <span className="rule-heading">{STATUS_LABEL[app.status] ?? app.status}</span>
+        )}
         {app.is_seeded && (
           <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
             Demo data
