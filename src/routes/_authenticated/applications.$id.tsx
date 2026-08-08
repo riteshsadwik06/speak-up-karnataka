@@ -63,6 +63,8 @@ function Detail() {
   const [transferTo, setTransferTo] = useState("");
   const [transferReg, setTransferReg] = useState("");
   const [appealReg, setAppealReg] = useState<Record<string, string>>({});
+  const [portalChoice, setPortalChoice] = useState("");
+
 
 
   const { data, isLoading } = useQuery({
