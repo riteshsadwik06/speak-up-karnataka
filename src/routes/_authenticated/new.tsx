@@ -315,6 +315,10 @@ function NewApplication() {
       status: markFiled ? "filed" : "draft",
       filed_date: markFiled ? (filedDate ?? today()) : null,
       response_due_date: markFiled ? addDays(filedDate ?? today(), LEGAL.pioDays) : null,
+      stage: "rti",
+      complaint_ref: complaintRef.trim() || null,
+      complaint_filed_date: priorFiledDate || null,
+      closure_claimed_date: prior === "false_closure" ? closureDate || null : null,
     };
   }
 
