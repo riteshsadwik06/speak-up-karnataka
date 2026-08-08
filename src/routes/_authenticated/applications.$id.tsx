@@ -653,6 +653,14 @@ function Detail() {
               >
                 {busy ? "Drafting…" : "Draft first appeal"}
               </button>
+              <a
+                href={PORTAL_LINKS.submitFirstAppeal}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block text-xs text-accent underline underline-offset-4"
+              >
+                File the first appeal on the portal
+              </a>
             </div>
           )}
 
@@ -703,6 +711,14 @@ function Detail() {
                   Draft first appeal — unreasonable fee
                 </button>
               </div>
+              <a
+                href={PORTAL_LINKS.submitFirstAppeal}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block text-xs text-accent underline underline-offset-4"
+              >
+                File the first appeal on the portal
+              </a>
 
             </div>
           )}
