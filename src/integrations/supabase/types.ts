@@ -23,6 +23,8 @@ export type Database = {
           filed_date: string | null
           grounds: string
           id: string
+          portal_ground: string | null
+          registration_number: string | null
           tier: string
         }
         Insert: {
@@ -33,6 +35,8 @@ export type Database = {
           filed_date?: string | null
           grounds?: string
           id?: string
+          portal_ground?: string | null
+          registration_number?: string | null
           tier: string
         }
         Update: {
@@ -43,6 +47,8 @@ export type Database = {
           filed_date?: string | null
           grounds?: string
           id?: string
+          portal_ground?: string | null
+          registration_number?: string | null
           tier?: string
         }
         Relationships: [
@@ -69,10 +75,14 @@ export type Database = {
           pio_address: string | null
           pio_name: string | null
           public_authority: string
+          registration_number: string | null
           reply_notes: string | null
           reply_received_date: string | null
           response_due_date: string | null
           status: string
+          transfer_date: string | null
+          transfer_registration_number: string | null
+          transferred_to: string | null
           user_id: string
           ward_id: string | null
           ward_name: string | null
@@ -90,10 +100,14 @@ export type Database = {
           pio_address?: string | null
           pio_name?: string | null
           public_authority?: string
+          registration_number?: string | null
           reply_notes?: string | null
           reply_received_date?: string | null
           response_due_date?: string | null
           status?: string
+          transfer_date?: string | null
+          transfer_registration_number?: string | null
+          transferred_to?: string | null
           user_id: string
           ward_id?: string | null
           ward_name?: string | null
@@ -111,10 +125,14 @@ export type Database = {
           pio_address?: string | null
           pio_name?: string | null
           public_authority?: string
+          registration_number?: string | null
           reply_notes?: string | null
           reply_received_date?: string | null
           response_due_date?: string | null
           status?: string
+          transfer_date?: string | null
+          transfer_registration_number?: string | null
+          transferred_to?: string | null
           user_id?: string
           ward_id?: string | null
           ward_name?: string | null
