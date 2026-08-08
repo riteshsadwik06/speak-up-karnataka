@@ -5,7 +5,7 @@ import { WARDS } from "@/lib/wards";
 type Shapes = { width: number; height: number; shapes: { ward_id: string; d: string }[] };
 
 const CORP_TONE: Record<string, string> = {
-  "Bengaluru Central City Corporation": "hsl(var(--accent) / 0.18)",
+  "Bengaluru Central City Corporation": "color-mix(in oklch, var(--accent) 18%, var(--muted))",
 };
 
 export function WardMap({
@@ -70,14 +70,14 @@ export function WardMap({
               className="cursor-pointer"
               fill={
                 isSelected
-                  ? "hsl(var(--accent))"
+                  ? "var(--accent)"
                   : isHover
-                    ? "hsl(var(--accent) / 0.35)"
+                    ? "color-mix(in oklch, var(--accent) 40%, var(--muted))"
                     : dimmed
-                      ? "hsl(var(--muted) / 0.35)"
-                      : CORP_TONE[byId.get(s.ward_id)?.corporation ?? ""] ?? "hsl(var(--muted))"
+                      ? "color-mix(in oklch, var(--muted) 60%, var(--background))"
+                      : CORP_TONE[byId.get(s.ward_id)?.corporation ?? ""] ?? "var(--muted)"
               }
-              stroke="hsl(var(--border))"
+              stroke="var(--border)"
               strokeWidth={isSelected ? 2.5 : 0.7}
             />
           );
