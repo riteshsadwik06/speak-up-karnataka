@@ -251,6 +251,10 @@ export function complaintChannel(id: string | null | undefined) {
  */
 export const COMPLAINT_EXPECTATION_DAYS = 14;
 
+export const COMPLAINT_NOT_STATUTORY =
+  "This is a service expectation, not a statutory deadline. The RTI Act's 30-day limit applies to RTI applications, not to civic complaints.";
+
+
 export const COMPLAINT_ESCALATION_NOTE =
   "Sahaaya 2.0 allows two escalations before the complaint reaches a higher officer. Work through both, then an RTI is the next real lever.";
 
