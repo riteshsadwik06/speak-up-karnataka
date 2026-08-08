@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { WardMap3D } from "@/components/ward-map-3d";
+import { WardMap3D, type MapMode } from "@/components/ward-map-3d";
 
 export const Route = createFileRoute("/_authenticated/map")({
   ssr: false,
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/map")({
 });
 
 function MapPage() {
-  const [mode, setMode] = useState<"gba" | "portal">("gba");
+  const [mode, setMode] = useState<MapMode>("gba");
 
   return (
     <AppShell bare>
@@ -43,6 +43,7 @@ function MapPage() {
             [
               ["gba", "GBA (today)"],
               ["portal", "RTI portal (still BBMP)"],
+              ["complaints", "Where complaints go"],
             ] as const
           ).map(([k, label]) => (
             <button
