@@ -105,6 +105,41 @@ export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * The Karnataka RTI portal restricts the request/appeal text field to
+ * A-Z a-z 0-9 and , . - _ ( ) / @ : & \ % ? and caps it at 3000 characters.
+ */
+export const PORTAL_ALLOWED = /[^A-Za-z0-9 \n,.\-_()\/@:&\\%?]/g;
+export const PORTAL_MAX_CHARS = 3000;
+
+export function toPortalSafe(text: string): string {
+  return text
+    .replace(/₹\s?/g, "Rs. ")
+    .replace(/[–—]/g, "-")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/…/g, "...")
+    .replace(PORTAL_ALLOWED, "");
+}
+
+/** The portal's fixed first-appeal ground dropdown. */
+export const APPEAL_GROUNDS = [
+  { id: "refused", label: "Access to the requested information was refused" },
+  { id: "no_response", label: "No response received within the time limit" },
+  { id: "excess_fee", label: "Unreasonable amount of fee demanded" },
+  { id: "incomplete", label: "Incomplete, misleading or false information provided" },
+  { id: "other", label: "Any other ground" },
+] as const;
+
+export function appealGroundLabel(id: string | null | undefined): string | null {
+  return APPEAL_GROUNDS.find((g) => g.id === id)?.label ?? null;
+}
+
+/** Sub-registration number advisory for split applications. */
+export const SPLIT_ADVISORY =
+  "If your application was forwarded to more than one PIO, the portal splits it into sub-numbers (e.g. .../60104/1). Each sub-number gets its own reply. File your appeal against the specific sub-number you are dissatisfied with, not the parent number.";
+
+
 export type Clock = {
   label: string;
   tone: "calm" | "warn" | "danger" | "neutral";
