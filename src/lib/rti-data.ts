@@ -85,7 +85,81 @@ export const LEGAL = {
   section18:
     "A Section 18 complaint to the Information Commission has no time limit — use it if you have missed an appeal window.",
   calendarDays: "All periods are calendar days, including weekends and public holidays.",
+  rule14:
+    "Karnataka Rule 14: one subject matter per application, and ordinarily no more than 150 words. Multiple subjects mean the PIO may answer only the first.",
 };
+
+/** Word budget under Rule 14 (soft cap — the rule says "ordinarily"). */
+export const RULE14_WORD_LIMIT = 150;
+
+export function countWords(text: string): number {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+/**
+ * Exact public-authority strings as they appear on rtionline.karnataka.gov.in.
+ * The portal still lists Bengaluru under the nine legacy BBMP zones, not the
+ * five GBA city corporations. Reproduced verbatim, spacing and spellings included.
+ */
+export const PORTAL_AUTHORITIES = {
+  bbmpZones: [
+    "Bruhat Bengaluru Mahanagara Palike (West Zone)BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (South Zone)BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (Dasarahalli Zone)BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (Raja rajeshwarinagar Zone)BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (Central Zone) BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (East Zone) BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (Bommanahalli Zone) BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (Mahadevapura Zone) BBMP",
+    "Bruhat Bengaluru Mahanagara Palike (Yalahanka Zone) BBMP",
+  ],
+  bwssbUnits: [
+    "Bangalore water supply and sewage board(Administration)",
+    "Bangalore water supply and sewage board(Finance)",
+    "Bangalore water supply and sewage board(East)",
+    "Bangalore water supply and sewage board(West)",
+    "Bangalore Water Supply And Sewerage Board (North)",
+    "Bangalore Water Supply And Sewerage Board (South)",
+    "Bangalore water supply and sewage board(Design)",
+    "Bangalore water supply and sewage board(Kaveri Project)",
+    "Bangalore Water Supply And Sewerage Board (Kaveri Operation And Maintenance)",
+    "Bangalore water supply and sewage board(WWM) - East",
+    "Bangalore Water Supply And Sewerage Board(WWM) - West",
+    "Bangalore water supply and sewage board(WWM-110V)",
+  ],
+  bescom: "Bangalore Electricity Supply Company Ltd (BESCOM)",
+} as const;
+
+/**
+ * Only four GBA zones have a verified equivalent in the portal's BBMP zone list.
+ * The other six (C.V. Raman Nagar, Gandhinagara, K.R. Pura, Byatarayanapura,
+ * Jayanagar, Malleshwaram) have none — never guess, ask the user.
+ */
+const GBA_ZONE_TO_PORTAL: Record<string, string> = {
+  Mahadevapura: "Bruhat Bengaluru Mahanagara Palike (Mahadevapura Zone) BBMP",
+  Yelahanka: "Bruhat Bengaluru Mahanagara Palike (Yalahanka Zone) BBMP",
+  Bommanahalli: "Bruhat Bengaluru Mahanagara Palike (Bommanahalli Zone) BBMP",
+  Rajarajeshwarinagar:
+    "Bruhat Bengaluru Mahanagara Palike (Raja rajeshwarinagar Zone)BBMP",
+};
+
+export function portalZoneForGbaZone(zone: string | null | undefined): string | null {
+  if (!zone) return null;
+  return GBA_ZONE_TO_PORTAL[zone.trim()] ?? null;
+}
+
+export type PortalAuthorityKind = "bbmp" | "bwssb" | "bescom" | "none";
+
+/** Which portal picker applies to a saved application's public authority. */
+export function portalAuthorityKind(authority: string): PortalAuthorityKind {
+  const a = authority.toLowerCase();
+  if (a.includes("bwssb") || a.includes("water supply")) return "bwssb";
+  if (a.includes("bescom") || a.includes("electricity")) return "bescom";
+  if (a.includes("corporation") || a.includes("bbmp") || a.includes("bengaluru authority"))
+    return "bbmp";
+  return "none";
+}
+
 
 export const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
