@@ -2,62 +2,61 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 
+const navLink =
+  "block px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground";
+const navLinkActive = "bg-foreground text-background hover:bg-foreground hover:text-background";
+
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
-          <Link to="/dashboard" className="font-display text-2xl leading-none">
-            Vicharane
+    <div className="min-h-screen w-full bg-background p-4 md:p-8">
+      <div className="registry-frame mx-auto flex w-full max-w-6xl flex-col md:flex-row">
+        <aside className="w-full shrink-0 border-b border-border bg-background p-6 md:w-60 md:border-b-0 md:border-r">
+          <Link to="/dashboard" className="block">
+            <h1 className="font-display text-xl font-bold tracking-tight">VICHARANE</h1>
+            <p className="rule-heading mt-1">Public Records Tracker</p>
           </Link>
-          <nav className="ml-auto flex items-center gap-1 text-sm">
-            <Link
-              to="/dashboard"
-              className="rounded-md px-2.5 py-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              activeProps={{ className: "bg-secondary text-foreground" }}
-            >
-              Dashboard
+
+          <nav className="mt-8 space-y-1">
+            <Link to="/dashboard" className={navLink} activeProps={{ className: `${navLink} ${navLinkActive}` }}>
+              Registry
             </Link>
-            <Link
-              to="/new"
-              className="rounded-md bg-accent px-3 py-1.5 font-medium text-accent-foreground transition-opacity hover:opacity-90"
-            >
-              New RTI
+            <Link to="/new" className={navLink} activeProps={{ className: `${navLink} ${navLinkActive}` }}>
+              New filing
             </Link>
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
                 router.navigate({ to: "/auth" });
               }}
-              className="rounded-md px-2.5 py-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className={`${navLink} w-full text-left`}
             >
               Sign out
             </button>
           </nav>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
+        </aside>
+
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }
 
 export function StatusPill({ tone, children }: { tone: string; children: ReactNode }) {
   const tones: Record<string, string> = {
-    calm: "bg-secondary text-secondary-foreground",
-    warn: "bg-warning/20 text-warning-foreground border border-warning/40",
-    danger: "bg-destructive/12 text-destructive border border-destructive/30",
-    neutral: "bg-muted text-muted-foreground",
+    calm: "border border-foreground text-foreground",
+    warn: "border border-foreground text-foreground",
+    danger: "border border-foreground bg-foreground text-background",
+    neutral: "border border-dashed border-muted-foreground text-muted-foreground",
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone] ?? tones["neutral"]}`}
+      className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tones[tone] ?? tones["neutral"]}`}
     >
       {children}
     </span>
   );
-
 }
 
 export function SectionLabel({ children }: { children: ReactNode }) {
