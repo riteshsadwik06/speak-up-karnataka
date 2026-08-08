@@ -79,7 +79,7 @@ function Detail() {
   }
 
   const app = data.app;
-  const clock = clockFor(app);
+  const clock = clockFor(app, data.appeals);
   const requests = (app.generated_requests as { text: string; rationale: string }[]) ?? [];
   const firstAppeal = data.appeals.find((a) => a.tier === "first");
   const secondAppeal = data.appeals.find((a) => a.tier === "second");
@@ -108,7 +108,9 @@ function Detail() {
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusPill tone={clock.tone}>{clock.label}</StatusPill>
-        <span className="rule-heading">{STATUS_LABEL[app.status] ?? app.status}</span>
+        {clock.tone !== "danger" && (
+          <span className="rule-heading">{STATUS_LABEL[app.status] ?? app.status}</span>
+        )}
         {app.is_seeded && (
           <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
             Demo data
@@ -180,7 +182,11 @@ function Detail() {
               <p className="text-xs text-muted-foreground">
                 Grounds: {ap.grounds}
                 {ap.filed_date ? ` · filed ${ap.filed_date}` : " · not filed yet"}
-                {ap.due_date ? ` · decision due ${ap.due_date}` : ""}
+                {ap.tier === "first"
+                  ? ap.due_date
+                    ? ` · FAA decision due ${ap.due_date}`
+                    : ""
+                  : " · No statutory disposal deadline for second appeals."}
               </p>
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
                 {ap.body}
@@ -200,7 +206,10 @@ function Detail() {
                     onClick={async () => {
                       const { error } = await supabase
                         .from("appeals")
-                        .update({ filed_date: today(), due_date: addDays(today(), ap.tier === "first" ? 45 : 90) })
+                        .update({
+                          filed_date: today(),
+                          due_date: ap.tier === "first" ? addDays(today(), 45) : null,
+                        })
                         .eq("id", ap.id);
                       if (error) {
                         toast.error(error.message);
