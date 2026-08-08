@@ -119,6 +119,14 @@ function Detail() {
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
   const portalSafeBody = toPortalSafe(app.application_body);
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
+  const wardZone = WARDS.find((w) => w.ward_id === app.ward_id)?.zone_name ?? null;
+  const kind = portalAuthorityKind(app.public_authority);
+  const autoZone = kind === "bbmp" ? portalZoneForGbaZone(wardZone) : null;
+  const savedPortal = app.portal_authority as string | null;
+  const portalOptions =
+    kind === "bwssb" ? [...PORTAL_AUTHORITIES.bwssbUnits] : [...PORTAL_AUTHORITIES.bbmpZones];
+  const portalValue = savedPortal ?? autoZone ?? "";
+
 
   async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
