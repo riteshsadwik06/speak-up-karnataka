@@ -4,16 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, StatusPill } from "@/components/app-shell";
-import { clockFor, LEGAL, STATUS_LABEL } from "@/lib/rti-data";
+import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Your RTI applications — Vicharane" },
+      { title: "RTI registry — Vicharane" },
       { name: "description", content: "Track every RTI application and its statutory deadline." },
-      { property: "og:title", content: "Your RTI applications — Vicharane" },
+      { property: "og:title", content: "RTI registry — Vicharane" },
       { property: "og:description", content: "Live day counters for every RTI you have filed." },
     ],
   }),
@@ -29,9 +29,14 @@ type AppRow = {
   filed_date: string | null;
   response_due_date: string | null;
   reply_received_date: string | null;
+  registration_number: string | null;
   is_seeded: boolean;
   created_at: string;
 };
+
+function stamp(date: string | null) {
+  return date ? date.replaceAll("-", ".") : "—";
+}
 
 function Dashboard() {
   const qc = useQueryClient();
@@ -44,7 +49,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("applications")
         .select(
-          "id, grievance_text, public_authority, ward_name, status, filed_date, response_due_date, reply_received_date, is_seeded, created_at",
+          "id, grievance_text, public_authority, ward_name, status, filed_date, response_due_date, reply_received_date, registration_number, is_seeded, created_at",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -77,16 +82,108 @@ function Dashboard() {
     (a, b) => clockFor(a, byApp[a.id]).urgency - clockFor(b, byApp[b.id]).urgency,
   );
   const hasDemo = rows.some((r) => r.is_seeded);
+  const pending = rows.filter((r) => r.status !== "draft" && r.status !== "closed").length;
 
   return (
     <AppShell>
-      <div className="flex flex-wrap items-end gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-6">
         <div>
-          <h1 className="text-3xl sm:text-4xl">Your applications</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sorted by urgency. {LEGAL.calendarDays}
+          <h2 className="font-display text-2xl">RTI Registry</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Monitoring {pending} statutory {pending === 1 ? "deadline" : "deadlines"}.
           </p>
         </div>
+        <Link
+          to="/new"
+          className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
+        >
+          NEW FILING
+        </Link>
+      </header>
+
+      {isLoading && <p className="p-6 text-sm text-muted-foreground">Loading…</p>}
+
+      {!isLoading && rows.length === 0 && (
+        <div className="p-10 text-center">
+          <p className="font-display text-xl">Nothing filed yet</p>
+          <Link to="/new" className="mt-4 inline-block bg-foreground px-4 py-2 text-sm font-bold text-background">
+            Draft your first RTI
+          </Link>
+        </div>
+      )}
+
+      {rows.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-background text-left">
+                <th className="rule-heading p-4">Ref / Status</th>
+                <th className="rule-heading p-4">Grievance &amp; Authority</th>
+                <th className="rule-heading hidden p-4 sm:table-cell">Timeline</th>
+                <th className="rule-heading p-4 text-right">Deadline</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.map((row) => {
+                const clock = clockFor(row, byApp[row.id]);
+                const day = row.filed_date ? daysBetween(row.filed_date) : 0;
+                const pct = Math.min(100, Math.round((day / LEGAL.pioDays) * 100));
+                return (
+                  <tr key={row.id} className="group transition-colors hover:bg-muted">
+                    <td className="p-4 align-top">
+                      <div className="mono-stamp mb-1.5">{row.registration_number ?? "———"}</div>
+                      <StatusPill tone={clock.tone}>
+                        {row.status === "draft" ? "Not filed" : clock.tone === "danger" ? "Action due" : "In progress"}
+                      </StatusPill>
+                    </td>
+                    <td className="p-4 align-top">
+                      <Link to="/applications/$id" params={{ id: row.id }} className="block">
+                        <h3
+                          className={`font-display text-sm font-semibold leading-tight group-hover:underline ${row.status === "draft" ? "text-muted-foreground" : ""}`}
+                        >
+                          {row.grievance_text}
+                        </h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {row.public_authority}
+                          {row.ward_name ? ` • ${row.ward_name}` : ""}
+                          {row.is_seeded ? " • demo" : ""}
+                        </p>
+                      </Link>
+                    </td>
+                    <td className="hidden p-4 align-top sm:table-cell">
+                      {row.filed_date ? (
+                        <div className="flex flex-col gap-1.5">
+                          <span className="mono-stamp">Filed {stamp(row.filed_date)}</span>
+                          <div className="h-1 w-28 bg-secondary">
+                            <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs italic text-muted-foreground">Awaiting your action</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right align-top">
+                      <div
+                        className={`font-display text-base font-bold ${row.status === "draft" ? "text-muted-foreground/40" : ""}`}
+                      >
+                        {row.filed_date ? `DAY ${day}` : "DAY 0"}
+                      </div>
+                      <div
+                        className={`mt-0.5 text-[10px] font-bold uppercase leading-tight ${clock.tone === "danger" ? "text-destructive" : "text-muted-foreground"}`}
+                      >
+                        {clock.label}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
+        <p className="text-[11px] text-muted-foreground">{LEGAL.calendarDays}</p>
         {hasDemo && (
           <button
             onClick={async () => {
@@ -94,61 +191,13 @@ function Dashboard() {
               await qc.invalidateQueries({ queryKey: ["applications"] });
               toast.success("Demo data cleared");
             }}
-            className="ml-auto rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary"
+            className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground underline"
           >
             Clear demo data
           </button>
         )}
-      </div>
-
-      {isLoading && <p className="mt-8 text-sm text-muted-foreground">Loading…</p>}
-
-      {!isLoading && rows.length === 0 && (
-        <div className="paper-card mt-8 p-8 text-center">
-          <p className="font-display text-2xl">Nothing filed yet</p>
-          <Link
-            to="/new"
-            className="mt-4 inline-block rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
-          >
-            Draft your first RTI
-          </Link>
-        </div>
-      )}
-
-      <div className="mt-6 space-y-3">
-        {rows.map((row) => {
-          const clock = clockFor(row, byApp[row.id]);
-          return (
-            <Link
-              key={row.id}
-              to="/applications/$id"
-              params={{ id: row.id }}
-              className="paper-card block p-4 transition-colors hover:border-accent/50 sm:p-5"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill tone={clock.tone}>{clock.label}</StatusPill>
-                {clock.tone !== "danger" && (
-                  <span className="rule-heading">{STATUS_LABEL[row.status] ?? row.status}</span>
-                )}
-                {row.is_seeded && (
-                  <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
-                    Demo data
-                  </span>
-                )}
-              </div>
-              <p className="mt-2 line-clamp-2 font-display text-lg leading-snug">
-                {row.grievance_text}
-              </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {row.public_authority}
-                {row.ward_name ? ` · ${row.ward_name} ward` : ""}
-                {row.filed_date ? ` · filed ${row.filed_date}` : ""}
-                {row.response_due_date ? ` · reply due ${row.response_due_date}` : ""}
-              </p>
-            </Link>
-          );
-        })}
-      </div>
+      </footer>
     </AppShell>
   );
 }
+
