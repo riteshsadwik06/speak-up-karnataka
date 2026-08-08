@@ -100,6 +100,7 @@ export async function draftRequests(input: {
   grievance: string;
   authority: string;
   ward?: string | null;
+  focusSubject?: string | null;
 }): Promise<RtiDraft> {
   const user = [
     `Public authority selected by the citizen: ${input.authority}`,
@@ -107,12 +108,20 @@ export async function draftRequests(input: {
     "",
     "Grievance in the citizen's own words:",
     input.grievance,
-  ].join("\n");
+    input.focusSubject ? `\nDraft requests for this subject only: ${input.focusSubject}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const parsed = parseJson(await callGateway(DRAFT_SYSTEM_PROMPT, user)) as Partial<RtiDraft>;
+  const subjects = Array.isArray(parsed.subjects)
+    ? parsed.subjects.filter((s) => s && typeof s.label === "string" && s.label.trim())
+    : [];
   return {
     requests: Array.isArray(parsed.requests) ? parsed.requests.slice(0, 6) : [],
     flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+    subjects,
+    primary_subject: typeof parsed.primary_subject === "string" ? parsed.primary_subject : "",
     suggested_authority: parsed.suggested_authority ?? input.authority,
     confidence: parsed.confidence ?? "medium",
   };
