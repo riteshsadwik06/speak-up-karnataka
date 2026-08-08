@@ -35,8 +35,11 @@ Rules:
 - Never ask the applicant to state a reason for wanting the information. Section 6(2) explicitly bars a public authority from requiring reasons.
 - Write the requests in English even when the grievance is in Kannada.
 
+Karnataka's Rule 14 requires that a single RTI application relate to ONE subject matter. If a request covers more than one, the Public Information Officer may lawfully answer only the first subject and discard the rest. First, identify every distinct civic subject in the grievance - treat things as distinct subjects when they would be held by different departments or in different record sets (road works, street lighting, solid waste, water supply, sewerage, building permissions, property records are all distinct subjects). List them in "subjects". Then draft requests for the SINGLE most substantial subject only, and name it in "primary_subject". Never mix subjects across the numbered requests.
+Rule 14 also states an application shall not ordinarily exceed 150 words. Keep the combined text of the numbered requests under 150 words. Be terse and specific; drop filler. Do not sacrifice the time period, the location or the document type to save words - those are what make a request answerable.
+
 Return ONLY valid JSON, no markdown fences:
-{ "requests": [{"text": "...", "rationale": "why this record matters"}], "flags": [{"type": "opinion_seeking|exemption_risk|too_broad|wrong_authority", "message": "...", "suggestion": "..."}], "suggested_authority": "...", "confidence": "high|medium|low" }`;
+{ "requests": [{"text": "...", "rationale": "why this record matters"}], "flags": [{"type": "opinion_seeking|exemption_risk|too_broad|wrong_authority", "message": "...", "suggestion": "..."}], "subjects": [{"label": "short name of the subject, e.g. Road resurfacing", "summary": "one line"}], "primary_subject": "label of the subject the returned requests cover", "suggested_authority": "...", "confidence": "high|medium|low" }`;
 
 export const APPEAL_SYSTEM_PROMPT = `You draft appeals under the Right to Information Act 2005 for applicants in Karnataka, India.
 
