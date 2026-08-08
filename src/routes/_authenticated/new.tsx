@@ -81,7 +81,14 @@ function NewApplication() {
   const authorityMismatch =
     !!suggested && !dismissedAuthorityHint && !sameAuthority(authority, suggested);
 
-  async function generate(overrideAuthority?: string) {
+  const requestWords = draft ? countWords(draft.requests.map((r) => r.text).join(" ")) : 0;
+  const overWordLimit = requestWords > RULE14_WORD_LIMIT;
+  const otherSubjects = (draft?.subjects ?? []).filter(
+    (s) => s.label.trim().toLowerCase() !== (draft?.primary_subject ?? "").trim().toLowerCase(),
+  );
+  const multiSubject = (draft?.subjects.length ?? 0) > 1;
+
+  async function generate(overrideAuthority?: string, focusSubject?: string) {
     setBusy(true);
     try {
       const result = await run({
@@ -90,6 +97,7 @@ function NewApplication() {
           authority: overrideAuthority ?? authority,
           ward: ward?.ward_name ?? null,
           language,
+          focusSubject: focusSubject ?? null,
         },
       });
       setDraft(result.draft);
@@ -101,6 +109,7 @@ function NewApplication() {
       setBusy(false);
     }
   }
+
 
   function switchToSuggested() {
     const match = AUTHORITIES.find((a) => sameAuthority(a.name, suggested));
