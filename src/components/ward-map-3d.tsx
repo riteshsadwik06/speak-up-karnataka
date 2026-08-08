@@ -197,7 +197,7 @@ export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
         geo.computeBoundingBox();
         const color = new THREE.Color(CORP_COLOR[w.c] ?? GREY);
         const mat = new THREE.MeshLambertMaterial({ color: color.clone(), transparent: true, opacity: 1 });
-        const mesh = new THREE.Mesh(geo, mat) as WardMesh;
+        const mesh = new THREE.Mesh(geo, mat) as unknown as WardMesh;
         mesh.rotation.x = -Math.PI / 2;
         mesh.scale.z = 0.001;
 
