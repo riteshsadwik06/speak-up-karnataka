@@ -153,7 +153,9 @@ export function clockFor(
     filed_date: string | null;
     response_due_date: string | null;
     reply_received_date: string | null;
+    transfer_date?: string | null;
   },
+
   appeals?: { tier: string; filed_date: string | null }[],
 ): Clock {
   if (app.status === "draft") return { label: "Not filed yet", tone: "neutral", urgency: 10 };
