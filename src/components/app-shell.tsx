@@ -27,6 +27,10 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
             <Link to="/new" className={navIdle} activeProps={{ className: navActive }}>
               New filing
             </Link>
+            <Link to="/map" className={navIdle} activeProps={{ className: navActive }}>
+              Ward map
+            </Link>
+
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
