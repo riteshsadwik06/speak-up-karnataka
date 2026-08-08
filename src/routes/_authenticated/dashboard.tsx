@@ -85,7 +85,7 @@ function Dashboard() {
   const pending = rows.filter((r) => r.status !== "draft" && r.status !== "closed").length;
 
   return (
-    <AppShell>
+    <AppShell bare>
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-6">
         <div>
           <h2 className="font-display text-2xl">RTI Registry</h2>
