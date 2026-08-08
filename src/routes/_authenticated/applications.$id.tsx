@@ -82,6 +82,7 @@ function Detail() {
 
   async function patch(values: Partial<{
     status: string;
+    stage: string;
     filed_date: string | null;
     response_due_date: string | null;
     reply_received_date: string | null;
@@ -91,6 +92,12 @@ function Detail() {
     transfer_date: string | null;
     transfer_registration_number: string | null;
     portal_authority: string | null;
+    complaint_ref: string | null;
+    complaint_filed_date: string | null;
+    closure_claimed_date: string | null;
+    escalation_count: number;
+    generated_requests: { text: string; rationale: string }[];
+    application_body: string;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
