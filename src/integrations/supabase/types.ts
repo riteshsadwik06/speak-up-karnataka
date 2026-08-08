@@ -64,8 +64,14 @@ export type Database = {
       applications: {
         Row: {
           application_body: string
+          closure_claimed_date: string | null
+          complaint_channel: string | null
+          complaint_filed_date: string | null
+          complaint_ref: string | null
+          complaint_text: string | null
           corporation: string | null
           created_at: string
+          escalation_count: number
           filed_date: string | null
           generated_requests: Json
           grievance_text: string
@@ -80,6 +86,7 @@ export type Database = {
           reply_notes: string | null
           reply_received_date: string | null
           response_due_date: string | null
+          stage: string
           status: string
           transfer_date: string | null
           transfer_registration_number: string | null
@@ -90,8 +97,14 @@ export type Database = {
         }
         Insert: {
           application_body?: string
+          closure_claimed_date?: string | null
+          complaint_channel?: string | null
+          complaint_filed_date?: string | null
+          complaint_ref?: string | null
+          complaint_text?: string | null
           corporation?: string | null
           created_at?: string
+          escalation_count?: number
           filed_date?: string | null
           generated_requests?: Json
           grievance_text?: string
@@ -106,6 +119,7 @@ export type Database = {
           reply_notes?: string | null
           reply_received_date?: string | null
           response_due_date?: string | null
+          stage?: string
           status?: string
           transfer_date?: string | null
           transfer_registration_number?: string | null
@@ -116,8 +130,14 @@ export type Database = {
         }
         Update: {
           application_body?: string
+          closure_claimed_date?: string | null
+          complaint_channel?: string | null
+          complaint_filed_date?: string | null
+          complaint_ref?: string | null
+          complaint_text?: string | null
           corporation?: string | null
           created_at?: string
+          escalation_count?: number
           filed_date?: string | null
           generated_requests?: Json
           grievance_text?: string
@@ -132,6 +152,7 @@ export type Database = {
           reply_notes?: string | null
           reply_received_date?: string | null
           response_due_date?: string | null
+          stage?: string
           status?: string
           transfer_date?: string | null
           transfer_registration_number?: string | null
