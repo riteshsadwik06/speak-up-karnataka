@@ -182,7 +182,11 @@ function Detail() {
               <p className="text-xs text-muted-foreground">
                 Grounds: {ap.grounds}
                 {ap.filed_date ? ` · filed ${ap.filed_date}` : " · not filed yet"}
-                {ap.due_date ? ` · decision due ${ap.due_date}` : ""}
+                {ap.tier === "first"
+                  ? ap.due_date
+                    ? ` · FAA decision due ${ap.due_date}`
+                    : ""
+                  : " · No statutory disposal deadline for second appeals."}
               </p>
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
                 {ap.body}
