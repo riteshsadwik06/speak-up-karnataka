@@ -149,9 +149,64 @@ function Detail() {
     }
   }
 
+  async function escalate() {
+    await patch({ escalation_count: (app.escalation_count ?? 0) + 1 });
+    toast.success("Escalation recorded");
+  }
 
-  return (
-    <AppShell>
+  async function promoteToRti() {
+    if (stillWrong.trim().length < 10) {
+      toast.error("Say what is still wrong on the ground — the RTI is built from it.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await makeDraft({
+        data: {
+          grievance: app.grievance_text,
+          authority: app.public_authority,
+          ward: app.ward_name,
+          language: app.language,
+          falseClosure: {
+            ref: app.complaint_ref ?? "",
+            complaintText: app.complaint_text ?? app.grievance_text,
+            filedDate: app.complaint_filed_date,
+            closureDate: closureDate || null,
+            whatIsStillWrong: stillWrong,
+          },
+        },
+      });
+      await patch({
+        stage: "rti",
+        status: "draft",
+        closure_claimed_date: closureDate || null,
+        generated_requests: result.draft.requests,
+        application_body: result.body,
+      });
+      toast.success("RTI drafted against the closure");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not draft the RTI");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const currentStage: StageRailId =
+    app.stage === "complaint"
+      ? (app.escalation_count ?? 0) > 0
+        ? "escalation"
+        : "complaint"
+      : secondAppeal
+        ? "second_appeal"
+        : firstAppeal
+          ? "first_appeal"
+          : "rti";
+
+  const railCompleted: StageRailId[] =
+    app.stage === "complaint" ? [] : app.complaint_ref || app.complaint_filed_date ? ["complaint"] : [];
+
+  const header = (
+    <>
       <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
         ← All applications
       </Link>
@@ -173,6 +228,194 @@ function Detail() {
         {app.public_authority}
         {app.ward_name ? ` · ${app.ward_name} ward` : ""}
       </p>
+
+      <div className="mt-4">
+        <StageRail current={currentStage} completed={railCompleted} />
+      </div>
+    </>
+  );
+
+  if (app.stage === "complaint") {
+    const channel = complaintChannel(app.complaint_channel);
+    return (
+      <AppShell>
+        {header}
+
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+          <div className="space-y-5">
+            <div className="paper-card p-5">
+              <SectionLabel>The complaint</SectionLabel>
+              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
+                {app.complaint_text}
+              </pre>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(app.complaint_text ?? "");
+                  toast.success("Copied");
+                }}
+                className="mt-3 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+              >
+                Copy
+              </button>
+            </div>
+
+            <div className="paper-card p-5">
+              <SectionLabel>What happened next?</SectionLabel>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <button
+                  disabled={busy}
+                  onClick={() => void escalate()}
+                  className="rounded-md border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-50"
+                >
+                  Still nothing — escalate
+                </button>
+                <button
+                  disabled={busy}
+                  onClick={() => setShowClosure((v) => !v)}
+                  className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  They marked it resolved but it isn't
+                </button>
+                <button
+                  disabled={busy}
+                  onClick={() => void patch({ status: "closed" })}
+                  className="rounded-md border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-50"
+                >
+                  They fixed it
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">{COMPLAINT_ESCALATION_NOTE}</p>
+              {(app.escalation_count ?? 0) > 0 && (
+                <p className="mt-1 text-xs">
+                  Escalated {app.escalation_count} time{app.escalation_count === 1 ? "" : "s"}.
+                </p>
+              )}
+
+              {showClosure && (
+                <div className="mt-4 space-y-3 rounded-md border border-border p-3">
+                  <label className="block text-xs text-muted-foreground">
+                    Date they marked it resolved
+                    <input
+                      type="date"
+                      value={closureDate}
+                      onChange={(e) => setClosureDate(e.target.value)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  <label className="block text-xs text-muted-foreground">
+                    What is still wrong on the ground?
+                    <textarea
+                      value={stillWrong}
+                      onChange={(e) => setStillWrong(e.target.value)}
+                      rows={3}
+                      className={`${inputClass} mt-1 resize-y`}
+                    />
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    The RTI will ask for the action-taken report, the work order, the closing officer's
+                    name, the completion certificate, the closure photograph, the measurement book entry
+                    and the expenditure booked. None of these exist if the work was not done.
+                  </p>
+                  <button
+                    disabled={busy}
+                    onClick={() => void promoteToRti()}
+                    className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                  >
+                    {busy ? "Drafting…" : "Draft the RTI against this closure"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div className="paper-card p-5">
+              <SectionLabel>Where it went</SectionLabel>
+              {channel ? (
+                <>
+                  <p className="text-sm font-medium">{channel.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{channel.note}</p>
+                  {"phone" in channel && channel.phone ? (
+                    <p className="mt-1 font-mono text-xs">{channel.phone}</p>
+                  ) : null}
+                  {"url" in channel && channel.url ? (
+                    <a
+                      href={channel.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 block text-xs underline"
+                    >
+                      {channel.url}
+                    </a>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Channel not recorded.</p>
+              )}
+            </div>
+
+            <div className="paper-card p-5">
+              <SectionLabel>Timeline</SectionLabel>
+              <dl className="space-y-1.5 text-sm">
+                <TimelineRow label="Complaint reference" value={app.complaint_ref ?? "—"} />
+                <TimelineRow label="Sent on" value={app.complaint_filed_date ?? "not sent yet"} />
+                <TimelineRow
+                  label="Service expectation"
+                  value={`${COMPLAINT_EXPECTATION_DAYS} days — not a statutory deadline`}
+                />
+                <TimelineRow
+                  label="Marked resolved"
+                  value={app.closure_claimed_date ?? "—"}
+                />
+              </dl>
+              <p className="mt-3 text-xs text-muted-foreground">
+                The RTI Act's 30-day clock applies only once an RTI application is filed. A complaint has
+                no statutory deadline at all.
+              </p>
+            </div>
+
+            {!app.complaint_filed_date && (
+              <div className="paper-card p-5">
+                <SectionLabel>Mark as sent</SectionLabel>
+                <div className="space-y-2">
+                  <input
+                    value={sentRef}
+                    onChange={(e) => setSentRef(e.target.value)}
+                    placeholder="Complaint reference number"
+                    className={inputClass}
+                  />
+                  <input
+                    type="date"
+                    value={filedDate}
+                    onChange={(e) => setFiledDate(e.target.value)}
+                    className={inputClass}
+                  />
+                  <button
+                    onClick={() =>
+                      void patch({
+                        status: "filed",
+                        complaint_ref: sentRef.trim() || null,
+                        complaint_filed_date: filedDate,
+                      })
+                    }
+                    className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                  >
+                    Start the clock
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell>
+      {header}
+
+
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
