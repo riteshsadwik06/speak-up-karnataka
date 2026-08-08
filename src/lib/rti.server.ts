@@ -96,12 +96,22 @@ function parseJson(raw: string): unknown {
   }
 }
 
+export type FalseClosure = {
+  ref: string;
+  complaintText: string;
+  filedDate: string | null;
+  closureDate: string | null;
+  whatIsStillWrong: string;
+};
+
 export async function draftRequests(input: {
   grievance: string;
   authority: string;
   ward?: string | null;
   focusSubject?: string | null;
+  falseClosure?: FalseClosure | null;
 }): Promise<RtiDraft> {
+  const fc = input.falseClosure;
   const user = [
     `Public authority selected by the citizen: ${input.authority}`,
     input.ward ? `Ward: ${input.ward}, Bengaluru, Karnataka` : "Location: Bengaluru, Karnataka",
@@ -109,6 +119,9 @@ export async function draftRequests(input: {
     "Grievance in the citizen's own words:",
     input.grievance,
     input.focusSubject ? `\nDraft requests for this subject only: ${input.focusSubject}` : "",
+    fc
+      ? `\nThis RTI follows a civic complaint that the authority marked RESOLVED without doing the work. Complaint reference: ${fc.ref || "not recorded"}, filed ${fc.filedDate ?? "not recorded"}, marked resolved ${fc.closureDate ?? "not recorded"}. The citizen states the problem persists: ${fc.whatIsStillWrong}. Draft requests that would prove whether any work was actually carried out - the action-taken report, the work order and its date, the name and designation of the officer who closed the complaint, the completion certificate, the site photograph relied on for closure, the measurement book entry, and the expenditure booked against that work. These are the records that cannot exist if the work was not done.`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
