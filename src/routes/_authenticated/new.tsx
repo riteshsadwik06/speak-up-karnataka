@@ -68,12 +68,22 @@ type SubjectDraft = {
   savedId?: string | undefined;
 };
 
+type Path = "complaint" | "rti";
+type PriorOutcome = "no_response" | "false_closure" | "refused";
+
 function NewApplication() {
   const router = useRouter();
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
+  const runComplaint = useServerFn(generateComplaint);
 
   const [step, setStep] = useState(1);
+  const [path, setPath] = useState<Path | null>(null);
+  const [prior, setPrior] = useState<PriorOutcome | null>(null);
+  const [complaintRef, setComplaintRef] = useState("");
+  const [priorFiledDate, setPriorFiledDate] = useState("");
+  const [closureDate, setClosureDate] = useState("");
+  const [stillWrong, setStillWrong] = useState("");
   const [grievance, setGrievance] = useState("");
   const [language, setLanguage] = useState("en");
   const [authorityId, setAuthorityId] = useState("");
@@ -87,6 +97,11 @@ function NewApplication() {
   );
 
   const [busy, setBusy] = useState(false);
+  const [complaint, setComplaint] = useState<ComplaintDraft | null>(null);
+  const [complaintText, setComplaintText] = useState("");
+  const [channelId, setChannelId] = useState("sahaaya");
+  const [sentRef, setSentRef] = useState("");
+  const [sentDate, setSentDate] = useState(today());
   const [drafts, setDrafts] = useState<SubjectDraft[]>([]);
   const [activeSubject, setActiveSubject] = useState<string>("");
   const [instruction, setInstruction] = useState("");
