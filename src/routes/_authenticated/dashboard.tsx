@@ -49,7 +49,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("applications")
         .select(
-          "id, grievance_text, public_authority, ward_name, status, filed_date, response_due_date, reply_received_date, registration_number, is_seeded, created_at",
+          "id, grievance_text, public_authority, ward_name, status, filed_date, response_due_date, reply_received_date, registration_number, is_seeded, created_at, stage, complaint_filed_date, escalation_count, transfer_date",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -147,6 +147,7 @@ function Dashboard() {
                           {row.public_authority}
                           {row.ward_name ? ` • ${row.ward_name}` : ""}
                           {row.is_seeded ? " • demo" : ""}
+                          {row.stage === "complaint" ? " • complaint" : ""}
                         </p>
                       </Link>
                     </td>
