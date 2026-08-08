@@ -290,3 +290,21 @@ export function clockFor(
 
   return { label: "Filed", tone: "calm", urgency: 30 };
 }
+
+/**
+ * Verified live URLs from the Karnataka RTI portal's own navigation.
+ * Submit Request and Submit First Appeal both land on a guidelines page where
+ * the user ticks an acknowledgement before the form appears — that is the
+ * correct entry point, not a shortcut past it.
+ */
+export const PORTAL_LINKS = {
+  home: "https://rtionline.karnataka.gov.in/index.php?lan=E",
+  submitRequest: "https://rtionline.karnataka.gov.in/guidelines.php?request",
+  submitFirstAppeal: "https://rtionline.karnataka.gov.in/guidelines.php?appeal",
+  onlineRequestStatus: "https://rtionline.karnataka.gov.in/request/status.php?lan=E",
+  offlineRequestStatus:
+    "https://rtionline.karnataka.gov.in/request/status_PhysicalRequest.php?lan=E",
+  viewHistory: "https://rtionline.karnataka.gov.in/request/status_history.php?lan=E",
+  userManual: "https://rtionline.karnataka.gov.in/UMcitizen_Eng.pdf",
+  faq: "https://rtionline.karnataka.gov.in/FAQ-RTI-Eng.pdf",
+} as const;

@@ -213,3 +213,58 @@ export async function draftAppeal(input: {
 
   return callGateway(APPEAL_SYSTEM_PROMPT, user);
 }
+
+export const REVISE_SYSTEM_PROMPT = `You revise draft Right to Information requests under the RTI Act 2005 for applicants in Karnataka.
+
+You will be given the citizen's original grievance, the current numbered requests, and a revision instruction. Apply the instruction and return the full revised set of requests.
+
+Keep every request that the instruction does not affect, unchanged. Do not renumber gratuitously, do not drop requests the instruction did not ask you to drop, and do not add unrelated requests.
+
+All the original rules still apply: ask for records and never explanations, never begin a request with "why", be specific about time period, location and document type, stay on ONE subject matter under Karnataka's Rule 14, keep the combined text of the requests under 150 words, and never state a reason for wanting the information (Section 6(2)).
+
+If the citizen has supplied new specifics - dates, a street name, a complaint number, a ward - work them into the relevant requests to make them harder to refuse as vague.
+
+Return ONLY valid JSON, no markdown fences:
+{ "requests": [{"text": "...", "rationale": "..."}], "flags": [{"type": "opinion_seeking|exemption_risk|too_broad|wrong_authority", "message": "...", "suggestion": "..."}], "subjects": [{"label": "...", "summary": "..."}], "primary_subject": "...", "suggested_authority": "...", "confidence": "high|medium|low" }`;
+
+export async function reviseRequests(input: {
+  grievance: string;
+  authority: string;
+  ward?: string | null;
+  subject: string;
+  requests: RtiRequest[];
+  instruction: string;
+}): Promise<RtiDraft> {
+  const user = [
+    `Public authority: ${input.authority}`,
+    input.ward ? `Ward: ${input.ward}, Bengaluru, Karnataka` : "Location: Bengaluru, Karnataka",
+    input.subject ? `Subject matter of this application: ${input.subject}` : "",
+    "",
+    "Original grievance in the citizen's own words:",
+    input.grievance,
+    "",
+    "Current requests:",
+    input.requests.map((r, i) => `${i + 1}. ${r.text}`).join("\n"),
+    "",
+    "Revision instruction:",
+    input.instruction,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const parsed = parseJson(await callGateway(REVISE_SYSTEM_PROMPT, user)) as Partial<RtiDraft>;
+  const subjects = Array.isArray(parsed.subjects)
+    ? parsed.subjects.filter((s) => s && typeof s.label === "string" && s.label.trim())
+    : [];
+  return {
+    requests: Array.isArray(parsed.requests) ? parsed.requests.slice(0, 6) : [],
+    flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+    subjects,
+    primary_subject:
+      typeof parsed.primary_subject === "string" && parsed.primary_subject.trim()
+        ? parsed.primary_subject
+        : input.subject,
+    suggested_authority: parsed.suggested_authority ?? input.authority,
+    confidence: parsed.confidence ?? "medium",
+  };
+}

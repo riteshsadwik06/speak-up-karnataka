@@ -12,6 +12,7 @@ import {
   LEGAL,
   PORTAL_AUTHORITIES,
   portalAuthorityKind,
+  PORTAL_LINKS,
   portalZoneForGbaZone,
   PORTAL_MAX_CHARS,
   SPLIT_ADVISORY,
@@ -330,7 +331,19 @@ function Detail() {
               <TimelineRow label="Created" value={String(app.created_at).slice(0, 10)} />
               <TimelineRow label="Filed" value={app.filed_date ?? "—"} />
               {app.registration_number && (
-                <TimelineRow label="Registration number" value={app.registration_number} />
+                <>
+                  <TimelineRow label="Registration number" value={app.registration_number} />
+                  <li className="text-xs">
+                    <a
+                      href={PORTAL_LINKS.onlineRequestStatus}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent underline underline-offset-4"
+                    >
+                      Check status on the portal
+                    </a>
+                  </li>
+                </>
               )}
               {app.transfer_date && (
                 <TimelineRow label="Transferred (Section 6(3))" value={app.transfer_date} />
@@ -442,6 +455,25 @@ function Detail() {
                     File at {LEGAL.portal}. No account is needed. The portal takes your email, mobile
                     number and a captcha, then verifies by OTP.
                   </p>
+                  <p className="mt-2 flex flex-col gap-1">
+                    <a
+                      href={PORTAL_LINKS.submitRequest}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-accent underline underline-offset-4"
+                    >
+                      File on the Karnataka RTI portal
+                    </a>
+                    <a
+                      href={PORTAL_LINKS.userManual}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs underline underline-offset-4"
+                    >
+                      Official user manual (PDF)
+                    </a>
+                  </p>
+
                   <ul className="mt-2 list-disc space-y-1 pl-4">
                     {LEGAL.onlinePaymentModes.map((m) => (
                       <li key={m}>{m}</li>
@@ -621,6 +653,14 @@ function Detail() {
               >
                 {busy ? "Drafting…" : "Draft first appeal"}
               </button>
+              <a
+                href={PORTAL_LINKS.submitFirstAppeal}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block text-xs text-accent underline underline-offset-4"
+              >
+                File the first appeal on the portal
+              </a>
             </div>
           )}
 
@@ -671,6 +711,14 @@ function Detail() {
                   Draft first appeal — unreasonable fee
                 </button>
               </div>
+              <a
+                href={PORTAL_LINKS.submitFirstAppeal}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block text-xs text-accent underline underline-offset-4"
+              >
+                File the first appeal on the portal
+              </a>
 
             </div>
           )}
