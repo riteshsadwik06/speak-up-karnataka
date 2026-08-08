@@ -84,7 +84,6 @@ export const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   filed: "Filed",
   replied: "Replied",
-  overdue: "Overdue",
   first_appeal_filed: "First appeal filed",
   second_appeal_filed: "Second appeal filed",
   closed: "Closed",
@@ -113,12 +112,15 @@ export type Clock = {
 };
 
 /** Live statutory clock for an application row. */
-export function clockFor(app: {
-  status: string;
-  filed_date: string | null;
-  response_due_date: string | null;
-  reply_received_date: string | null;
-}): Clock {
+export function clockFor(
+  app: {
+    status: string;
+    filed_date: string | null;
+    response_due_date: string | null;
+    reply_received_date: string | null;
+  },
+  appeals?: { tier: string; filed_date: string | null }[],
+): Clock {
   if (app.status === "draft") return { label: "Not filed yet", tone: "neutral", urgency: 10 };
   if (app.status === "closed") return { label: "Closed", tone: "neutral", urgency: 90 };
   if (app.status === "replied") {
@@ -128,7 +130,27 @@ export function clockFor(app: {
       ? { label: `Replied — ${left} days left to appeal`, tone: "warn", urgency: 3 }
       : { label: "Replied — appeal window closed (Section 18 still open)", tone: "neutral", urgency: 40 };
   }
-  if (app.status === "first_appeal_filed" || app.status === "second_appeal_filed") {
+  if (app.status === "first_appeal_filed") {
+    const first = (appeals ?? []).find((a) => a.tier === "first" && a.filed_date);
+    const hasSecond = (appeals ?? []).some((a) => a.tier === "second");
+    if (first?.filed_date) {
+      const faaSilentDays = daysBetween(first.filed_date);
+      if (faaSilentDays >= LEGAL.secondAppealAfterDays && !hasSecond) {
+        return {
+          label: `Second appeal available — FAA silent ${faaSilentDays} days`,
+          tone: "danger",
+          urgency: 0,
+        };
+      }
+      return {
+        label: `First appeal filed — FAA has ${LEGAL.faaMaxDays - faaSilentDays} days left`,
+        tone: "warn",
+        urgency: 2,
+      };
+    }
+    return { label: STATUS_LABEL[app.status] ?? app.status, tone: "warn", urgency: 4 };
+  }
+  if (app.status === "second_appeal_filed") {
     return { label: STATUS_LABEL[app.status] ?? app.status, tone: "warn", urgency: 4 };
   }
   if (app.filed_date) {

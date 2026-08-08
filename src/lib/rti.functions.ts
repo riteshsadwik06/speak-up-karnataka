@@ -74,7 +74,7 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
         tier: data.tier,
         grounds: data.reason,
         body,
-        due_date: data.tier === "first" ? addDays(new Date(), 30) : addDays(new Date(), 90),
+        due_date: null,
       })
       .select()
       .single();
@@ -97,11 +97,13 @@ export const seedDemoData = createServerFn({ method: "POST" })
     const { data: created, error } = await context.supabase
       .from("applications")
       .insert(inserts)
-      .select("id, status");
+      .select("id, public_authority, status");
     if (error) throw new Error(error.message);
 
     const appealRow = rows.findIndex((r) => r._first_appeal_date);
-    const appealApp = appealRow >= 0 ? created?.[appealRow] : undefined;
+    const appealApp = created?.find(
+      (c) => c.public_authority === "BWSSB" && c.status === "first_appeal_filed",
+    );
     const filed = appealRow >= 0 ? rows[appealRow]?._first_appeal_date : undefined;
     if (appealApp && filed) {
       await context.supabase.from("appeals").insert({
