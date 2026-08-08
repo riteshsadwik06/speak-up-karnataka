@@ -54,9 +54,18 @@ function Detail() {
     },
   });
 
-  async function patch(values: Record<string, unknown>) {
+  async function patch(values: Partial<{
+    status: string;
+    filed_date: string | null;
+    response_due_date: string | null;
+    reply_received_date: string | null;
+    reply_notes: string | null;
+  }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await qc.invalidateQueries({ queryKey: ["application", id] });
     await qc.invalidateQueries({ queryKey: ["applications"] });
   }
@@ -193,7 +202,10 @@ function Detail() {
                         .from("appeals")
                         .update({ filed_date: today(), due_date: addDays(today(), ap.tier === "first" ? 45 : 90) })
                         .eq("id", ap.id);
-                      if (error) return toast.error(error.message);
+                      if (error) {
+                        toast.error(error.message);
+                        return;
+                      }
                       await patch({
                         status: ap.tier === "first" ? "first_appeal_filed" : "second_appeal_filed",
                       });
