@@ -11,10 +11,14 @@ import {
   today,
   countWords,
   RULE14_WORD_LIMIT,
+  COMPLAINT_CHANNELS,
+  COMPLAINT_EXPECTATION_DAYS,
 } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
-import { generateDraft, reviseDraft } from "@/lib/rti.functions";
-import type { RtiDraft } from "@/lib/rti.server";
+import { WardInset3D } from "@/components/ward-inset-3d";
+import { StageRail } from "@/components/stage-rail";
+import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
+import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/new")({
