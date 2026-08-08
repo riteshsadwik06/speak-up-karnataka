@@ -52,9 +52,18 @@ function sameAuthority(a: string, b: string): boolean {
 
 
 
+type SubjectDraft = {
+  subject: string;
+  draft: RtiDraft;
+  body: string;
+  saved: boolean;
+  savedId?: string;
+};
+
 function NewApplication() {
   const router = useRouter();
   const run = useServerFn(generateDraft);
+  const revise = useServerFn(reviseDraft);
 
   const [step, setStep] = useState(1);
   const [grievance, setGrievance] = useState("");
@@ -66,8 +75,10 @@ function NewApplication() {
   const [wardQuery, setWardQuery] = useState("");
   const [wardId, setWardId] = useState("");
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<RtiDraft | null>(null);
-  const [body, setBody] = useState("");
+  const [drafts, setDrafts] = useState<SubjectDraft[]>([]);
+  const [activeSubject, setActiveSubject] = useState<string>("");
+  const [instruction, setInstruction] = useState("");
+  const [revising, setRevising] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dismissedAuthorityHint, setDismissedAuthorityHint] = useState(false);
 
@@ -85,6 +96,16 @@ function NewApplication() {
     return pool.slice(0, 12);
   }, [wardQuery]);
 
+  const active = drafts.find((d) => d.subject === activeSubject) ?? drafts[0] ?? null;
+  const draft = active?.draft ?? null;
+  const body = active?.body ?? "";
+
+  function updateActive(patch: Partial<SubjectDraft>) {
+    setDrafts((prev) =>
+      prev.map((d) => (d.subject === active?.subject ? { ...d, ...patch } : d)),
+    );
+  }
+
   const suggested = draft?.suggested_authority?.trim() ?? "";
   const authorityMismatch =
     !!suggested && !dismissedAuthorityHint && !sameAuthority(authority, suggested);
@@ -92,9 +113,13 @@ function NewApplication() {
   const requestWords = draft ? countWords(draft.requests.map((r) => r.text).join(" ")) : 0;
   const overWordLimit = requestWords > RULE14_WORD_LIMIT;
   const otherSubjects = (draft?.subjects ?? []).filter(
-    (s) => s.label.trim().toLowerCase() !== (draft?.primary_subject ?? "").trim().toLowerCase(),
+    (s) => s.label.trim().toLowerCase() !== (active?.subject ?? "").trim().toLowerCase(),
   );
   const multiSubject = (draft?.subjects.length ?? 0) > 1;
+
+  function hasDraftFor(label: string) {
+    return drafts.some((d) => d.subject.trim().toLowerCase() === label.trim().toLowerCase());
+  }
 
   async function generate(overrideAuthority?: string, focusSubject?: string) {
     setBusy(true);
@@ -108,8 +133,20 @@ function NewApplication() {
           focusSubject: focusSubject ?? null,
         },
       });
-      setDraft(result.draft);
-      setBody(result.body);
+      const key =
+        focusSubject ??
+        result.draft.primary_subject?.trim() ??
+        "";
+      const subject = key || `Application ${drafts.length + 1}`;
+      const entry: SubjectDraft = {
+        subject,
+        draft: result.draft,
+        body: result.body,
+        saved: false,
+      };
+      setDrafts((prev) => (focusSubject ? [...prev, entry] : [entry]));
+      setActiveSubject(subject);
+      setInstruction("");
       setStep(3);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not draft the application");
@@ -118,6 +155,39 @@ function NewApplication() {
     }
   }
 
+  function addSubject(label: string) {
+    const existing = drafts.find(
+      (d) => d.subject.trim().toLowerCase() === label.trim().toLowerCase(),
+    );
+    if (existing) {
+      setActiveSubject(existing.subject);
+      return;
+    }
+    void generate(undefined, label);
+  }
+
+  async function runRevision(text: string) {
+    if (!active || !text.trim()) return;
+    setRevising(true);
+    try {
+      const result = await revise({
+        data: {
+          grievance,
+          authority,
+          ward: ward?.ward_name ?? null,
+          subject: active.subject,
+          requests: active.draft.requests,
+          instruction: text,
+        },
+      });
+      updateActive({ draft: result.draft, body: result.body });
+      setInstruction("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not revise the draft");
+    } finally {
+      setRevising(false);
+    }
+  }
 
   function switchToSuggested() {
     const match = AUTHORITIES.find((a) => sameAuthority(a.name, suggested));
@@ -134,38 +204,76 @@ function NewApplication() {
     void generate(match ? match.name : suggested);
   }
 
+  function rowFor(entry: SubjectDraft, markFiled: boolean, filedDate: string | undefined, userId: string) {
+    return {
+      user_id: userId,
+      grievance_text: grievance,
+      language,
+      public_authority: authority,
+      pio_name: pioName || null,
+      pio_address: pioAddress || null,
+      ward_id: ward?.ward_id ?? null,
+      ward_name: ward?.ward_name ?? null,
+      corporation: ward?.corporation ?? null,
+      generated_requests: entry.draft.requests,
+      application_body: entry.body,
+      status: markFiled ? "filed" : "draft",
+      filed_date: markFiled ? (filedDate ?? today()) : null,
+      response_due_date: markFiled ? addDays(filedDate ?? today(), LEGAL.pioDays) : null,
+    };
+  }
 
   async function save(markFiled: boolean, filedDate?: string) {
+    if (!active) return;
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("applications")
-        .insert({
-          user_id: userData.user!.id,
-          grievance_text: grievance,
-          language,
-          public_authority: authority,
-          pio_name: pioName || null,
-          pio_address: pioAddress || null,
-          ward_id: ward?.ward_id ?? null,
-          ward_name: ward?.ward_name ?? null,
-          corporation: ward?.corporation ?? null,
-          generated_requests: draft?.requests ?? [],
-          application_body: body,
-          status: markFiled ? "filed" : "draft",
-          filed_date: markFiled ? (filedDate ?? today()) : null,
-          response_due_date: markFiled ? addDays(filedDate ?? today(), LEGAL.pioDays) : null,
-        })
+        .insert(rowFor(active, markFiled, filedDate, userData.user!.id))
         .select("id")
         .single();
       if (error) throw error;
-      router.navigate({ to: "/applications/$id", params: { id: data.id } });
+      if (drafts.length > 1) {
+        updateActive({ saved: true, savedId: data.id });
+        toast.success(`Saved "${active.subject}"`);
+        setSaving(false);
+      } else {
+        router.navigate({ to: "/applications/$id", params: { id: data.id } });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save");
       setSaving(false);
     }
   }
+
+  async function saveAll() {
+    setSaving(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const unsaved = drafts.filter((d) => !d.saved);
+      const results: Record<string, string> = {};
+      for (const entry of unsaved) {
+        const { data, error } = await supabase
+          .from("applications")
+          .insert(rowFor(entry, false, undefined, userData.user!.id))
+          .select("id")
+          .single();
+        if (error) throw error;
+        results[entry.subject] = data.id;
+      }
+      setDrafts((prev) =>
+        prev.map((d) =>
+          results[d.subject] ? { ...d, saved: true, savedId: results[d.subject] } : d,
+        ),
+      );
+      router.navigate({ to: "/dashboard" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+      setSaving(false);
+    }
+  }
+
 
   return (
     <AppShell>
