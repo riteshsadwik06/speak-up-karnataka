@@ -206,7 +206,10 @@ function Detail() {
                     onClick={async () => {
                       const { error } = await supabase
                         .from("appeals")
-                        .update({ filed_date: today(), due_date: addDays(today(), ap.tier === "first" ? 45 : 90) })
+                        .update({
+                          filed_date: today(),
+                          due_date: ap.tier === "first" ? addDays(today(), 45) : null,
+                        })
                         .eq("id", ap.id);
                       if (error) {
                         toast.error(error.message);
