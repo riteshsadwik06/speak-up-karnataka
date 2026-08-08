@@ -503,10 +503,17 @@ function Detail() {
                 {LEGAL.firstAppealWindowDays} days from the due date to file a first appeal with the
                 First Appellate Authority of the same public authority.
               </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Portal ground to select: {appealGroundLabel("no_response")}
+              </p>
               <button
                 disabled={busy}
                 onClick={() =>
-                  draftAppeal("first", "No reply received within 30 days — deemed refusal under Section 7(2).")
+                  draftAppeal(
+                    "first",
+                    "No reply received within 30 days — deemed refusal under Section 7(2).",
+                    "no_response",
+                  )
                 }
                 className="mt-3 w-full rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
               >
@@ -528,6 +535,7 @@ function Detail() {
                     draftAppeal(
                       "first",
                       `Incomplete reply. ${replyNotes || app.reply_notes || "Several points were not answered and no exemption was cited, contrary to Section 7(8)."}`,
+                      "incomplete",
                     )
                   }
                   className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
@@ -540,13 +548,28 @@ function Detail() {
                     draftAppeal(
                       "first",
                       `Refusal of information. ${replyNotes || app.reply_notes || "The PIO refused the information."}`,
+                      "refused",
                     )
                   }
                   className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"
                 >
                   Draft first appeal — refusal
                 </button>
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    draftAppeal(
+                      "first",
+                      `Unreasonable fee demanded. ${replyNotes || app.reply_notes || "The PIO demanded an excessive additional fee."}`,
+                      "excess_fee",
+                    )
+                  }
+                  className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"
+                >
+                  Draft first appeal — unreasonable fee
+                </button>
               </div>
+
             </div>
           )}
 
