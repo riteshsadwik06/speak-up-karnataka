@@ -18,7 +18,11 @@ import type { RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/new")({
+  validateSearch: (search: Record<string, unknown>): { ward?: string } => ({
+    ward: typeof search["ward"] === "string" ? search["ward"] : undefined,
+  }),
   head: () => ({
+
     meta: [
       { title: "New RTI application — Vicharane" },
       {
