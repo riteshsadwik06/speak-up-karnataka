@@ -89,6 +89,7 @@ function Detail() {
     transferred_to: string | null;
     transfer_date: string | null;
     transfer_registration_number: string | null;
+    portal_authority: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
