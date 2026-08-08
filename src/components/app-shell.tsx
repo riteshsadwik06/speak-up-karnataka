@@ -6,8 +6,9 @@ const navLink =
   "block px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground";
 const navLinkActive = "bg-foreground text-background hover:bg-foreground hover:text-background";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
   const router = useRouter();
+
 
   return (
     <div className="min-h-screen w-full bg-background p-4 md:p-8">
