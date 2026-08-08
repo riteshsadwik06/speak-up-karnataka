@@ -148,6 +148,73 @@ function NewApplication() {
     return drafts.some((d) => d.subject.trim().toLowerCase() === label.trim().toLowerCase());
   }
 
+  const falseClosure =
+    prior === "false_closure"
+      ? {
+          ref: complaintRef,
+          complaintText: grievance,
+          filedDate: priorFiledDate || null,
+          closureDate: closureDate || null,
+          whatIsStillWrong: stillWrong,
+        }
+      : null;
+
+  async function generateTheComplaint() {
+    setBusy(true);
+    try {
+      const result = await runComplaint({
+        data: {
+          grievance,
+          authority,
+          ward: ward?.ward_name ?? null,
+          wardNumber: ward?.ward_id ?? null,
+        },
+      });
+      setComplaint(result);
+      setComplaintText(result.complaint);
+      if (COMPLAINT_CHANNELS.some((c) => c.id === result.suggested_channel))
+        setChannelId(result.suggested_channel);
+      setStep(3);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not draft the complaint");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveComplaint(markSent: boolean) {
+    setSaving(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("applications")
+        .insert({
+          user_id: userData.user!.id,
+          stage: "complaint",
+          grievance_text: grievance,
+          language,
+          public_authority: authority,
+          ward_id: ward?.ward_id ?? null,
+          ward_name: ward?.ward_name ?? null,
+          corporation: ward?.corporation ?? null,
+          generated_requests: [],
+          application_body: "",
+          complaint_text: complaintText,
+          complaint_channel: channelId,
+          complaint_ref: markSent ? sentRef.trim() || null : null,
+          complaint_filed_date: markSent ? sentDate : null,
+          status: markSent ? "filed" : "draft",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      router.navigate({ to: "/applications/$id", params: { id: data.id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+      setSaving(false);
+    }
+  }
+
   async function generate(overrideAuthority?: string, focusSubject?: string) {
     setBusy(true);
     try {
@@ -158,6 +225,7 @@ function NewApplication() {
           ward: ward?.ward_name ?? null,
           language,
           focusSubject: focusSubject ?? null,
+          falseClosure,
         },
       });
       const key =
