@@ -146,7 +146,7 @@ Where a record is voluminous, please provide an inspection date under Section 2(
 ${
   input.isBpl
     ? "I belong to a Below Poverty Line household and am exempt from the application fee under the Karnataka Right to Information Rules. A copy of my BPL card is enclosed."
-    : "The prescribed application fee of ₹10 is enclosed. I undertake to pay the copying charges of ₹2 per A4 page on demand."
+    : "The prescribed application fee of Rs. 10 is enclosed. I undertake to pay the copying charges of Rs. 2 per A4 page on demand."
 }
 
 If any part of this information is held by another public authority, please transfer that part under Section 6(3) within five days and inform me of the transfer.

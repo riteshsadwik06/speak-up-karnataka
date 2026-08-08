@@ -4,7 +4,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, SectionLabel, StatusPill } from "@/components/app-shell";
-import { addDays, clockFor, daysBetween, LEGAL, STATUS_LABEL, today } from "@/lib/rti-data";
+import {
+  addDays,
+  appealGroundLabel,
+  clockFor,
+  daysBetween,
+  LEGAL,
+  PORTAL_MAX_CHARS,
+  SPLIT_ADVISORY,
+  STATUS_LABEL,
+  today,
+  toPortalSafe,
+} from "@/lib/rti-data";
 import { generateAppealDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
 
@@ -28,6 +39,8 @@ type Appeal = {
   filed_date: string | null;
   due_date: string | null;
   created_at: string;
+  registration_number: string | null;
+  portal_ground: string | null;
 };
 
 const inputClass =
@@ -39,8 +52,14 @@ function Detail() {
   const makeAppeal = useServerFn(generateAppealDraft);
   const [busy, setBusy] = useState(false);
   const [filedDate, setFiledDate] = useState(today());
+  const [regNumber, setRegNumber] = useState("");
   const [replyDate, setReplyDate] = useState(today());
   const [replyNotes, setReplyNotes] = useState("");
+  const [transferDate, setTransferDate] = useState(today());
+  const [transferTo, setTransferTo] = useState("");
+  const [transferReg, setTransferReg] = useState("");
+  const [appealReg, setAppealReg] = useState<Record<string, string>>({});
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["application", id],
@@ -60,6 +79,10 @@ function Detail() {
     response_due_date: string | null;
     reply_received_date: string | null;
     reply_notes: string | null;
+    registration_number: string | null;
+    transferred_to: string | null;
+    transfer_date: string | null;
+    transfer_registration_number: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -83,14 +106,17 @@ function Detail() {
   const requests = (app.generated_requests as { text: string; rationale: string }[]) ?? [];
   const firstAppeal = data.appeals.find((a) => a.tier === "first");
   const secondAppeal = data.appeals.find((a) => a.tier === "second");
-  const overdue = app.filed_date ? daysBetween(app.filed_date) > LEGAL.pioDays : false;
+  const clockStart = app.transfer_date ?? app.filed_date;
+  const overdue = clockStart ? daysBetween(clockStart) > LEGAL.pioDays : false;
   const faaSilentDays = firstAppeal?.filed_date ? daysBetween(firstAppeal.filed_date) : 0;
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
+  const portalSafeBody = toPortalSafe(app.application_body);
+  const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
 
-  async function draftAppeal(tier: "first" | "second", reason: string) {
+  async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
     try {
-      await makeAppeal({ data: { applicationId: id, tier, reason } });
+      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround } });
       await qc.invalidateQueries({ queryKey: ["application", id] });
       toast.success(`${tier === "first" ? "First" : "Second"} appeal drafted`);
     } catch (err) {
@@ -99,6 +125,7 @@ function Detail() {
       setBusy(false);
     }
   }
+
 
   return (
     <AppShell>
@@ -141,9 +168,9 @@ function Detail() {
           </div>
 
           <div className="paper-card p-5">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <SectionLabel>The application</SectionLabel>
-              <div className="mb-2 ml-auto flex gap-2">
+              <div className="mb-2 ml-auto flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(app.application_body);
@@ -152,6 +179,15 @@ function Detail() {
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
                   Copy
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(portalSafeBody);
+                    toast.success("Portal-safe text copied");
+                  }}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                >
+                  Copy portal-safe
                 </button>
                 <button
                   onClick={() => {
@@ -172,7 +208,18 @@ function Detail() {
             <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
               {app.application_body}
             </pre>
+            <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
+              {portalSafeBody.length.toLocaleString()} / {PORTAL_MAX_CHARS.toLocaleString()} characters
+              (portal limit)
+            </p>
+            {overLimit && (
+              <p className="mt-1 text-xs text-warning">
+                Over the portal limit - upload the full text as a PDF in the Supporting Document field
+                instead (PDF only, max 5MB).
+              </p>
+            )}
           </div>
+
 
           {data.appeals.map((ap) => (
             <div key={ap.id} className="paper-card border-accent/40 p-5">
@@ -188,9 +235,30 @@ function Detail() {
                     : ""
                   : " · No statutory disposal deadline for second appeals."}
               </p>
+              {ap.tier === "first" && appealGroundLabel(ap.portal_ground) && (
+                <p className="mt-1 text-xs font-medium">
+                  Portal ground to select: {appealGroundLabel(ap.portal_ground)}
+                </p>
+              )}
+              {ap.registration_number && (
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  Registration number: {ap.registration_number}
+                </p>
+              )}
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
                 {ap.body}
               </pre>
+              {!ap.filed_date && (
+                <div className="mt-3">
+                  <label className="rule-heading block">Portal registration number (optional)</label>
+                  <input
+                    value={appealReg[ap.id] ?? ""}
+                    onChange={(e) => setAppealReg((s) => ({ ...s, [ap.id]: e.target.value }))}
+                    placeholder="RTIPM/A/2026/60025"
+                    className={inputClass}
+                  />
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={() => {
@@ -201,6 +269,15 @@ function Detail() {
                 >
                   Copy
                 </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(toPortalSafe(ap.body));
+                    toast.success("Portal-safe text copied");
+                  }}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                >
+                  Copy portal-safe
+                </button>
                 {!ap.filed_date && (
                   <button
                     onClick={async () => {
@@ -209,6 +286,7 @@ function Detail() {
                         .update({
                           filed_date: today(),
                           due_date: ap.tier === "first" ? addDays(today(), 45) : null,
+                          registration_number: appealReg[ap.id]?.trim() || null,
                         })
                         .eq("id", ap.id);
                       if (error) {
@@ -236,7 +314,27 @@ function Detail() {
             <ul className="space-y-2 text-sm">
               <TimelineRow label="Created" value={String(app.created_at).slice(0, 10)} />
               <TimelineRow label="Filed" value={app.filed_date ?? "—"} />
-              <TimelineRow label="Reply due (filed + 30 days)" value={app.response_due_date ?? "—"} />
+              {app.registration_number && (
+                <TimelineRow label="Registration number" value={app.registration_number} />
+              )}
+              {app.transfer_date && (
+                <TimelineRow label="Transferred (Section 6(3))" value={app.transfer_date} />
+              )}
+              {app.transferred_to && (
+                <TimelineRow label="Transferred to" value={app.transferred_to} />
+              )}
+              {app.transfer_registration_number && (
+                <TimelineRow
+                  label="New registration number"
+                  value={app.transfer_registration_number}
+                />
+              )}
+              <TimelineRow
+                label={
+                  app.transfer_date ? "Reply due (transfer + 30 days)" : "Reply due (filed + 30 days)"
+                }
+                value={app.response_due_date ?? "—"}
+              />
               <TimelineRow label="Reply received" value={app.reply_received_date ?? "—"} />
               {firstAppeal && (
                 <TimelineRow label="First appeal filed" value={firstAppeal.filed_date ?? "drafted"} />
@@ -245,6 +343,7 @@ function Detail() {
                 <TimelineRow label="Second appeal filed" value={secondAppeal.filed_date ?? "drafted"} />
               )}
             </ul>
+
             {app.reply_notes && (
               <p className="mt-3 rounded-md bg-secondary/60 p-3 text-xs text-muted-foreground">
                 {app.reply_notes}
@@ -256,19 +355,34 @@ function Detail() {
             <div className="paper-card p-5">
               <SectionLabel>Filing instructions</SectionLabel>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>{LEGAL.fee}</li>
-                <li>{LEGAL.copyCharges}</li>
                 <li>
-                  Payment: {LEGAL.paymentModes.join("; ")}.
+                  Online: {LEGAL.portal}. No account is needed. The portal takes your email, mobile
+                  number and a captcha, then verifies by OTP.
                 </li>
                 <li>
-                  Online: {LEGAL.portal} — {LEGAL.portalCaveat}
+                  Fee: Rs. 10, paid through the Government of Karnataka Khajane-II gateway via ICICI
+                  e-Pay or SBI e-Pay. Netbanking, debit/credit card and BHIM UPI are all accepted.
                 </li>
+                <li>
+                  BPL applicants pay nothing. The portal validates the BPL card number directly; if you
+                  do not have a BPL card, an income certificate can be uploaded instead.
+                </li>
+                <li>Copying charges: Rs. 2 per A4 page for copies of records.</li>
+                <li>
+                  Supporting documents must be a single PDF, maximum 5MB, with a filename containing
+                  only letters, numbers, dots, underscores and hyphens.
+                </li>
+                <li>
+                  The portal is for Karnataka state public authorities only. Applications filed here for
+                  central-government or other-state bodies are returned without a refund.
+                </li>
+                <li>The PIO may demand an additional fee; that is paid through a link on the status page.</li>
                 <li>
                   The PIO must reply within {LEGAL.pioDays} days ({LEGAL.lifeLibertyHours} hours where
                   life or liberty is concerned). {LEGAL.calendarDays}
                 </li>
                 <li>{LEGAL.section62}</li>
+                <li>{SPLIT_ADVISORY}</li>
               </ul>
               <div className="mt-4 space-y-2">
                 <label className="rule-heading block">Date you filed it</label>
@@ -278,12 +392,20 @@ function Detail() {
                   onChange={(e) => setFiledDate(e.target.value)}
                   className={inputClass}
                 />
+                <label className="rule-heading block">Portal registration number (optional)</label>
+                <input
+                  value={regNumber}
+                  onChange={(e) => setRegNumber(e.target.value)}
+                  placeholder="RTIPM/R/2026/60208"
+                  className={inputClass}
+                />
                 <button
                   onClick={() =>
                     patch({
                       status: "filed",
                       filed_date: filedDate,
                       response_due_date: addDays(filedDate, LEGAL.pioDays),
+                      registration_number: regNumber.trim() || null,
                     })
                   }
                   className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
@@ -293,6 +415,54 @@ function Detail() {
               </div>
             </div>
           )}
+
+          {app.status === "filed" && (
+            <div className="paper-card p-5">
+              <SectionLabel>Was it transferred?</SectionLabel>
+              <p className="text-sm text-muted-foreground">
+                Under Section 6(3) a misdirected application must be transferred within 5 days, and the
+                30-day clock runs afresh from the new authority's receipt. The portal issues a new
+                registration number on transfer.
+              </p>
+              <div className="mt-3 space-y-2">
+                <label className="rule-heading block">Transfer date</label>
+                <input
+                  type="date"
+                  value={transferDate}
+                  onChange={(e) => setTransferDate(e.target.value)}
+                  className={inputClass}
+                />
+                <label className="rule-heading block">Transferred to</label>
+                <input
+                  value={transferTo}
+                  onChange={(e) => setTransferTo(e.target.value)}
+                  placeholder="Name of the new public authority"
+                  className={inputClass}
+                />
+                <label className="rule-heading block">New registration number (optional)</label>
+                <input
+                  value={transferReg}
+                  onChange={(e) => setTransferReg(e.target.value)}
+                  placeholder="RTIPM/R/2026/60311"
+                  className={inputClass}
+                />
+                <button
+                  onClick={() =>
+                    patch({
+                      transfer_date: transferDate,
+                      transferred_to: transferTo.trim() || null,
+                      transfer_registration_number: transferReg.trim() || null,
+                      response_due_date: addDays(transferDate, LEGAL.pioDays),
+                    })
+                  }
+                  className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
+                >
+                  Save transfer and reset the clock
+                </button>
+              </div>
+            </div>
+          )}
+
 
           {(app.status === "filed" || app.status === "overdue") && (
             <div className="paper-card p-5">
@@ -333,10 +503,17 @@ function Detail() {
                 {LEGAL.firstAppealWindowDays} days from the due date to file a first appeal with the
                 First Appellate Authority of the same public authority.
               </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Portal ground to select: {appealGroundLabel("no_response")}
+              </p>
               <button
                 disabled={busy}
                 onClick={() =>
-                  draftAppeal("first", "No reply received within 30 days — deemed refusal under Section 7(2).")
+                  draftAppeal(
+                    "first",
+                    "No reply received within 30 days — deemed refusal under Section 7(2).",
+                    "no_response",
+                  )
                 }
                 className="mt-3 w-full rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
               >
@@ -358,6 +535,7 @@ function Detail() {
                     draftAppeal(
                       "first",
                       `Incomplete reply. ${replyNotes || app.reply_notes || "Several points were not answered and no exemption was cited, contrary to Section 7(8)."}`,
+                      "incomplete",
                     )
                   }
                   className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
@@ -370,13 +548,28 @@ function Detail() {
                     draftAppeal(
                       "first",
                       `Refusal of information. ${replyNotes || app.reply_notes || "The PIO refused the information."}`,
+                      "refused",
                     )
                   }
                   className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"
                 >
                   Draft first appeal — refusal
                 </button>
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    draftAppeal(
+                      "first",
+                      `Unreasonable fee demanded. ${replyNotes || app.reply_notes || "The PIO demanded an excessive additional fee."}`,
+                      "excess_fee",
+                    )
+                  }
+                  className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"
+                >
+                  Draft first appeal — unreasonable fee
+                </button>
               </div>
+
             </div>
           )}
 

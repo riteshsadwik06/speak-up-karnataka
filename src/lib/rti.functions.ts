@@ -37,7 +37,15 @@ export const generateDraft = createServerFn({ method: "POST" })
 
 export const generateAppealDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { applicationId: string; tier: "first" | "second"; reason: string }) => input)
+  .inputValidator(
+    (input: {
+      applicationId: string;
+      tier: "first" | "second";
+      reason: string;
+      portalGround?: string | undefined;
+    }) => input,
+  )
+
   .handler(async ({ data, context }) => {
     const { data: app, error } = await context.supabase
       .from("applications")
@@ -75,8 +83,10 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
         grounds: data.reason,
         body,
         due_date: null,
+        portal_ground: data.portalGround ?? null,
       })
       .select()
+
       .single();
     if (insertError) throw new Error(insertError.message);
 
