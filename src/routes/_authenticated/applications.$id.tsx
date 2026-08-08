@@ -354,36 +354,56 @@ function Detail() {
           {app.status === "draft" && (
             <div className="paper-card p-5">
               <SectionLabel>Filing instructions</SectionLabel>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  Online: {LEGAL.portal}. No account is needed. The portal takes your email, mobile
-                  number and a captcha, then verifies by OTP.
-                </li>
-                <li>
-                  Fee: Rs. 10, paid through the Government of Karnataka Khajane-II gateway via ICICI
-                  e-Pay or SBI e-Pay. Netbanking, debit/credit card and BHIM UPI are all accepted.
-                </li>
-                <li>
-                  BPL applicants pay nothing. The portal validates the BPL card number directly; if you
-                  do not have a BPL card, an income certificate can be uploaded instead.
-                </li>
-                <li>Copying charges: Rs. 2 per A4 page for copies of records.</li>
-                <li>
-                  Supporting documents must be a single PDF, maximum 5MB, with a filename containing
-                  only letters, numbers, dots, underscores and hyphens.
-                </li>
-                <li>
-                  The portal is for Karnataka state public authorities only. Applications filed here for
-                  central-government or other-state bodies are returned without a refund.
-                </li>
-                <li>The PIO may demand an additional fee; that is paid through a link on the status page.</li>
-                <li>
-                  The PIO must reply within {LEGAL.pioDays} days ({LEGAL.lifeLibertyHours} hours where
-                  life or liberty is concerned). {LEGAL.calendarDays}
-                </li>
-                <li>{LEGAL.section62}</li>
-                <li>{SPLIT_ADVISORY}</li>
-              </ul>
+              <div className="space-y-4 text-sm text-muted-foreground">
+                <div>
+                  <p className="rule-heading">Online (recommended)</p>
+                  <p className="mt-1">
+                    File at {LEGAL.portal}. No account is needed. The portal takes your email, mobile
+                    number and a captcha, then verifies by OTP.
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-4">
+                    {LEGAL.onlinePaymentModes.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-xs">{LEGAL.onlinePaymentNote}</p>
+                </div>
+
+                <div>
+                  <p className="rule-heading">By post</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4">
+                    {LEGAL.postalPaymentModes.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-xs">
+                    Send by speed post with acknowledgement due, and keep the receipt - it is your proof
+                    of the filing date.
+                  </p>
+                </div>
+
+                <ul className="space-y-2 border-t border-border pt-3">
+                  <li>{LEGAL.fee}</li>
+                  <li>
+                    BPL applicants pay nothing. The portal validates the BPL card number directly; if you
+                    do not have a BPL card, an income certificate can be uploaded instead.
+                  </li>
+                  <li>{LEGAL.copyCharges}</li>
+                  <li>
+                    Supporting documents must be a single PDF, maximum 5MB, with a filename containing
+                    only letters, numbers, dots, underscores and hyphens.
+                  </li>
+                  <li>{LEGAL.portalCaveat}</li>
+                  <li>The PIO may demand an additional fee; that is paid through a link on the status page.</li>
+                  <li>
+                    The PIO must reply within {LEGAL.pioDays} days ({LEGAL.lifeLibertyHours} hours where
+                    life or liberty is concerned). {LEGAL.calendarDays}
+                  </li>
+                  <li>{LEGAL.section62}</li>
+                  <li>{SPLIT_ADVISORY}</li>
+                </ul>
+              </div>
+
               <div className="mt-4 space-y-2">
                 <label className="rule-heading block">Date you filed it</label>
                 <input
