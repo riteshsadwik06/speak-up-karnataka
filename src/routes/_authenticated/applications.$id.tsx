@@ -168,9 +168,9 @@ function Detail() {
           </div>
 
           <div className="paper-card p-5">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <SectionLabel>The application</SectionLabel>
-              <div className="mb-2 ml-auto flex gap-2">
+              <div className="mb-2 ml-auto flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(app.application_body);
@@ -179,6 +179,15 @@ function Detail() {
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
                   Copy
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(portalSafeBody);
+                    toast.success("Portal-safe text copied");
+                  }}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                >
+                  Copy portal-safe
                 </button>
                 <button
                   onClick={() => {
@@ -199,7 +208,18 @@ function Detail() {
             <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
               {app.application_body}
             </pre>
+            <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
+              {portalSafeBody.length.toLocaleString()} / {PORTAL_MAX_CHARS.toLocaleString()} characters
+              (portal limit)
+            </p>
+            {overLimit && (
+              <p className="mt-1 text-xs text-warning">
+                Over the portal limit - upload the full text as a PDF in the Supporting Document field
+                instead (PDF only, max 5MB).
+              </p>
+            )}
           </div>
+
 
           {data.appeals.map((ap) => (
             <div key={ap.id} className="paper-card border-accent/40 p-5">
