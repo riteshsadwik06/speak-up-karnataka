@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, SectionLabel } from "@/components/app-shell";
 import { AUTHORITIES, WARDS, LEGAL, addDays, today } from "@/lib/rti-data";
+import { WardMap } from "@/components/ward-map";
 import { generateDraft } from "@/lib/rti.functions";
 import type { RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
@@ -60,7 +61,7 @@ function NewApplication() {
   const wardOptions = useMemo(() => {
     const q = wardQuery.trim().toLowerCase();
     const pool = q
-      ? WARDS.filter((w) => `${w.ward_name} ${w.corporation} ${w.ward_id}`.toLowerCase().includes(q))
+      ? WARDS.filter((w) => `${w.ward_name} ${w.ward_name_kn} ${w.zone_name} ${w.corporation} ${w.ward_id}`.toLowerCase().includes(q))
       : WARDS;
     return pool.slice(0, 12);
   }, [wardQuery]);
@@ -221,26 +222,42 @@ function NewApplication() {
             <input
               value={wardQuery}
               onChange={(e) => setWardQuery(e.target.value)}
-              placeholder="Search ward or corporation…"
+              placeholder="Search ward, zone or corporation…"
               className={inputClass}
             />
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {wardOptions.map((w) => (
-                <button
-                  key={w.ward_id}
-                  onClick={() => setWardId(w.ward_id === wardId ? "" : w.ward_id)}
-                  className={`rounded-full border px-2.5 py-1 text-xs ${
-                    wardId === w.ward_id
-                      ? "border-accent bg-accent/10 text-accent"
-                      : "border-border text-muted-foreground hover:bg-secondary"
-                  }`}
-                >
-                  {w.ward_name}
-                </button>
-              ))}
+            {wardQuery.trim() && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {wardOptions.slice(0, 24).map((w) => (
+                  <button
+                    key={w.ward_id}
+                    onClick={() => setWardId(w.ward_id === wardId ? "" : w.ward_id)}
+                    className={`rounded-full border px-2.5 py-1 text-xs ${
+                      wardId === w.ward_id
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {w.ward_name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="mt-3">
+              <WardMap
+                selectedId={wardId}
+                onSelect={setWardId}
+                highlightIds={
+                  wardQuery.trim() ? wardOptions.map((w) => w.ward_id) : undefined
+                }
+              />
             </div>
-            {ward && <p className="mt-2 text-xs text-muted-foreground">{ward.corporation}</p>}
+            {ward && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {ward.ward_name} · {ward.corporation} · {ward.assembly}
+              </p>
+            )}
           </div>
+
 
           <div className="flex gap-2">
             <button
