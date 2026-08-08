@@ -235,9 +235,30 @@ function Detail() {
                     : ""
                   : " · No statutory disposal deadline for second appeals."}
               </p>
+              {ap.tier === "first" && appealGroundLabel(ap.portal_ground) && (
+                <p className="mt-1 text-xs font-medium">
+                  Portal ground to select: {appealGroundLabel(ap.portal_ground)}
+                </p>
+              )}
+              {ap.registration_number && (
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  Registration number: {ap.registration_number}
+                </p>
+              )}
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
                 {ap.body}
               </pre>
+              {!ap.filed_date && (
+                <div className="mt-3">
+                  <label className="rule-heading block">Portal registration number (optional)</label>
+                  <input
+                    value={appealReg[ap.id] ?? ""}
+                    onChange={(e) => setAppealReg((s) => ({ ...s, [ap.id]: e.target.value }))}
+                    placeholder="RTIPM/A/2026/60025"
+                    className={inputClass}
+                  />
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={() => {
@@ -248,6 +269,15 @@ function Detail() {
                 >
                   Copy
                 </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(toPortalSafe(ap.body));
+                    toast.success("Portal-safe text copied");
+                  }}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                >
+                  Copy portal-safe
+                </button>
                 {!ap.filed_date && (
                   <button
                     onClick={async () => {
@@ -256,6 +286,7 @@ function Detail() {
                         .update({
                           filed_date: today(),
                           due_date: ap.tier === "first" ? addDays(today(), 45) : null,
+                          registration_number: appealReg[ap.id]?.trim() || null,
                         })
                         .eq("id", ap.id);
                       if (error) {
@@ -283,7 +314,27 @@ function Detail() {
             <ul className="space-y-2 text-sm">
               <TimelineRow label="Created" value={String(app.created_at).slice(0, 10)} />
               <TimelineRow label="Filed" value={app.filed_date ?? "—"} />
-              <TimelineRow label="Reply due (filed + 30 days)" value={app.response_due_date ?? "—"} />
+              {app.registration_number && (
+                <TimelineRow label="Registration number" value={app.registration_number} />
+              )}
+              {app.transfer_date && (
+                <TimelineRow label="Transferred (Section 6(3))" value={app.transfer_date} />
+              )}
+              {app.transferred_to && (
+                <TimelineRow label="Transferred to" value={app.transferred_to} />
+              )}
+              {app.transfer_registration_number && (
+                <TimelineRow
+                  label="New registration number"
+                  value={app.transfer_registration_number}
+                />
+              )}
+              <TimelineRow
+                label={
+                  app.transfer_date ? "Reply due (transfer + 30 days)" : "Reply due (filed + 30 days)"
+                }
+                value={app.response_due_date ?? "—"}
+              />
               <TimelineRow label="Reply received" value={app.reply_received_date ?? "—"} />
               {firstAppeal && (
                 <TimelineRow label="First appeal filed" value={firstAppeal.filed_date ?? "drafted"} />
@@ -292,6 +343,7 @@ function Detail() {
                 <TimelineRow label="Second appeal filed" value={secondAppeal.filed_date ?? "drafted"} />
               )}
             </ul>
+
             {app.reply_notes && (
               <p className="mt-3 rounded-md bg-secondary/60 p-3 text-xs text-muted-foreground">
                 {app.reply_notes}
