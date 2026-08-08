@@ -191,7 +191,8 @@ export function clockFor(
     return { label: STATUS_LABEL[app.status] ?? app.status, tone: "warn", urgency: 4 };
   }
   if (app.filed_date) {
-    const day = daysBetween(app.filed_date);
+    const transferred = !!app.transfer_date;
+    const day = daysBetween(app.transfer_date ?? app.filed_date);
     if (day > LEGAL.pioDays) {
       return {
         label: `Overdue by ${day - LEGAL.pioDays} days — first appeal available`,
@@ -200,10 +201,11 @@ export function clockFor(
       };
     }
     return {
-      label: `Day ${day} of ${LEGAL.pioDays}`,
+      label: `Day ${day} of ${LEGAL.pioDays}${transferred ? " (from transfer)" : ""}`,
       tone: day >= 25 ? "warn" : "calm",
       urgency: day >= 25 ? 1 : 20 - day / 100,
     };
   }
+
   return { label: "Filed", tone: "calm", urgency: 30 };
 }
