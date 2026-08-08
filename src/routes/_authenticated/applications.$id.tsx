@@ -10,11 +10,15 @@ import {
   clockFor,
   daysBetween,
   LEGAL,
+  PORTAL_AUTHORITIES,
+  portalAuthorityKind,
+  portalZoneForGbaZone,
   PORTAL_MAX_CHARS,
   SPLIT_ADVISORY,
   STATUS_LABEL,
   today,
   toPortalSafe,
+  WARDS,
 } from "@/lib/rti-data";
 import { generateAppealDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
@@ -59,6 +63,8 @@ function Detail() {
   const [transferTo, setTransferTo] = useState("");
   const [transferReg, setTransferReg] = useState("");
   const [appealReg, setAppealReg] = useState<Record<string, string>>({});
+  const [portalChoice, setPortalChoice] = useState("");
+
 
 
   const { data, isLoading } = useQuery({
@@ -83,6 +89,7 @@ function Detail() {
     transferred_to: string | null;
     transfer_date: string | null;
     transfer_registration_number: string | null;
+    portal_authority: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -112,6 +119,14 @@ function Detail() {
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
   const portalSafeBody = toPortalSafe(app.application_body);
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
+  const wardZone = WARDS.find((w) => w.ward_id === app.ward_id)?.zone_name ?? null;
+  const kind = portalAuthorityKind(app.public_authority);
+  const autoZone = kind === "bbmp" ? portalZoneForGbaZone(wardZone) : null;
+  const savedPortal = app.portal_authority as string | null;
+  const portalOptions =
+    kind === "bwssb" ? [...PORTAL_AUTHORITIES.bwssbUnits] : [...PORTAL_AUTHORITIES.bbmpZones];
+  const portalValue = savedPortal ?? autoZone ?? "";
+
 
   async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
@@ -351,6 +366,72 @@ function Detail() {
             )}
           </div>
 
+          {kind !== "none" && (
+            <div className="paper-card p-5">
+              <SectionLabel>On the portal, select this</SectionLabel>
+              <p className="text-sm text-muted-foreground">
+                Bengaluru was reorganised into the Greater Bengaluru Authority and five city
+                corporations, but the RTI portal still lists the old BBMP zones. Select the zone
+                below, not your GBA corporation.
+              </p>
+
+              {kind === "bescom" ? (
+                <PortalString value={PORTAL_AUTHORITIES.bescom} />
+              ) : kind === "bbmp" && autoZone && !savedPortal ? (
+                <>
+                  <PortalString value={autoZone} />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Matched from your ward's zone ({wardZone}). Confirm it looks right.
+                  </p>
+                  <button
+                    onClick={() => patch({ portal_authority: autoZone })}
+                    className="mt-2 w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+                  >
+                    Confirm and save
+                  </button>
+                </>
+              ) : (
+                <>
+                  {savedPortal && <PortalString value={savedPortal} />}
+                  <select
+                    value={portalChoice || portalValue}
+                    onChange={(e) => setPortalChoice(e.target.value)}
+                    className={`${inputClass} mt-3`}
+                  >
+                    <option value="">Select the exact portal entry…</option>
+                    {portalOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                  {kind === "bbmp" && wardZone && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Your ward's GBA zone is {wardZone}. The portal has no verified equivalent, so
+                      pick the closest old BBMP zone yourself.
+                    </p>
+                  )}
+                  {kind === "bwssb" && (
+                    <p className="mt-2 text-xs text-warning">
+                      BWSSB is split by function and area on the portal. Picking the wrong unit means
+                      a Section 6(3) transfer, which costs at least 5 days and restarts the 30-day
+                      clock.
+                    </p>
+                  )}
+                  <button
+                    disabled={!(portalChoice || portalValue)}
+                    onClick={() => patch({ portal_authority: portalChoice || portalValue })}
+                    className="mt-2 w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-50"
+                  >
+                    Save this selection
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+
+
           {app.status === "draft" && (
             <div className="paper-card p-5">
               <SectionLabel>Filing instructions</SectionLabel>
@@ -400,6 +481,7 @@ function Detail() {
                     life or liberty is concerned). {LEGAL.calendarDays}
                   </li>
                   <li>{LEGAL.section62}</li>
+                  <li>{LEGAL.rule14}</li>
                   <li>{SPLIT_ADVISORY}</li>
                 </ul>
               </div>
@@ -645,5 +727,22 @@ function TimelineRow({ label, value }: { label: string; value: string }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="font-mono text-xs">{value}</span>
     </li>
+  );
+}
+
+function PortalString({ value }: { value: string }) {
+  return (
+    <div className="mt-3 flex flex-wrap items-start gap-2 rounded-md bg-secondary/60 p-3">
+      <span className="min-w-0 flex-1 break-words font-mono text-xs">{value}</span>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(value);
+          toast.success("Copied");
+        }}
+        className="rounded-md border border-border bg-background px-2.5 py-1 text-xs hover:bg-secondary"
+      >
+        Copy
+      </button>
+    </div>
   );
 }
