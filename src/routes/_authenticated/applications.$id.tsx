@@ -355,19 +355,34 @@ function Detail() {
             <div className="paper-card p-5">
               <SectionLabel>Filing instructions</SectionLabel>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>{LEGAL.fee}</li>
-                <li>{LEGAL.copyCharges}</li>
                 <li>
-                  Payment: {LEGAL.paymentModes.join("; ")}.
+                  Online: {LEGAL.portal}. No account is needed. The portal takes your email, mobile
+                  number and a captcha, then verifies by OTP.
                 </li>
                 <li>
-                  Online: {LEGAL.portal} — {LEGAL.portalCaveat}
+                  Fee: Rs. 10, paid through the Government of Karnataka Khajane-II gateway via ICICI
+                  e-Pay or SBI e-Pay. Netbanking, debit/credit card and BHIM UPI are all accepted.
                 </li>
+                <li>
+                  BPL applicants pay nothing. The portal validates the BPL card number directly; if you
+                  do not have a BPL card, an income certificate can be uploaded instead.
+                </li>
+                <li>Copying charges: Rs. 2 per A4 page for copies of records.</li>
+                <li>
+                  Supporting documents must be a single PDF, maximum 5MB, with a filename containing
+                  only letters, numbers, dots, underscores and hyphens.
+                </li>
+                <li>
+                  The portal is for Karnataka state public authorities only. Applications filed here for
+                  central-government or other-state bodies are returned without a refund.
+                </li>
+                <li>The PIO may demand an additional fee; that is paid through a link on the status page.</li>
                 <li>
                   The PIO must reply within {LEGAL.pioDays} days ({LEGAL.lifeLibertyHours} hours where
                   life or liberty is concerned). {LEGAL.calendarDays}
                 </li>
                 <li>{LEGAL.section62}</li>
+                <li>{SPLIT_ADVISORY}</li>
               </ul>
               <div className="mt-4 space-y-2">
                 <label className="rule-heading block">Date you filed it</label>
@@ -377,12 +392,20 @@ function Detail() {
                   onChange={(e) => setFiledDate(e.target.value)}
                   className={inputClass}
                 />
+                <label className="rule-heading block">Portal registration number (optional)</label>
+                <input
+                  value={regNumber}
+                  onChange={(e) => setRegNumber(e.target.value)}
+                  placeholder="RTIPM/R/2026/60208"
+                  className={inputClass}
+                />
                 <button
                   onClick={() =>
                     patch({
                       status: "filed",
                       filed_date: filedDate,
                       response_due_date: addDays(filedDate, LEGAL.pioDays),
+                      registration_number: regNumber.trim() || null,
                     })
                   }
                   className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
@@ -392,6 +415,54 @@ function Detail() {
               </div>
             </div>
           )}
+
+          {app.status === "filed" && (
+            <div className="paper-card p-5">
+              <SectionLabel>Was it transferred?</SectionLabel>
+              <p className="text-sm text-muted-foreground">
+                Under Section 6(3) a misdirected application must be transferred within 5 days, and the
+                30-day clock runs afresh from the new authority's receipt. The portal issues a new
+                registration number on transfer.
+              </p>
+              <div className="mt-3 space-y-2">
+                <label className="rule-heading block">Transfer date</label>
+                <input
+                  type="date"
+                  value={transferDate}
+                  onChange={(e) => setTransferDate(e.target.value)}
+                  className={inputClass}
+                />
+                <label className="rule-heading block">Transferred to</label>
+                <input
+                  value={transferTo}
+                  onChange={(e) => setTransferTo(e.target.value)}
+                  placeholder="Name of the new public authority"
+                  className={inputClass}
+                />
+                <label className="rule-heading block">New registration number (optional)</label>
+                <input
+                  value={transferReg}
+                  onChange={(e) => setTransferReg(e.target.value)}
+                  placeholder="RTIPM/R/2026/60311"
+                  className={inputClass}
+                />
+                <button
+                  onClick={() =>
+                    patch({
+                      transfer_date: transferDate,
+                      transferred_to: transferTo.trim() || null,
+                      transfer_registration_number: transferReg.trim() || null,
+                      response_due_date: addDays(transferDate, LEGAL.pioDays),
+                    })
+                  }
+                  className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
+                >
+                  Save transfer and reset the clock
+                </button>
+              </div>
+            </div>
+          )}
+
 
           {(app.status === "filed" || app.status === "overdue") && (
             <div className="paper-card p-5">
