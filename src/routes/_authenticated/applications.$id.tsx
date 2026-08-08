@@ -729,3 +729,20 @@ function TimelineRow({ label, value }: { label: string; value: string }) {
     </li>
   );
 }
+
+function PortalString({ value }: { value: string }) {
+  return (
+    <div className="mt-3 flex flex-wrap items-start gap-2 rounded-md bg-secondary/60 p-3">
+      <span className="min-w-0 flex-1 break-words font-mono text-xs">{value}</span>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(value);
+          toast.success("Copied");
+        }}
+        className="rounded-md border border-border bg-background px-2.5 py-1 text-xs hover:bg-secondary"
+      >
+        Copy
+      </button>
+    </div>
+  );
+}
