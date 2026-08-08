@@ -42,7 +42,7 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
       applicationId: string;
       tier: "first" | "second";
       reason: string;
-      portalGround?: string;
+      portalGround?: string | undefined;
     }) => input,
   )
 
