@@ -481,6 +481,7 @@ function Detail() {
                     life or liberty is concerned). {LEGAL.calendarDays}
                   </li>
                   <li>{LEGAL.section62}</li>
+                  <li>{LEGAL.rule14}</li>
                   <li>{SPLIT_ADVISORY}</li>
                 </ul>
               </div>
