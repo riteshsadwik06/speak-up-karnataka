@@ -548,7 +548,9 @@ function NewApplication() {
 
       {step === 2 && (
         <div className="paper-card mt-6 space-y-4 p-5">
-          <SectionLabel>Step 2 · Who holds the records?</SectionLabel>
+          <SectionLabel>
+            {path === "complaint" ? "Step 2 · Whose problem is this?" : "Step 2 · Who holds the records?"}
+          </SectionLabel>
           <div className="grid gap-2 sm:grid-cols-2">
             {AUTHORITIES.map((a) => (
               <button
@@ -626,9 +628,12 @@ function NewApplication() {
               />
             </div>
             {ward && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {ward.ward_name} · {ward.corporation} · {ward.assembly}
-              </p>
+              <div className="mt-2 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {ward.ward_name} · {ward.corporation} · {ward.assembly}
+                </p>
+                <WardInset3D wardId={ward.ward_id} corporation={ward.corporation} />
+              </div>
             )}
           </div>
 
@@ -642,16 +647,152 @@ function NewApplication() {
             </button>
             <button
               disabled={!authority || busy}
-              onClick={() => void generate()}
+              onClick={() => void (path === "complaint" ? generateTheComplaint() : generate())}
               className="ml-auto rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
-              {busy ? "Drafting…" : "Draft my requests"}
+              {busy
+                ? "Drafting…"
+                : path === "complaint"
+                  ? "Draft my complaint"
+                  : "Draft my requests"}
             </button>
           </div>
         </div>
       )}
 
-      {step === 3 && draft && active && (
+      {step === 3 && path === "complaint" && complaint && (
+        <div className="mt-6 space-y-5">
+          <div className="paper-card p-5">
+            <SectionLabel>Where you are</SectionLabel>
+            <div className="mt-2">
+              <StageRail current="complaint" />
+            </div>
+          </div>
+
+          <div className="paper-card p-5">
+            <SectionLabel>Step 3 · Your complaint</SectionLabel>
+            <p className="text-sm text-muted-foreground">
+              {complaint.category} · asks for one checkable action: {complaint.checkable_action}
+            </p>
+            <textarea
+              value={complaintText}
+              onChange={(e) => setComplaintText(e.target.value)}
+              rows={12}
+              className={`${inputClass} mt-3 resize-y font-mono text-xs`}
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(complaintText);
+                  toast.success("Complaint copied");
+                }}
+                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+              >
+                Copy
+              </button>
+              <button
+                onClick={() => {
+                  const blob = new Blob([complaintText], { type: "text/plain" });
+                  const a = document.createElement("a");
+                  a.href = URL.createObjectURL(blob);
+                  a.download = "complaint.txt";
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}
+                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+
+          <div className="paper-card p-5">
+            <SectionLabel>Where to send it</SectionLabel>
+            <p className="text-xs text-muted-foreground">
+              A starting point — confirm the channel before you send, and tell us where it actually went.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {COMPLAINT_CHANNELS.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setChannelId(c.id)}
+                  className={`rounded-md border p-3 text-left ${
+                    channelId === c.id ? "border-accent bg-accent/8" : "border-border hover:bg-secondary"
+                  }`}
+                >
+                  <span className="block text-sm font-medium">{c.name}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{c.note}</span>
+                  {"phone" in c && c.phone ? (
+                    <span className="mt-1 block font-mono text-[11px]">{c.phone}</span>
+                  ) : null}
+                  {"url" in c && c.url ? (
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 block text-[11px] underline"
+                    >
+                      {c.url}
+                    </a>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="paper-card p-5">
+            <SectionLabel>Mark as filed</SectionLabel>
+            <p className="text-xs text-muted-foreground">
+              Complaints have no statutory deadline. We track {COMPLAINT_EXPECTATION_DAYS} days as a
+              service expectation only.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="text-xs text-muted-foreground">
+                Complaint reference number
+                <input
+                  value={sentRef}
+                  onChange={(e) => setSentRef(e.target.value)}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-xs text-muted-foreground">
+                Date sent
+                <input
+                  type="date"
+                  value={sentDate}
+                  onChange={(e) => setSentDate(e.target.value)}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setStep(2)}
+                className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
+              >
+                Back
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => void saveComplaint(false)}
+                className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50"
+              >
+                Save as draft
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => void saveComplaint(true)}
+                className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "I have sent it — start the clock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && path !== "complaint" && draft && active && (
         <div className="mt-6 space-y-5">
           {drafts.length > 1 && (
             <div className="flex flex-wrap gap-2">
