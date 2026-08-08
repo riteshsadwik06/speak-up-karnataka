@@ -34,6 +34,16 @@ const FLAG_LABEL: Record<string, string> = {
   wrong_authority: "Possibly the wrong public authority",
 };
 
+/** Loose authority equality: case-insensitive, trimmed, either containing the other. */
+function sameAuthority(a: string, b: string): boolean {
+  const x = a.trim().toLowerCase();
+  const y = b.trim().toLowerCase();
+  if (!x || !y) return true;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+
+
 function NewApplication() {
   const router = useRouter();
   const run = useServerFn(generateDraft);
@@ -51,6 +61,7 @@ function NewApplication() {
   const [draft, setDraft] = useState<RtiDraft | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const [dismissedAuthorityHint, setDismissedAuthorityHint] = useState(false);
 
   const authority =
     authorityId === "other"
@@ -66,11 +77,20 @@ function NewApplication() {
     return pool.slice(0, 12);
   }, [wardQuery]);
 
-  async function generate() {
+  const suggested = draft?.suggested_authority?.trim() ?? "";
+  const authorityMismatch =
+    !!suggested && !dismissedAuthorityHint && !sameAuthority(authority, suggested);
+
+  async function generate(overrideAuthority?: string) {
     setBusy(true);
     try {
       const result = await run({
-        data: { grievance, authority, ward: ward?.ward_name ?? null, language },
+        data: {
+          grievance,
+          authority: overrideAuthority ?? authority,
+          ward: ward?.ward_name ?? null,
+          language,
+        },
       });
       setDraft(result.draft);
       setBody(result.body);
@@ -81,6 +101,22 @@ function NewApplication() {
       setBusy(false);
     }
   }
+
+  function switchToSuggested() {
+    const match = AUTHORITIES.find((a) => sameAuthority(a.name, suggested));
+    if (match) {
+      setAuthorityId(match.id);
+      setOtherAuthority("");
+    } else {
+      setAuthorityId("other");
+      setOtherAuthority(suggested);
+    }
+    setPioName("");
+    setPioAddress("");
+    setDismissedAuthorityHint(false);
+    void generate(match ? match.name : suggested);
+  }
+
 
   async function save(markFiled: boolean, filedDate?: string) {
     setSaving(true);
@@ -268,7 +304,7 @@ function NewApplication() {
             </button>
             <button
               disabled={!authority || busy}
-              onClick={generate}
+              onClick={() => void generate()}
               className="ml-auto rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
               {busy ? "Drafting…" : "Draft my requests"}
@@ -279,7 +315,34 @@ function NewApplication() {
 
       {step === 3 && draft && (
         <div className="mt-6 space-y-5">
+          {authorityMismatch && (
+            <div className="paper-card border-destructive bg-destructive/10 p-5">
+              <p className="rule-heading text-destructive">This may be the wrong public authority</p>
+              <p className="mt-2 text-sm">
+                You selected {authority}. Based on your grievance, these records are likely held by{" "}
+                {suggested}. Filing with the wrong authority means it must be transferred under
+                Section 6(3), which adds at least 5 days and restarts the 30-day clock.
+              </p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button
+                  disabled={busy}
+                  onClick={switchToSuggested}
+                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
+                >
+                  {busy ? "Redrafting…" : `Switch to ${suggested} and redraft`}
+                </button>
+                <button
+                  onClick={() => setDismissedAuthorityHint(true)}
+                  className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
+                >
+                  Keep {authority}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
+
             <div className="paper-card border-destructive/30 p-5">
               <p className="rule-heading text-destructive">What you wrote — a PIO can refuse this</p>
               <p className="mt-3 whitespace-pre-wrap font-display text-lg leading-snug">{grievance}</p>
@@ -300,10 +363,14 @@ function NewApplication() {
                   </li>
                 ))}
               </ol>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Confidence: {draft.confidence}
+                {suggested ? ` · Suggested authority: ${suggested}` : ""}
+              </p>
             </div>
           </div>
 
-          {draft.flags.length > 0 && (
+          {draft.flags.length > 0 ? (
             <div className="paper-card p-5">
               <SectionLabel>Pre-flight check</SectionLabel>
               <ul className="space-y-3">
@@ -319,11 +386,14 @@ function NewApplication() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Confidence: {draft.confidence} · Suggested authority: {draft.suggested_authority}
-              </p>
             </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Pre-flight check passed - no opinion-seeking phrasing or obvious Section 8 exemption risk
+              detected.
+            </p>
           )}
+
 
           <div className="paper-card p-5">
             <SectionLabel>The application — edit anything before you file</SectionLabel>
