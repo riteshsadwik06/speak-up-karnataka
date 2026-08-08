@@ -13,7 +13,7 @@ import {
   RULE14_WORD_LIMIT,
 } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
-import { generateDraft } from "@/lib/rti.functions";
+import { generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 
@@ -57,7 +57,7 @@ type SubjectDraft = {
   draft: RtiDraft;
   body: string;
   saved: boolean;
-  savedId?: string;
+  savedId?: string | undefined;
 };
 
 function NewApplication() {
@@ -264,7 +264,7 @@ function NewApplication() {
       }
       setDrafts((prev) =>
         prev.map((d) =>
-          results[d.subject] ? { ...d, saved: true, savedId: results[d.subject] } : d,
+          results[d.subject] ? { ...d, saved: true, savedId: results[d.subject]! } : d,
         ),
       );
       router.navigate({ to: "/dashboard" });
