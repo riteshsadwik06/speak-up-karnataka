@@ -12,6 +12,7 @@ import {
   LEGAL,
   PORTAL_AUTHORITIES,
   portalAuthorityKind,
+  PORTAL_LINKS,
   portalZoneForGbaZone,
   PORTAL_MAX_CHARS,
   SPLIT_ADVISORY,
@@ -442,6 +443,25 @@ function Detail() {
                     File at {LEGAL.portal}. No account is needed. The portal takes your email, mobile
                     number and a captcha, then verifies by OTP.
                   </p>
+                  <p className="mt-2 flex flex-col gap-1">
+                    <a
+                      href={PORTAL_LINKS.submitRequest}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-accent underline underline-offset-4"
+                    >
+                      File on the Karnataka RTI portal
+                    </a>
+                    <a
+                      href={PORTAL_LINKS.userManual}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs underline underline-offset-4"
+                    >
+                      Official user manual (PDF)
+                    </a>
+                  </p>
+
                   <ul className="mt-2 list-disc space-y-1 pl-4">
                     {LEGAL.onlinePaymentModes.map((m) => (
                       <li key={m}>{m}</li>
