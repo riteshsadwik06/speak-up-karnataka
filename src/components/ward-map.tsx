@@ -52,7 +52,7 @@ export function WardMap({
     <div className="relative rounded-md border border-border bg-secondary/30 p-2">
       <svg
         viewBox={`0 0 ${data.width} ${data.height}`}
-        className="h-auto w-full"
+        className="mx-auto h-auto max-h-[460px] w-full"
         role="img"
         aria-label="Map of Greater Bengaluru Authority wards"
       >
