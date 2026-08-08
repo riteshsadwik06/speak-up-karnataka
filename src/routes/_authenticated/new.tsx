@@ -438,8 +438,26 @@ function NewApplication() {
         </div>
       )}
 
-      {step === 3 && draft && (
+      {step === 3 && draft && active && (
         <div className="mt-6 space-y-5">
+          {drafts.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {drafts.map((d) => (
+                <button
+                  key={d.subject}
+                  onClick={() => setActiveSubject(d.subject)}
+                  className={`rounded-full border px-3 py-1.5 text-xs ${
+                    d.subject === active.subject
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-border text-muted-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {d.subject}
+                  {d.saved ? " ✓" : ""}
+                </button>
+              ))}
+            </div>
+          )}
           {authorityMismatch && (
             <div className="paper-card border-destructive bg-destructive/10 p-5">
               <p className="rule-heading text-destructive">This may be the wrong public authority</p>
@@ -472,7 +490,7 @@ function NewApplication() {
               <p className="mt-2 text-sm">
                 Karnataka's Rule 14 requires one subject per application. If you file all of these
                 together, the PIO may answer only the first and tell you to file separately for the
-                rest. We have drafted for {draft.primary_subject || "the main subject"}.
+                rest. This draft covers {active.subject}.
               </p>
               <ul className="mt-3 space-y-1 text-sm">
                 {otherSubjects.map((s) => (
@@ -481,20 +499,25 @@ function NewApplication() {
                     {s.summary ? (
                       <span className="text-muted-foreground"> — {s.summary}</span>
                     ) : null}
+                    {hasDraftFor(s.label) ? (
+                      <span className="text-accent"> · drafted</span>
+                    ) : null}
                   </li>
                 ))}
               </ul>
               <div className="mt-4 flex flex-col gap-2">
-                {otherSubjects.map((s) => (
-                  <button
-                    key={s.label}
-                    disabled={busy}
-                    onClick={() => void generate(undefined, s.label)}
-                    className="rounded-md border border-border bg-background px-4 py-2 text-left text-sm hover:bg-secondary disabled:opacity-60"
-                  >
-                    {busy ? "Redrafting…" : `Draft a separate application for ${s.label}`}
-                  </button>
-                ))}
+                {otherSubjects
+                  .filter((s) => !hasDraftFor(s.label))
+                  .map((s) => (
+                    <button
+                      key={s.label}
+                      disabled={busy}
+                      onClick={() => addSubject(s.label)}
+                      className="rounded-md border border-border bg-background px-4 py-2 text-left text-sm hover:bg-secondary disabled:opacity-60"
+                    >
+                      {busy ? "Drafting…" : `Draft this too — ${s.label}`}
+                    </button>
+                  ))}
               </div>
             </div>
           )}
@@ -539,6 +562,24 @@ function NewApplication() {
             </div>
           </div>
 
+          <div className="paper-card p-5">
+            <SectionLabel>Improve this draft</SectionLabel>
+            <textarea
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              rows={3}
+              placeholder="Add anything that would make these harder to refuse - dates, the exact stretch of road, a complaint number you already have..."
+              className={`${inputClass} resize-y`}
+            />
+            <button
+              disabled={revising || !instruction.trim()}
+              onClick={() => void runRevision(instruction)}
+              className="mt-3 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
+            >
+              {revising ? "Revising…" : "Revise"}
+            </button>
+          </div>
+
 
           {draft.flags.length > 0 ? (
             <div className="paper-card p-5">
@@ -553,6 +594,17 @@ function NewApplication() {
                     <span className="mt-1 block text-xs text-muted-foreground">
                       Suggestion: {f.suggestion}
                     </span>
+                    <button
+                      disabled={revising}
+                      onClick={() =>
+                        void runRevision(
+                          `Address this problem with request wording: ${f.message} Suggested fix: ${f.suggestion}`,
+                        )
+                      }
+                      className="mt-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60"
+                    >
+                      {revising ? "Revising…" : "Apply this"}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -569,7 +621,7 @@ function NewApplication() {
             <SectionLabel>The application — edit anything before you file</SectionLabel>
             <textarea
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={(e) => updateActive({ body: e.target.value })}
               rows={22}
               className={`${inputClass} font-mono text-xs leading-relaxed`}
             />
@@ -594,6 +646,15 @@ function NewApplication() {
               >
                 Save & mark filed today
               </button>
+              {drafts.length > 1 && drafts.some((d) => !d.saved) && (
+                <button
+                  disabled={saving}
+                  onClick={() => void saveAll()}
+                  className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50 sm:w-auto"
+                >
+                  {saving ? "Saving…" : "Save all as drafts"}
+                </button>
+              )}
             </div>
           </div>
         </div>
