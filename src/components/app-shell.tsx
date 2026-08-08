@@ -2,9 +2,10 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 
-const navLink =
-  "block px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground";
-const navLinkActive = "bg-foreground text-background hover:bg-foreground hover:text-background";
+const navBase = "block px-3 py-2 text-sm font-medium transition-colors";
+const navIdle = `${navBase} text-muted-foreground hover:bg-secondary hover:text-foreground`;
+const navActive = `${navBase} bg-foreground text-background`;
+
 
 export function AppShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
   const router = useRouter();
