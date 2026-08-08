@@ -34,6 +34,16 @@ const FLAG_LABEL: Record<string, string> = {
   wrong_authority: "Possibly the wrong public authority",
 };
 
+/** Loose authority equality: case-insensitive, trimmed, either containing the other. */
+function sameAuthority(a: string, b: string): boolean {
+  const x = a.trim().toLowerCase();
+  const y = b.trim().toLowerCase();
+  if (!x || !y) return true;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+
+
 function NewApplication() {
   const router = useRouter();
   const run = useServerFn(generateDraft);
