@@ -32,6 +32,10 @@ type AppRow = {
   registration_number: string | null;
   is_seeded: boolean;
   created_at: string;
+  stage: string;
+  complaint_filed_date: string | null;
+  escalation_count: number;
+  transfer_date: string | null;
 };
 
 function stamp(date: string | null) {
