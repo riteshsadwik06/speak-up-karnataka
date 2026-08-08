@@ -7,13 +7,20 @@ import { addDays } from "./rti-data";
 export const generateDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { grievance: string; authority: string; ward?: string | null; language?: string }) => input,
+    (input: {
+      grievance: string;
+      authority: string;
+      ward?: string | null;
+      language?: string;
+      focusSubject?: string | null;
+    }) => input,
   )
   .handler(async ({ data, context }) => {
     const draft = await draftRequests({
       grievance: data.grievance,
       authority: data.authority,
       ward: data.ward ?? null,
+      focusSubject: data.focusSubject ?? null,
     });
 
     const { data: profile } = await context.supabase
