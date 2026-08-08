@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" | "login" } => ({
     mode: search["mode"] === "signup" ? ("signup" as const) : ("login" as const),
   }),
+
   head: () => ({
     meta: [
       { title: "Sign in — Vicharane RTI tracker" },
