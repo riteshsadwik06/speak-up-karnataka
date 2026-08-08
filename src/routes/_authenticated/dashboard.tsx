@@ -117,7 +117,7 @@ function Dashboard() {
 
       <div className="mt-6 space-y-3">
         {rows.map((row) => {
-          const clock = clockFor(row);
+          const clock = clockFor(row, byApp[row.id]);
           return (
             <Link
               key={row.id}
@@ -127,7 +127,9 @@ function Dashboard() {
             >
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone={clock.tone}>{clock.label}</StatusPill>
-                <span className="rule-heading">{STATUS_LABEL[row.status] ?? row.status}</span>
+                {clock.tone !== "danger" && (
+                  <span className="rule-heading">{STATUS_LABEL[row.status] ?? row.status}</span>
+                )}
                 {row.is_seeded && (
                   <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
                     Demo data
