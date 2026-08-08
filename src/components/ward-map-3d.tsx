@@ -501,6 +501,12 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
               <span className="mono-stamp">{l.note}</span>
             </span>
           ))}
+          {mode === "complaints" && (
+            <span className="text-[11px] text-muted-foreground">
+              All five city corporations route civic complaints through Sahaaya 2.0. Water and sewerage go to
+              BWSSB (1916) and power to BESCOM (1912) instead - those are not ward-mapped.
+            </span>
+          )}
           {mode === "portal" && (
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 opacity-50" style={{ backgroundColor: GREY }} />
