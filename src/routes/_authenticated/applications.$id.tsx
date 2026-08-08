@@ -366,6 +366,72 @@ function Detail() {
             )}
           </div>
 
+          {kind !== "none" && (
+            <div className="paper-card p-5">
+              <SectionLabel>On the portal, select this</SectionLabel>
+              <p className="text-sm text-muted-foreground">
+                Bengaluru was reorganised into the Greater Bengaluru Authority and five city
+                corporations, but the RTI portal still lists the old BBMP zones. Select the zone
+                below, not your GBA corporation.
+              </p>
+
+              {kind === "bescom" ? (
+                <PortalString value={PORTAL_AUTHORITIES.bescom} />
+              ) : kind === "bbmp" && autoZone && !savedPortal ? (
+                <>
+                  <PortalString value={autoZone} />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Matched from your ward's zone ({wardZone}). Confirm it looks right.
+                  </p>
+                  <button
+                    onClick={() => patch({ portal_authority: autoZone })}
+                    className="mt-2 w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+                  >
+                    Confirm and save
+                  </button>
+                </>
+              ) : (
+                <>
+                  {savedPortal && <PortalString value={savedPortal} />}
+                  <select
+                    value={portalChoice || portalValue}
+                    onChange={(e) => setPortalChoice(e.target.value)}
+                    className={`${inputClass} mt-3`}
+                  >
+                    <option value="">Select the exact portal entry…</option>
+                    {portalOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                  {kind === "bbmp" && wardZone && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Your ward's GBA zone is {wardZone}. The portal has no verified equivalent, so
+                      pick the closest old BBMP zone yourself.
+                    </p>
+                  )}
+                  {kind === "bwssb" && (
+                    <p className="mt-2 text-xs text-warning">
+                      BWSSB is split by function and area on the portal. Picking the wrong unit means
+                      a Section 6(3) transfer, which costs at least 5 days and restarts the 30-day
+                      clock.
+                    </p>
+                  )}
+                  <button
+                    disabled={!(portalChoice || portalValue)}
+                    onClick={() => patch({ portal_authority: portalChoice || portalValue })}
+                    className="mt-2 w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-50"
+                  >
+                    Save this selection
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+
+
           {app.status === "draft" && (
             <div className="paper-card p-5">
               <SectionLabel>Filing instructions</SectionLabel>
