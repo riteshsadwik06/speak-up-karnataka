@@ -8,6 +8,9 @@ import {
   addDays,
   appealGroundLabel,
   clockFor,
+  complaintChannel,
+  COMPLAINT_ESCALATION_NOTE,
+  COMPLAINT_EXPECTATION_DAYS,
   daysBetween,
   LEGAL,
   PORTAL_AUTHORITIES,
@@ -20,8 +23,10 @@ import {
   today,
   toPortalSafe,
   WARDS,
+  type StageRailId,
 } from "@/lib/rti-data";
-import { generateAppealDraft } from "@/lib/rti.functions";
+import { StageRail } from "@/components/stage-rail";
+import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
@@ -55,6 +60,7 @@ function Detail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const makeAppeal = useServerFn(generateAppealDraft);
+  const makeDraft = useServerFn(generateDraft);
   const [busy, setBusy] = useState(false);
   const [filedDate, setFiledDate] = useState(today());
   const [regNumber, setRegNumber] = useState("");
@@ -65,6 +71,10 @@ function Detail() {
   const [transferReg, setTransferReg] = useState("");
   const [appealReg, setAppealReg] = useState<Record<string, string>>({});
   const [portalChoice, setPortalChoice] = useState("");
+  const [showClosure, setShowClosure] = useState(false);
+  const [closureDate, setClosureDate] = useState(today());
+  const [stillWrong, setStillWrong] = useState("");
+  const [sentRef, setSentRef] = useState("");
 
 
 
