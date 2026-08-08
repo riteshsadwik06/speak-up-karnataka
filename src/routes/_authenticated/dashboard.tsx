@@ -48,17 +48,34 @@ function Dashboard() {
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as AppRow[];
+      const apps = data as AppRow[];
+      const ids = apps.map((a) => a.id);
+      let appeals: { application_id: string; tier: string; filed_date: string | null }[] = [];
+      if (ids.length) {
+        const { data: ap } = await supabase
+          .from("appeals")
+          .select("application_id, tier, filed_date")
+          .in("application_id", ids);
+        appeals = ap ?? [];
+      }
+      const byApp: Record<string, { tier: string; filed_date: string | null }[]> = {};
+      for (const a of appeals) {
+        (byApp[a.application_id] ??= []).push({ tier: a.tier, filed_date: a.filed_date });
+      }
+      return { apps, byApp };
     },
   });
 
   useEffect(() => {
-    if (!isLoading && data && data.length === 0) {
+    if (!isLoading && data && data.apps.length === 0) {
       seed().then(() => qc.invalidateQueries({ queryKey: ["applications"] }));
     }
   }, [isLoading, data, seed, qc]);
 
-  const rows = [...(data ?? [])].sort((a, b) => clockFor(a).urgency - clockFor(b).urgency);
+  const byApp = data?.byApp ?? {};
+  const rows = [...(data?.apps ?? [])].sort(
+    (a, b) => clockFor(a, byApp[a.id]).urgency - clockFor(b, byApp[b.id]).urgency,
+  );
   const hasDemo = rows.some((r) => r.is_seeded);
 
   return (
