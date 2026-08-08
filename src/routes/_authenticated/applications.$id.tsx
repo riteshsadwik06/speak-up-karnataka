@@ -79,6 +79,10 @@ function Detail() {
     response_due_date: string | null;
     reply_received_date: string | null;
     reply_notes: string | null;
+    registration_number: string | null;
+    transferred_to: string | null;
+    transfer_date: string | null;
+    transfer_registration_number: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -102,14 +106,17 @@ function Detail() {
   const requests = (app.generated_requests as { text: string; rationale: string }[]) ?? [];
   const firstAppeal = data.appeals.find((a) => a.tier === "first");
   const secondAppeal = data.appeals.find((a) => a.tier === "second");
-  const overdue = app.filed_date ? daysBetween(app.filed_date) > LEGAL.pioDays : false;
+  const clockStart = app.transfer_date ?? app.filed_date;
+  const overdue = clockStart ? daysBetween(clockStart) > LEGAL.pioDays : false;
   const faaSilentDays = firstAppeal?.filed_date ? daysBetween(firstAppeal.filed_date) : 0;
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
+  const portalSafeBody = toPortalSafe(app.application_body);
+  const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
 
-  async function draftAppeal(tier: "first" | "second", reason: string) {
+  async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
     try {
-      await makeAppeal({ data: { applicationId: id, tier, reason } });
+      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround } });
       await qc.invalidateQueries({ queryKey: ["application", id] });
       toast.success(`${tier === "first" ? "First" : "Second"} appeal drafted`);
     } catch (err) {
@@ -118,6 +125,7 @@ function Detail() {
       setBusy(false);
     }
   }
+
 
   return (
     <AppShell>
