@@ -74,6 +74,7 @@ export type Database = {
           language: string
           pio_address: string | null
           pio_name: string | null
+          portal_authority: string | null
           public_authority: string
           registration_number: string | null
           reply_notes: string | null
@@ -99,6 +100,7 @@ export type Database = {
           language?: string
           pio_address?: string | null
           pio_name?: string | null
+          portal_authority?: string | null
           public_authority?: string
           registration_number?: string | null
           reply_notes?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           language?: string
           pio_address?: string | null
           pio_name?: string | null
+          portal_authority?: string | null
           public_authority?: string
           registration_number?: string | null
           reply_notes?: string | null
