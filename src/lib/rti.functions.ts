@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assembleApplication, draftAppeal, draftRequests, type RtiRequest } from "./rti.server";
+import {
+  assembleApplication,
+  draftAppeal,
+  draftRequests,
+  reviseRequests,
+  type RtiRequest,
+} from "./rti.server";
 import { buildSeedRows } from "./seed.server";
 import { addDays } from "./rti-data";
 
@@ -21,6 +27,47 @@ export const generateDraft = createServerFn({ method: "POST" })
       authority: data.authority,
       ward: data.ward ?? null,
       focusSubject: data.focusSubject ?? null,
+    });
+
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("full_name, address, phone, is_bpl")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const body = assembleApplication({
+      authority: data.authority,
+      wardName: data.ward ?? null,
+      requests: draft.requests,
+      applicantName: profile?.full_name ?? null,
+      applicantAddress: profile?.address ?? null,
+      applicantPhone: profile?.phone ?? null,
+      isBpl: profile?.is_bpl ?? false,
+    });
+
+    return { draft, body };
+  });
+
+export const reviseDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      grievance: string;
+      authority: string;
+      ward?: string | null;
+      subject: string;
+      requests: RtiRequest[];
+      instruction: string;
+    }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const draft = await reviseRequests({
+      grievance: data.grievance,
+      authority: data.authority,
+      ward: data.ward ?? null,
+      subject: data.subject,
+      requests: data.requests,
+      instruction: data.instruction,
     });
 
     const { data: profile } = await context.supabase
