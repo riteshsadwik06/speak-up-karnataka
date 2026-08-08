@@ -85,8 +85,8 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
         due_date: null,
         portal_ground: data.portalGround ?? null,
       })
-
       .select()
+
       .single();
     if (insertError) throw new Error(insertError.message);
 
