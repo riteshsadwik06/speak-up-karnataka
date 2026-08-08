@@ -294,7 +294,7 @@ function NewApplication() {
             </button>
             <button
               disabled={!authority || busy}
-              onClick={generate}
+              onClick={() => void generate()}
               className="ml-auto rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
               {busy ? "Drafting…" : "Draft my requests"}
