@@ -374,11 +374,18 @@ function NewApplication() {
   }
 
 
+  const stepLabels =
+    path === "complaint"
+      ? ["What went wrong", "Where to send it", "Your complaint"]
+      : ["Grievance", "Authority", "Requests", "File it"];
+
   return (
     <AppShell>
-      <h1 className="text-3xl sm:text-4xl">New RTI application</h1>
+      <h1 className="text-3xl sm:text-4xl">
+        {path === "complaint" ? "New civic complaint" : "New RTI application"}
+      </h1>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        {["Grievance", "Authority", "Requests", "File it"].map((label, i) => (
+        {stepLabels.map((label, i) => (
           <span
             key={label}
             className={`rounded-full px-2.5 py-1 ${
@@ -394,10 +401,115 @@ function NewApplication() {
 
       {step === 1 && (
         <div className="paper-card mt-6 p-5">
-          <SectionLabel>Step 1 · What went wrong?</SectionLabel>
-          <p className="text-sm text-muted-foreground">
-            Write it plainly, in English or Kannada. Do not try to sound legal — that is our job.
-          </p>
+          <SectionLabel>Step 1 · Have you reported this already?</SectionLabel>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <button
+              onClick={() => {
+                setPath("complaint");
+                setPrior(null);
+              }}
+              className={`rounded-md border p-4 text-left ${
+                path === "complaint" ? "border-foreground bg-secondary/60" : "border-border"
+              }`}
+            >
+              <span className="block text-sm font-semibold">I haven't reported this yet</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Start with a civic complaint. It is faster, free, and it creates the paper trail an RTI
+                can later test.
+              </span>
+            </button>
+            <button
+              onClick={() => setPath("rti")}
+              className={`rounded-md border p-4 text-left ${
+                path === "rti" ? "border-foreground bg-secondary/60" : "border-border"
+              }`}
+            >
+              <span className="block text-sm font-semibold">I already reported it</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Go straight to an RTI application for the records behind what happened next.
+              </span>
+            </button>
+          </div>
+
+          {path === "rti" && (
+            <div className="mt-4 rounded-md border border-border p-4">
+              <SectionLabel>What happened?</SectionLabel>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    ["no_response", "No response yet"],
+                    ["false_closure", "They say it's fixed, but it isn't"],
+                    ["refused", "They refused or gave a partial answer"],
+                  ] as [PriorOutcome, string][]
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setPrior(id)}
+                    className={`rounded-md border px-3 py-2 text-left text-xs ${
+                      prior === id ? "border-foreground bg-secondary/60" : "border-border"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {prior && (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs text-muted-foreground">
+                    Complaint reference (if any)
+                    <input
+                      value={complaintRef}
+                      onChange={(e) => setComplaintRef(e.target.value)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  <label className="text-xs text-muted-foreground">
+                    Date you reported it
+                    <input
+                      type="date"
+                      value={priorFiledDate}
+                      onChange={(e) => setPriorFiledDate(e.target.value)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  {prior === "false_closure" && (
+                    <>
+                      <label className="text-xs text-muted-foreground">
+                        Date they marked it resolved
+                        <input
+                          type="date"
+                          value={closureDate}
+                          onChange={(e) => setClosureDate(e.target.value)}
+                          className={`${inputClass} mt-1`}
+                        />
+                      </label>
+                      <label className="text-xs text-muted-foreground sm:col-span-2">
+                        What is still wrong on the ground?
+                        <textarea
+                          value={stillWrong}
+                          onChange={(e) => setStillWrong(e.target.value)}
+                          rows={2}
+                          className={`${inputClass} mt-1 resize-y`}
+                        />
+                      </label>
+                      <p className="text-xs text-muted-foreground sm:col-span-2">
+                        We will ask for the action-taken report, work order, completion certificate,
+                        closure photograph and the expenditure booked — records that cannot exist if the
+                        work was never done.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-5">
+            <SectionLabel>What went wrong?</SectionLabel>
+            <p className="text-sm text-muted-foreground">
+              Write it plainly, in English or Kannada. Do not try to sound legal — that is our job.
+            </p>
+          </div>
           <textarea
             value={grievance}
             onChange={(e) => setGrievance(e.target.value)}
@@ -419,7 +531,9 @@ function NewApplication() {
               </select>
             </label>
             <button
-              disabled={grievance.trim().length < 15}
+              disabled={
+                grievance.trim().length < 15 || !path || (path === "rti" && !prior)
+              }
               onClick={() => setStep(2)}
               className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
