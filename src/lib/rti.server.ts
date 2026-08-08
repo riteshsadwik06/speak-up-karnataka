@@ -9,12 +9,16 @@ export type RtiFlag = {
   message: string;
   suggestion: string;
 };
+export type RtiSubject = { label: string; summary: string };
 export type RtiDraft = {
   requests: RtiRequest[];
   flags: RtiFlag[];
+  subjects: RtiSubject[];
+  primary_subject: string;
   suggested_authority: string;
   confidence: "high" | "medium" | "low";
 };
+
 
 export const DRAFT_SYSTEM_PROMPT = `You help Indian citizens draft Right to Information (RTI) applications under the RTI Act 2005.
 
