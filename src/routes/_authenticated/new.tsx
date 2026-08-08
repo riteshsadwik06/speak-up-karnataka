@@ -363,10 +363,14 @@ function NewApplication() {
                   </li>
                 ))}
               </ol>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Confidence: {draft.confidence}
+                {suggested ? ` · Suggested authority: ${suggested}` : ""}
+              </p>
             </div>
           </div>
 
-          {draft.flags.length > 0 && (
+          {draft.flags.length > 0 ? (
             <div className="paper-card p-5">
               <SectionLabel>Pre-flight check</SectionLabel>
               <ul className="space-y-3">
@@ -382,11 +386,14 @@ function NewApplication() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Confidence: {draft.confidence} · Suggested authority: {draft.suggested_authority}
-              </p>
             </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Pre-flight check passed - no opinion-seeking phrasing or obvious Section 8 exemption risk
+              detected.
+            </p>
           )}
+
 
           <div className="paper-card p-5">
             <SectionLabel>The application — edit anything before you file</SectionLabel>
