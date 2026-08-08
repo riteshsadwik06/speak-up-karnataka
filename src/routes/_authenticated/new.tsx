@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, SectionLabel } from "@/components/app-shell";
 import { AUTHORITIES, WARDS, LEGAL, addDays, today } from "@/lib/rti-data";
+import { WardMap } from "@/components/ward-map";
 import { generateDraft } from "@/lib/rti.functions";
 import type { RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
@@ -60,7 +61,7 @@ function NewApplication() {
   const wardOptions = useMemo(() => {
     const q = wardQuery.trim().toLowerCase();
     const pool = q
-      ? WARDS.filter((w) => `${w.ward_name} ${w.corporation} ${w.ward_id}`.toLowerCase().includes(q))
+      ? WARDS.filter((w) => `${w.ward_name} ${w.ward_name_kn} ${w.zone_name} ${w.corporation} ${w.ward_id}`.toLowerCase().includes(q))
       : WARDS;
     return pool.slice(0, 12);
   }, [wardQuery]);
