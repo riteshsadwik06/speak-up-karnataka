@@ -11,6 +11,8 @@ import {
   complaintChannel,
   COMPLAINT_ESCALATION_NOTE,
   COMPLAINT_EXPECTATION_DAYS,
+  COMPLAINT_NOT_STATUTORY,
+
   daysBetween,
   LEGAL,
   PORTAL_AUTHORITIES,
@@ -378,10 +380,8 @@ function Detail() {
                   value={app.closure_claimed_date ?? "—"}
                 />
               </dl>
-              <p className="mt-3 text-xs text-muted-foreground">
-                The RTI Act's 30-day clock applies only once an RTI application is filed. A complaint has
-                no statutory deadline at all.
-              </p>
+              <p className="mt-3 text-xs text-muted-foreground">{COMPLAINT_NOT_STATUTORY}</p>
+
             </div>
 
             {!app.complaint_filed_date && (
