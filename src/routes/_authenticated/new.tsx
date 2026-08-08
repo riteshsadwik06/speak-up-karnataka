@@ -358,6 +358,39 @@ function NewApplication() {
             </div>
           )}
 
+          {multiSubject && (
+            <div className="paper-card border-warning/60 bg-warning/10 p-5">
+              <p className="rule-heading text-warning-foreground">This covers more than one subject</p>
+              <p className="mt-2 text-sm">
+                Karnataka's Rule 14 requires one subject per application. If you file all of these
+                together, the PIO may answer only the first and tell you to file separately for the
+                rest. We have drafted for {draft.primary_subject || "the main subject"}.
+              </p>
+              <ul className="mt-3 space-y-1 text-sm">
+                {otherSubjects.map((s) => (
+                  <li key={s.label}>
+                    <span className="font-medium">{s.label}</span>
+                    {s.summary ? (
+                      <span className="text-muted-foreground"> — {s.summary}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex flex-col gap-2">
+                {otherSubjects.map((s) => (
+                  <button
+                    key={s.label}
+                    disabled={busy}
+                    onClick={() => void generate(undefined, s.label)}
+                    className="rounded-md border border-border bg-background px-4 py-2 text-left text-sm hover:bg-secondary disabled:opacity-60"
+                  >
+                    {busy ? "Redrafting…" : `Draft a separate application for ${s.label}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
 
             <div className="paper-card border-destructive/30 p-5">
@@ -380,12 +413,24 @@ function NewApplication() {
                   </li>
                 ))}
               </ol>
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className={`mt-3 text-xs ${overWordLimit ? "text-warning" : "text-muted-foreground"}`}>
+                {requestWords} / {RULE14_WORD_LIMIT} words (Karnataka Rule 14)
+              </p>
+              {overWordLimit && (
+                <p className="mt-1 text-xs text-warning">
+                  Rule 14 says an application shall not ORDINARILY exceed 150 words, so this is not
+                  automatically invalid - but a PIO may push back. Consider trimming, or add a line
+                  explaining why the extra length is necessary.
+                </p>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
                 Confidence: {draft.confidence}
+                {draft.primary_subject ? ` · Subject: ${draft.primary_subject}` : ""}
                 {suggested ? ` · Suggested authority: ${suggested}` : ""}
               </p>
             </div>
           </div>
+
 
           {draft.flags.length > 0 ? (
             <div className="paper-card p-5">
