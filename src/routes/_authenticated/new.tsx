@@ -11,10 +11,14 @@ import {
   today,
   countWords,
   RULE14_WORD_LIMIT,
+  COMPLAINT_CHANNELS,
+  COMPLAINT_EXPECTATION_DAYS,
 } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
-import { generateDraft, reviseDraft } from "@/lib/rti.functions";
-import type { RtiDraft } from "@/lib/rti.server";
+import { WardInset3D } from "@/components/ward-inset-3d";
+import { StageRail } from "@/components/stage-rail";
+import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
+import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/new")({
@@ -64,12 +68,22 @@ type SubjectDraft = {
   savedId?: string | undefined;
 };
 
+type Path = "complaint" | "rti";
+type PriorOutcome = "no_response" | "false_closure" | "refused";
+
 function NewApplication() {
   const router = useRouter();
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
+  const runComplaint = useServerFn(generateComplaint);
 
   const [step, setStep] = useState(1);
+  const [path, setPath] = useState<Path | null>(null);
+  const [prior, setPrior] = useState<PriorOutcome | null>(null);
+  const [complaintRef, setComplaintRef] = useState("");
+  const [priorFiledDate, setPriorFiledDate] = useState("");
+  const [closureDate, setClosureDate] = useState("");
+  const [stillWrong, setStillWrong] = useState("");
   const [grievance, setGrievance] = useState("");
   const [language, setLanguage] = useState("en");
   const [authorityId, setAuthorityId] = useState("");
@@ -83,6 +97,11 @@ function NewApplication() {
   );
 
   const [busy, setBusy] = useState(false);
+  const [complaint, setComplaint] = useState<ComplaintDraft | null>(null);
+  const [complaintText, setComplaintText] = useState("");
+  const [channelId, setChannelId] = useState("sahaaya");
+  const [sentRef, setSentRef] = useState("");
+  const [sentDate, setSentDate] = useState(today());
   const [drafts, setDrafts] = useState<SubjectDraft[]>([]);
   const [activeSubject, setActiveSubject] = useState<string>("");
   const [instruction, setInstruction] = useState("");
@@ -129,6 +148,73 @@ function NewApplication() {
     return drafts.some((d) => d.subject.trim().toLowerCase() === label.trim().toLowerCase());
   }
 
+  const falseClosure =
+    prior === "false_closure"
+      ? {
+          ref: complaintRef,
+          complaintText: grievance,
+          filedDate: priorFiledDate || null,
+          closureDate: closureDate || null,
+          whatIsStillWrong: stillWrong,
+        }
+      : null;
+
+  async function generateTheComplaint() {
+    setBusy(true);
+    try {
+      const result = await runComplaint({
+        data: {
+          grievance,
+          authority,
+          ward: ward?.ward_name ?? null,
+          wardNumber: ward?.ward_id ?? null,
+        },
+      });
+      setComplaint(result);
+      setComplaintText(result.complaint);
+      if (COMPLAINT_CHANNELS.some((c) => c.id === result.suggested_channel))
+        setChannelId(result.suggested_channel);
+      setStep(3);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not draft the complaint");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveComplaint(markSent: boolean) {
+    setSaving(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("applications")
+        .insert({
+          user_id: userData.user!.id,
+          stage: "complaint",
+          grievance_text: grievance,
+          language,
+          public_authority: authority,
+          ward_id: ward?.ward_id ?? null,
+          ward_name: ward?.ward_name ?? null,
+          corporation: ward?.corporation ?? null,
+          generated_requests: [],
+          application_body: "",
+          complaint_text: complaintText,
+          complaint_channel: channelId,
+          complaint_ref: markSent ? sentRef.trim() || null : null,
+          complaint_filed_date: markSent ? sentDate : null,
+          status: markSent ? "filed" : "draft",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      router.navigate({ to: "/applications/$id", params: { id: data.id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+      setSaving(false);
+    }
+  }
+
   async function generate(overrideAuthority?: string, focusSubject?: string) {
     setBusy(true);
     try {
@@ -139,6 +225,7 @@ function NewApplication() {
           ward: ward?.ward_name ?? null,
           language,
           focusSubject: focusSubject ?? null,
+          falseClosure,
         },
       });
       const key =
@@ -228,6 +315,10 @@ function NewApplication() {
       status: markFiled ? "filed" : "draft",
       filed_date: markFiled ? (filedDate ?? today()) : null,
       response_due_date: markFiled ? addDays(filedDate ?? today(), LEGAL.pioDays) : null,
+      stage: "rti",
+      complaint_ref: complaintRef.trim() || null,
+      complaint_filed_date: priorFiledDate || null,
+      closure_claimed_date: prior === "false_closure" ? closureDate || null : null,
     };
   }
 
@@ -283,11 +374,18 @@ function NewApplication() {
   }
 
 
+  const stepLabels =
+    path === "complaint"
+      ? ["What went wrong", "Where to send it", "Your complaint"]
+      : ["Grievance", "Authority", "Requests", "File it"];
+
   return (
     <AppShell>
-      <h1 className="text-3xl sm:text-4xl">New RTI application</h1>
+      <h1 className="text-3xl sm:text-4xl">
+        {path === "complaint" ? "New civic complaint" : "New RTI application"}
+      </h1>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        {["Grievance", "Authority", "Requests", "File it"].map((label, i) => (
+        {stepLabels.map((label, i) => (
           <span
             key={label}
             className={`rounded-full px-2.5 py-1 ${
@@ -303,10 +401,115 @@ function NewApplication() {
 
       {step === 1 && (
         <div className="paper-card mt-6 p-5">
-          <SectionLabel>Step 1 · What went wrong?</SectionLabel>
-          <p className="text-sm text-muted-foreground">
-            Write it plainly, in English or Kannada. Do not try to sound legal — that is our job.
-          </p>
+          <SectionLabel>Step 1 · Have you reported this already?</SectionLabel>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <button
+              onClick={() => {
+                setPath("complaint");
+                setPrior(null);
+              }}
+              className={`rounded-md border p-4 text-left ${
+                path === "complaint" ? "border-foreground bg-secondary/60" : "border-border"
+              }`}
+            >
+              <span className="block text-sm font-semibold">I haven't reported this yet</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Start with a civic complaint. It is faster, free, and it creates the paper trail an RTI
+                can later test.
+              </span>
+            </button>
+            <button
+              onClick={() => setPath("rti")}
+              className={`rounded-md border p-4 text-left ${
+                path === "rti" ? "border-foreground bg-secondary/60" : "border-border"
+              }`}
+            >
+              <span className="block text-sm font-semibold">I already reported it</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Go straight to an RTI application for the records behind what happened next.
+              </span>
+            </button>
+          </div>
+
+          {path === "rti" && (
+            <div className="mt-4 rounded-md border border-border p-4">
+              <SectionLabel>What happened?</SectionLabel>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    ["no_response", "No response yet"],
+                    ["false_closure", "They say it's fixed, but it isn't"],
+                    ["refused", "They refused or gave a partial answer"],
+                  ] as [PriorOutcome, string][]
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setPrior(id)}
+                    className={`rounded-md border px-3 py-2 text-left text-xs ${
+                      prior === id ? "border-foreground bg-secondary/60" : "border-border"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {prior && (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs text-muted-foreground">
+                    Complaint reference (if any)
+                    <input
+                      value={complaintRef}
+                      onChange={(e) => setComplaintRef(e.target.value)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  <label className="text-xs text-muted-foreground">
+                    Date you reported it
+                    <input
+                      type="date"
+                      value={priorFiledDate}
+                      onChange={(e) => setPriorFiledDate(e.target.value)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  {prior === "false_closure" && (
+                    <>
+                      <label className="text-xs text-muted-foreground">
+                        Date they marked it resolved
+                        <input
+                          type="date"
+                          value={closureDate}
+                          onChange={(e) => setClosureDate(e.target.value)}
+                          className={`${inputClass} mt-1`}
+                        />
+                      </label>
+                      <label className="text-xs text-muted-foreground sm:col-span-2">
+                        What is still wrong on the ground?
+                        <textarea
+                          value={stillWrong}
+                          onChange={(e) => setStillWrong(e.target.value)}
+                          rows={2}
+                          className={`${inputClass} mt-1 resize-y`}
+                        />
+                      </label>
+                      <p className="text-xs text-muted-foreground sm:col-span-2">
+                        We will ask for the action-taken report, work order, completion certificate,
+                        closure photograph and the expenditure booked — records that cannot exist if the
+                        work was never done.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-5">
+            <SectionLabel>What went wrong?</SectionLabel>
+            <p className="text-sm text-muted-foreground">
+              Write it plainly, in English or Kannada. Do not try to sound legal — that is our job.
+            </p>
+          </div>
           <textarea
             value={grievance}
             onChange={(e) => setGrievance(e.target.value)}
@@ -328,7 +531,9 @@ function NewApplication() {
               </select>
             </label>
             <button
-              disabled={grievance.trim().length < 15}
+              disabled={
+                grievance.trim().length < 15 || !path || (path === "rti" && !prior)
+              }
               onClick={() => setStep(2)}
               className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
@@ -343,7 +548,9 @@ function NewApplication() {
 
       {step === 2 && (
         <div className="paper-card mt-6 space-y-4 p-5">
-          <SectionLabel>Step 2 · Who holds the records?</SectionLabel>
+          <SectionLabel>
+            {path === "complaint" ? "Step 2 · Whose problem is this?" : "Step 2 · Who holds the records?"}
+          </SectionLabel>
           <div className="grid gap-2 sm:grid-cols-2">
             {AUTHORITIES.map((a) => (
               <button
@@ -421,9 +628,12 @@ function NewApplication() {
               />
             </div>
             {ward && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {ward.ward_name} · {ward.corporation} · {ward.assembly}
-              </p>
+              <div className="mt-2 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {ward.ward_name} · {ward.corporation} · {ward.assembly}
+                </p>
+                <WardInset3D wardId={ward.ward_id} corporation={ward.corporation} />
+              </div>
             )}
           </div>
 
@@ -437,16 +647,152 @@ function NewApplication() {
             </button>
             <button
               disabled={!authority || busy}
-              onClick={() => void generate()}
+              onClick={() => void (path === "complaint" ? generateTheComplaint() : generate())}
               className="ml-auto rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
-              {busy ? "Drafting…" : "Draft my requests"}
+              {busy
+                ? "Drafting…"
+                : path === "complaint"
+                  ? "Draft my complaint"
+                  : "Draft my requests"}
             </button>
           </div>
         </div>
       )}
 
-      {step === 3 && draft && active && (
+      {step === 3 && path === "complaint" && complaint && (
+        <div className="mt-6 space-y-5">
+          <div className="paper-card p-5">
+            <SectionLabel>Where you are</SectionLabel>
+            <div className="mt-2">
+              <StageRail current="complaint" />
+            </div>
+          </div>
+
+          <div className="paper-card p-5">
+            <SectionLabel>Step 3 · Your complaint</SectionLabel>
+            <p className="text-sm text-muted-foreground">
+              {complaint.category} · asks for one checkable action: {complaint.checkable_action}
+            </p>
+            <textarea
+              value={complaintText}
+              onChange={(e) => setComplaintText(e.target.value)}
+              rows={12}
+              className={`${inputClass} mt-3 resize-y font-mono text-xs`}
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(complaintText);
+                  toast.success("Complaint copied");
+                }}
+                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+              >
+                Copy
+              </button>
+              <button
+                onClick={() => {
+                  const blob = new Blob([complaintText], { type: "text/plain" });
+                  const a = document.createElement("a");
+                  a.href = URL.createObjectURL(blob);
+                  a.download = "complaint.txt";
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}
+                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+
+          <div className="paper-card p-5">
+            <SectionLabel>Where to send it</SectionLabel>
+            <p className="text-xs text-muted-foreground">
+              A starting point — confirm the channel before you send, and tell us where it actually went.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {COMPLAINT_CHANNELS.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setChannelId(c.id)}
+                  className={`rounded-md border p-3 text-left ${
+                    channelId === c.id ? "border-accent bg-accent/8" : "border-border hover:bg-secondary"
+                  }`}
+                >
+                  <span className="block text-sm font-medium">{c.name}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{c.note}</span>
+                  {"phone" in c && c.phone ? (
+                    <span className="mt-1 block font-mono text-[11px]">{c.phone}</span>
+                  ) : null}
+                  {"url" in c && c.url ? (
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 block text-[11px] underline"
+                    >
+                      {c.url}
+                    </a>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="paper-card p-5">
+            <SectionLabel>Mark as filed</SectionLabel>
+            <p className="text-xs text-muted-foreground">
+              Complaints have no statutory deadline. We track {COMPLAINT_EXPECTATION_DAYS} days as a
+              service expectation only.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="text-xs text-muted-foreground">
+                Complaint reference number
+                <input
+                  value={sentRef}
+                  onChange={(e) => setSentRef(e.target.value)}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-xs text-muted-foreground">
+                Date sent
+                <input
+                  type="date"
+                  value={sentDate}
+                  onChange={(e) => setSentDate(e.target.value)}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setStep(2)}
+                className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
+              >
+                Back
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => void saveComplaint(false)}
+                className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50"
+              >
+                Save as draft
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => void saveComplaint(true)}
+                className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "I have sent it — start the clock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && path !== "complaint" && draft && active && (
         <div className="mt-6 space-y-5">
           {drafts.length > 1 && (
             <div className="flex flex-wrap gap-2">

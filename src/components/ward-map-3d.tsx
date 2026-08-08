@@ -44,6 +44,10 @@ const PORTAL_ZONE_COLOR: Record<string, string> = {
 
 const GREY = "#a9a396";
 
+const SAHAAYA = "#7a3f8f";
+
+export type MapMode = "gba" | "portal" | "complaints";
+
 function hasWebGL(): boolean {
   try {
     const c = document.createElement("canvas");
@@ -57,7 +61,7 @@ function easeInOut(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
-export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
+export function WardMap3D({ mode }: { mode: MapMode }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const modeRef = useRef(mode);
   const [webgl, setWebgl] = useState<boolean | null>(null);
@@ -65,7 +69,7 @@ export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
   const [hover, setHover] = useState<{ w: WardInfo; x: number; y: number } | null>(null);
   const [selected, setSelected] = useState<WardInfo | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const setModeColorsRef = useRef<((m: "gba" | "portal") => void) | null>(null);
+  const setModeColorsRef = useRef<((m: MapMode) => void) | null>(null);
 
   useEffect(() => setWebgl(hasWebGL()), []);
 
@@ -244,13 +248,14 @@ export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
       const CAM_A = new THREE.Vector3(60, 78, 92);
       const CAM_B = new THREE.Vector3(48, 118, 74);
 
-      function targetFor(m: WardMesh, md: "gba" | "portal") {
+      function targetFor(m: WardMesh, md: MapMode) {
+        if (md === "complaints") return { c: new THREE.Color(SAHAAYA), o: 1 };
         if (md === "gba") return { c: new THREE.Color(CORP_COLOR[m.userData.corp] ?? GREY), o: 1 };
         const pz = PORTAL_ZONE_COLOR[m.userData.zone];
         return pz ? { c: new THREE.Color(pz), o: 1 } : { c: new THREE.Color(GREY), o: 0.45 };
       }
 
-      function applyMode(md: "gba" | "portal", animate = true) {
+      function applyMode(md: MapMode, animate = true) {
         for (const m of meshes) {
           const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
           const t = targetFor(m, md);
@@ -432,6 +437,15 @@ export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
   }, [webgl]);
 
   const legend = useMemo(() => {
+    if (mode === "complaints") {
+      return [
+        {
+          color: SAHAAYA,
+          label: "Sahaaya 2.0",
+          note: `all ${Object.values(counts).reduce((a, b) => a + b, 0)} wards, five corporations`,
+        },
+      ];
+    }
     if (mode === "gba") {
       return Object.keys(CORP_COLOR).map((c) => ({
         color: CORP_COLOR[c]!,
@@ -487,6 +501,12 @@ export function WardMap3D({ mode }: { mode: "gba" | "portal" }) {
               <span className="mono-stamp">{l.note}</span>
             </span>
           ))}
+          {mode === "complaints" && (
+            <span className="text-[11px] text-muted-foreground">
+              All five city corporations route civic complaints through Sahaaya 2.0. Water and sewerage go to
+              BWSSB (1916) and power to BESCOM (1912) instead - those are not ward-mapped.
+            </span>
+          )}
           {mode === "portal" && (
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 opacity-50" style={{ backgroundColor: GREY }} />

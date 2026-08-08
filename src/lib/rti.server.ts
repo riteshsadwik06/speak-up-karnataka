@@ -96,12 +96,22 @@ function parseJson(raw: string): unknown {
   }
 }
 
+export type FalseClosure = {
+  ref: string;
+  complaintText: string;
+  filedDate: string | null;
+  closureDate: string | null;
+  whatIsStillWrong: string;
+};
+
 export async function draftRequests(input: {
   grievance: string;
   authority: string;
   ward?: string | null;
   focusSubject?: string | null;
+  falseClosure?: FalseClosure | null;
 }): Promise<RtiDraft> {
+  const fc = input.falseClosure;
   const user = [
     `Public authority selected by the citizen: ${input.authority}`,
     input.ward ? `Ward: ${input.ward}, Bengaluru, Karnataka` : "Location: Bengaluru, Karnataka",
@@ -109,6 +119,9 @@ export async function draftRequests(input: {
     "Grievance in the citizen's own words:",
     input.grievance,
     input.focusSubject ? `\nDraft requests for this subject only: ${input.focusSubject}` : "",
+    fc
+      ? `\nThis RTI follows a civic complaint that the authority marked RESOLVED without doing the work. Complaint reference: ${fc.ref || "not recorded"}, filed ${fc.filedDate ?? "not recorded"}, marked resolved ${fc.closureDate ?? "not recorded"}. The citizen states the problem persists: ${fc.whatIsStillWrong}. Draft requests that would prove whether any work was actually carried out - the action-taken report, the work order and its date, the name and designation of the officer who closed the complaint, the completion certificate, the site photograph relied on for closure, the measurement book entry, and the expenditure booked against that work. These are the records that cannot exist if the work was not done.`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -266,5 +279,55 @@ export async function reviseRequests(input: {
         : input.subject,
     suggested_authority: parsed.suggested_authority ?? input.authority,
     confidence: parsed.confidence ?? "medium",
+  };
+}
+
+export type ComplaintDraft = {
+  complaint: string;
+  suggested_channel: string;
+  category: string;
+  checkable_action: string;
+};
+
+export const COMPLAINT_SYSTEM_PROMPT = `You write civic grievance complaints for residents of Bengaluru, for submission to Sahaaya 2.0 (the Greater Bengaluru Authority grievance system) or to BWSSB, BESCOM or another public authority.
+
+A complaint is NOT an RTI application. It asks for action, not records. Write it so that it is specific enough that it cannot be closed as "insufficient information" and specific enough that a later audit can check whether the work was actually done.
+
+Rules:
+- State the exact location: street, landmark, ward name and number where known.
+- State when the problem began and how long it has persisted.
+- State the observable consequence (flooding, injury risk, contamination, outage duration).
+- Ask for a specific, checkable action - not "please fix this" but "please desilt the storm water drain along X and confirm with a site photograph".
+- Explicitly request the action-taken report and a completion photograph on closure. This is the single most important line: it sets up the evidence trail if the complaint is later closed without work.
+- Keep it under 200 words. Plain, factual, unemotional. No threats, no legal citations - this is not the RTI stage.
+
+Return ONLY valid JSON, no markdown fences:
+{ "complaint": "the complaint text", "suggested_channel": "sahaaya|bwssb|bescom|other", "category": "short issue category", "checkable_action": "the one specific action requested" }`;
+
+export async function draftComplaint(input: {
+  grievance: string;
+  authority: string;
+  ward?: string | null;
+  wardNumber?: string | null;
+}): Promise<ComplaintDraft> {
+  const user = [
+    `Public authority / department: ${input.authority}`,
+    input.ward
+      ? `Ward: ${input.ward}${input.wardNumber ? ` (ward number ${input.wardNumber})` : ""}, Bengaluru, Karnataka`
+      : "Location: Bengaluru, Karnataka",
+    "",
+    "The resident's account of the problem:",
+    input.grievance,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const parsed = parseJson(await callGateway(COMPLAINT_SYSTEM_PROMPT, user)) as Partial<ComplaintDraft>;
+  return {
+    complaint: typeof parsed.complaint === "string" ? parsed.complaint.trim() : "",
+    suggested_channel:
+      typeof parsed.suggested_channel === "string" ? parsed.suggested_channel : "sahaaya",
+    category: typeof parsed.category === "string" ? parsed.category : "",
+    checkable_action: typeof parsed.checkable_action === "string" ? parsed.checkable_action : "",
   };
 }

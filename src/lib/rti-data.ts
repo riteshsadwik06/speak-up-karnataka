@@ -221,6 +221,50 @@ export const SPLIT_ADVISORY =
   "If your application was forwarded to more than one PIO, the portal splits it into sub-numbers (e.g. .../60104/1). Each sub-number gets its own reply. File your appeal against the specific sub-number you are dissatisfied with, not the parent number.";
 
 
+/**
+ * Stage one: civic grievance channels. These are starting points, not
+ * guarantees — the user confirms where they actually filed.
+ */
+export const COMPLAINT_CHANNELS = [
+  {
+    id: "sahaaya",
+    name: "Sahaaya 2.0 (Namma Bengaluru)",
+    url: "https://support.bbmp.gov.in/ehelpline",
+    note: "GBA civic issues - roads, drains, garbage, street lights, trees, encroachment, building violations",
+    phone: "1533 (civic) / 1800-425-0422 (GBA toll-free)",
+  },
+  { id: "bwssb", name: "BWSSB", note: "Water supply and sewerage", phone: "1916" },
+  { id: "bescom", name: "BESCOM", note: "Power supply, transformers, billing", phone: "1912" },
+  { id: "other", name: "Other / entered manually", note: "Any other public authority" },
+] as const;
+
+export type ComplaintChannel = (typeof COMPLAINT_CHANNELS)[number];
+
+export function complaintChannel(id: string | null | undefined) {
+  return COMPLAINT_CHANNELS.find((c) => c.id === id) ?? null;
+}
+
+/**
+ * A service expectation only. Sahaaya 2.0 publishes turnaround targets per
+ * category; nothing here is a statutory deadline — the RTI Act's 30 days
+ * applies to RTI applications, never to complaints.
+ */
+export const COMPLAINT_EXPECTATION_DAYS = 14;
+
+export const COMPLAINT_ESCALATION_NOTE =
+  "Sahaaya 2.0 allows two escalations before the complaint reaches a higher officer. Work through both, then an RTI is the next real lever.";
+
+/** The five-step rail shown on the complaint and detail screens. */
+export const STAGE_RAIL = [
+  { id: "complaint", label: "Complaint", deadline: "no statutory deadline" },
+  { id: "escalation", label: "Escalation", deadline: "no statutory deadline" },
+  { id: "rti", label: "RTI", deadline: "30 days" },
+  { id: "first_appeal", label: "First appeal", deadline: "30 days to file / 45 to decide" },
+  { id: "second_appeal", label: "Second appeal", deadline: "90 days" },
+] as const;
+
+export type StageRailId = (typeof STAGE_RAIL)[number]["id"];
+
 export type Clock = {
   label: string;
   tone: "calm" | "warn" | "danger" | "neutral";
@@ -235,10 +279,31 @@ export function clockFor(
     response_due_date: string | null;
     reply_received_date: string | null;
     transfer_date?: string | null;
+    stage?: string | null;
+    complaint_filed_date?: string | null;
+    escalation_count?: number | null;
   },
 
   appeals?: { tier: string; filed_date: string | null }[],
 ): Clock {
+  if (app.stage === "complaint") {
+    if (app.status === "closed") return { label: "Complaint closed", tone: "neutral", urgency: 90 };
+    if (!app.complaint_filed_date)
+      return { label: "Complaint not sent yet", tone: "neutral", urgency: 10 };
+    const d = daysBetween(app.complaint_filed_date);
+    const esc = app.escalation_count ?? 0;
+    if (d > COMPLAINT_EXPECTATION_DAYS)
+      return {
+        label: `Day ${d} — past the ${COMPLAINT_EXPECTATION_DAYS}-day service expectation${esc ? ` · escalated ${esc}x` : ""}`,
+        tone: "warn",
+        urgency: 5,
+      };
+    return {
+      label: `Complaint day ${d} of ${COMPLAINT_EXPECTATION_DAYS} (service expectation)`,
+      tone: "calm",
+      urgency: 22 - d / 100,
+    };
+  }
   if (app.status === "draft") return { label: "Not filed yet", tone: "neutral", urgency: 10 };
   if (app.status === "closed") return { label: "Closed", tone: "neutral", urgency: 90 };
   if (app.status === "replied") {
