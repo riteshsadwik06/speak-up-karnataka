@@ -3,12 +3,33 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   assembleApplication,
   draftAppeal,
+  draftComplaint,
   draftRequests,
   reviseRequests,
+  type FalseClosure,
   type RtiRequest,
 } from "./rti.server";
 import { buildSeedRows } from "./seed.server";
 import { addDays } from "./rti-data";
+
+export const generateComplaint = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      grievance: string;
+      authority: string;
+      ward?: string | null;
+      wardNumber?: string | null;
+    }) => input,
+  )
+  .handler(async ({ data }) =>
+    draftComplaint({
+      grievance: data.grievance,
+      authority: data.authority,
+      ward: data.ward ?? null,
+      wardNumber: data.wardNumber ?? null,
+    }),
+  );
 
 export const generateDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -19,6 +40,7 @@ export const generateDraft = createServerFn({ method: "POST" })
       ward?: string | null;
       language?: string;
       focusSubject?: string | null;
+      falseClosure?: FalseClosure | null;
     }) => input,
   )
   .handler(async ({ data, context }) => {
@@ -27,6 +49,7 @@ export const generateDraft = createServerFn({ method: "POST" })
       authority: data.authority,
       ward: data.ward ?? null,
       focusSubject: data.focusSubject ?? null,
+      falseClosure: data.falseClosure ?? null,
     });
 
     const { data: profile } = await context.supabase
