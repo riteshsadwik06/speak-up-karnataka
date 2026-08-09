@@ -42,6 +42,7 @@ export const generateDraft = createServerFn({ method: "POST" })
       authority: string;
       ward?: string | null;
       language?: string;
+      lang?: "en" | "kn";
       focusSubject?: string | null;
       falseClosure?: FalseClosure | null;
     }) => input,
