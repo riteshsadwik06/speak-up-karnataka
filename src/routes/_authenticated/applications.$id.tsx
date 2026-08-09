@@ -58,6 +58,7 @@ type Appeal = {
   tier: string;
   grounds: string;
   body: string;
+  body_kn: string | null;
   filed_date: string | null;
   due_date: string | null;
   created_at: string;
