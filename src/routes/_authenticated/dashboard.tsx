@@ -57,6 +57,9 @@ function stamp(date: string | null) {
 function Dashboard() {
   const { lang, t } = useLang();
   const knCell = lang === "kn" ? `${KN_TEXT} normal-case` : "";
+  /** Authoritative Kannada ward name from the ward asset — never machine-translated. */
+  const wardKnFor = (name: string) =>
+    lang === "kn" ? (WARDS.find((w) => w.ward_name === name)?.ward_name_kn ?? null) : null;
   const qc = useQueryClient();
   const seed = useServerFn(seedDemoData);
   const clear = useServerFn(clearDemoData);
@@ -122,7 +125,9 @@ function Dashboard() {
     <AppShell bare>
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-6">
         <div>
-          <h2 className="font-display text-2xl">RTI Registry</h2>
+          <h2 lang={lang} className={`font-display text-2xl ${lang === "kn" ? KN_TEXT : ""}`}>
+            {t("registryTitle")}
+          </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Monitoring {pending} statutory {pending === 1 ? "deadline" : "deadlines"}.
           </p>
@@ -131,7 +136,9 @@ function Dashboard() {
           to="/new"
           className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
         >
-          NEW FILING
+          <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+            {t("newFilingCta")}
+          </span>
         </Link>
       </header>
 
@@ -159,19 +166,23 @@ function Dashboard() {
             onClick={() => setWardFilter("")}
             className="absolute bottom-2 right-4 text-[11px] font-bold uppercase tracking-tight underline"
           >
-            Clear filter
+            <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+              {t("clearFilter")}
+            </span>
           </button>
         )}
       </section>
 
 
-      {isLoading && <p className="p-6 text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && <p className="p-6 text-sm text-muted-foreground">{t("loading")}</p>}
 
       {!isLoading && rows.length === 0 && (
         <div className="p-10 text-center">
-          <p className="font-display text-xl">Nothing filed yet</p>
+          <p lang={lang} className={`font-display text-xl ${lang === "kn" ? KN_TEXT : ""}`}>{t("nothingFiled")}</p>
           <Link to="/new" className="mt-4 inline-block bg-foreground px-4 py-2 text-sm font-bold text-background">
-            Draft your first RTI
+            <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+              {t("draftFirstRti")}
+            </span>
           </Link>
         </div>
       )}
@@ -197,7 +208,13 @@ function Dashboard() {
                     <td className="p-4 align-top">
                       <div className="mono-stamp mb-1.5">{row.registration_number ?? "———"}</div>
                       <StatusPill tone={clock.tone}>
-                        {row.status === "draft" ? "Not filed" : clock.tone === "danger" ? "Action due" : "In progress"}
+                        <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+                          {row.status === "draft"
+                            ? t("statusNotFiled")
+                            : clock.tone === "danger"
+                              ? t("statusActionDue")
+                              : t("statusInProgress")}
+                        </span>
                       </StatusPill>
                     </td>
                     <td className="p-4 align-top">
@@ -209,7 +226,7 @@ function Dashboard() {
                         </h3>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {row.public_authority}
-                          {row.ward_name ? ` • ${row.ward_name}` : ""}
+                          {row.ward_name ? ` • ${wardKnFor(row.ward_name) ?? row.ward_name}` : ""}
                           {row.is_seeded ? " • demo" : ""}
                           {row.stage === "complaint" ? " • complaint" : ""}
                         </p>
@@ -218,20 +235,20 @@ function Dashboard() {
                     <td className="hidden p-4 align-top sm:table-cell">
                       {row.filed_date ? (
                         <div className="flex flex-col gap-1.5">
-                          <span className="mono-stamp">Filed {stamp(row.filed_date)}</span>
+                          <span className="mono-stamp">{t("filedOn")} {stamp(row.filed_date)}</span>
                           <div className="h-1 w-28 bg-secondary">
                             <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       ) : (
-                        <span className="text-xs italic text-muted-foreground">Awaiting your action</span>
+                        <span lang={lang} className={`text-xs italic text-muted-foreground ${lang === "kn" ? KN_TEXT : ""}`}>{t("awaitingAction")}</span>
                       )}
                     </td>
                     <td className="p-4 text-right align-top">
                       <div
                         className={`font-display text-base font-bold ${row.status === "draft" ? "text-muted-foreground/40" : ""}`}
                       >
-                        {row.filed_date ? `DAY ${day}` : "DAY 0"}
+                        {`${t("day")} ${row.filed_date ? day : 0}`}
                       </div>
                       <div
                         className={`mt-0.5 text-[10px] font-bold uppercase leading-tight ${clock.tone === "danger" ? "text-destructive" : "text-muted-foreground"}`}
