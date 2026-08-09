@@ -3,7 +3,8 @@ import { Link } from "@tanstack/react-router";
 import asset from "@/assets/gba-wards-3d.json.asset.json";
 import { portalZoneForGbaZone, PORTAL_AUTHORITIES } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
-import { acquireGlSlot, CORP_COLOR } from "@/lib/ward-3d";
+import { acquireGlSlot, CORP_COLOR, loadWards } from "@/lib/ward-3d";
+import { loadOfficials } from "@/lib/officials";
 import {
   OfficialsCaveat,
   OfficialsCredit,
@@ -59,6 +60,7 @@ export function WardMap3D() {
   const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  const focusRef = useRef<((id: string) => void) | null>(null);
   const [webgl, setWebgl] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<{ w: WardInfo; x: number; y: number } | null>(null);
@@ -160,8 +162,10 @@ export function WardMap3D() {
           baseColor: InstanceType<typeof THREE.Color>;
           delay: number;
           targetY: number;
+          center: { x: number; z: number };
         };
       };
+
 
       const meshes: WardMesh[] = [];
       const corpCounts: Record<string, number> = {};
@@ -228,6 +232,7 @@ export function WardMap3D() {
           baseColor: color,
           delay: Math.min(dist / 70, 1) * 0.45,
           targetY: 0,
+          center: { x: cx, z: -cy },
         };
         corpCounts[w.c] = (corpCounts[w.c] ?? 0) + 1;
         scene.add(mesh);
@@ -271,6 +276,44 @@ export function WardMap3D() {
       renderer.domElement.addEventListener("pointermove", onPointerMove);
       renderer.domElement.addEventListener("pointerleave", onPointerLeave);
       renderer.domElement.addEventListener("click", onClick);
+
+      // ---- imperative focus (used by the ward search)
+      type Focus = {
+        t0: number;
+        from: InstanceType<typeof THREE.Vector3>;
+        to: InstanceType<typeof THREE.Vector3>;
+        camFrom: InstanceType<typeof THREE.Vector3>;
+        camTo: InstanceType<typeof THREE.Vector3>;
+      };
+      let focus: Focus | null = null;
+      let flashId: string | null = null;
+      let flashUntil = 0;
+
+      focusRef.current = (id: string) => {
+        const m = meshes.find((mm) => mm.userData.info.id === id);
+        if (!m) return;
+        selectedId = id;
+        flashId = id;
+        flashUntil = performance.now() + 1400;
+        const c = m.userData.center;
+        const to = new THREE.Vector3(c.x, 0, c.z);
+        const delta = to.clone().sub(controls.target);
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reduce) {
+          controls.target.copy(to);
+          camera.position.add(delta);
+          focus = null;
+        } else {
+          focus = {
+            t0: performance.now(),
+            from: controls.target.clone(),
+            to,
+            camFrom: camera.position.clone(),
+            camTo: camera.position.clone().add(delta),
+          };
+        }
+      };
+
 
       // ---- sizing
       function resize() {
@@ -316,13 +359,28 @@ export function WardMap3D() {
             setHover((h) => (h ? { ...h, x: lastClient.x, y: lastClient.y } : h));
           }
         }
+        const flashing = flashId && now < flashUntil ? flashId : null;
         for (const m of meshes) {
-          const target = m.userData.targetY + (m.userData.info.id === selectedId ? 0.35 : 0);
+          const isFlash = m.userData.info.id === flashing;
+          const target =
+            m.userData.targetY +
+            (m.userData.info.id === selectedId ? 0.35 : 0) +
+            (isFlash ? 0.5 : 0);
           m.position.y += (target - m.position.y) * 0.18;
           const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
           const wantEmissive =
             m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
-          mat.emissive.setScalar(wantEmissive ? 0.14 : 0);
+          const pulse = isFlash ? 0.16 + 0.2 * Math.abs(Math.sin(now / 160)) : 0;
+          mat.emissive.setScalar(Math.max(wantEmissive ? 0.14 : 0, pulse));
+        }
+
+        // eased camera focus from the search
+        if (focus) {
+          const p = Math.min(1, (now - focus.t0) / 600);
+          const e = easeInOut(p);
+          controls.target.lerpVectors(focus.from, focus.to, e);
+          camera.position.lerpVectors(focus.camFrom, focus.camTo, e);
+          if (p >= 1) focus = null;
         }
 
         controls.update();
@@ -357,6 +415,7 @@ export function WardMap3D() {
 
       cleanups.push(() => {
         running = false;
+        focusRef.current = null;
         cancelAnimationFrame(rafId);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
@@ -402,10 +461,20 @@ export function WardMap3D() {
     );
   }
 
+  const pickWard = (w: WardInfo) => {
+    setSelected(w);
+    focusRef.current?.(w.id);
+  };
+
   return (
-    <div className="flex flex-col items-start lg:flex-row">
+    <div className="grid items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* Search sits first on mobile (above the stacked map) and top-right on desktop. */}
+      <div className="order-1 border-b border-border p-5 lg:order-none lg:col-start-2 lg:row-start-1">
+        <WardSearch onPick={pickWard} />
+      </div>
+
       {/* Sticky only in the two-column (lg) layout; stacked mobile keeps its normal flow. */}
-      <div className="min-w-0 w-full flex-1 border-b border-border lg:sticky lg:top-[var(--map-header-h,0px)] lg:flex lg:h-[calc(100svh-var(--map-header-h,0px))] lg:w-auto lg:flex-col lg:self-start lg:border-b-0 lg:border-r">
+      <div className="order-2 min-w-0 border-b border-border lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-[var(--map-header-h,0px)] lg:flex lg:h-[calc(100svh-var(--map-header-h,0px))] lg:flex-col lg:self-start lg:border-b-0 lg:border-r">
         <div className="relative lg:min-h-0 lg:flex-1">
           <div
             ref={mountRef}
@@ -444,7 +513,10 @@ export function WardMap3D() {
         </p>
       </div>
 
-      <aside ref={panelRef} className="w-full shrink-0 self-start p-5 lg:w-80">
+      <aside
+        ref={panelRef}
+        className="order-3 min-w-0 self-start p-5 lg:order-none lg:col-start-2 lg:row-start-2"
+      >
         {!selected && (
           <>
             <p className="rule-heading">
@@ -460,6 +532,222 @@ export function WardMap3D() {
     </div>
   );
 }
+
+// ------------------------------------------------------------------ ward search
+
+type SearchEntry = { info: WardInfo; oldWard?: string; keys: string[] };
+
+/** Lowercase, strip punctuation, collapse spacing: "K.R. Pura" === "kr pura". */
+function normalise(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function useWardSearchIndex() {
+  const [entries, setEntries] = useState<SearchEntry[]>([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const [wards, officials] = await Promise.all([
+        loadWards(),
+        loadOfficials().catch(() => null),
+      ]);
+      if (!alive) return;
+      const olds: Record<string, string | undefined> = {};
+      if (officials)
+        for (const [name, block] of Object.entries(officials.wards))
+          olds[normalise(name)] = block.oldBbmpWard;
+      setEntries(
+        wards.map((w) => {
+          const info: WardInfo = {
+            id: w.id,
+            name: w.n,
+            nameKn: w.kn,
+            corporation: `Bengaluru ${w.c} City Corporation`,
+            zone: w.z,
+            assembly: w.a,
+            population: w.pop,
+            number: w.w,
+          };
+          const oldWard = olds[normalise(w.n)];
+          return {
+            info,
+            ...(oldWard ? { oldWard } : {}),
+            // priority order: name, Kannada name, number, old BBMP ward, corporation, assembly
+            keys: [
+              normalise(w.n),
+              normalise(w.kn),
+              normalise(w.w),
+              normalise(oldWard ?? ""),
+              normalise(`Bengaluru ${w.c} City Corporation`),
+              normalise(w.a),
+            ],
+          };
+        }),
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return entries;
+}
+
+const OLD_WARD_KEY = 3;
+
+function WardSearch({ onPick }: { onPick: (w: WardInfo) => void }) {
+  const { t, lang } = useLang();
+  const corpShort = useCorporationShort();
+  const entries = useWardSearchIndex();
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const results = useMemo(() => {
+    const q = normalise(query);
+    if (q.length < 1) return [];
+    const scored: { e: SearchEntry; rank: number; starts: boolean }[] = [];
+    for (const e of entries) {
+      // compare with spacing removed too, so "K.R. Pura" === "KR Pura" === "kr pura"
+      const qc = q.replace(/ /g, "");
+      const rank = e.keys.findIndex(
+        (k) => k.length > 0 && (k.includes(q) || k.replace(/ /g, "").includes(qc)),
+      );
+      if (rank < 0) continue;
+      scored.push({ e, rank, starts: e.keys[rank]!.replace(/ /g, "").startsWith(qc) });
+    }
+    scored.sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        Number(b.starts) - Number(a.starts) ||
+        a.e.info.name.localeCompare(b.e.info.name),
+    );
+    return scored.slice(0, 8);
+  }, [entries, query]);
+
+  useEffect(() => setActive(0), [query]);
+
+  const choose = (i: number) => {
+    const hit = results[i];
+    if (!hit) return;
+    onPick(hit.e.info);
+  };
+
+  const onKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+    if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      setActive((a) => (results.length ? (a + 1) % results.length : 0));
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      setActive((a) => (results.length ? (a - 1 + results.length) % results.length : 0));
+    } else if (ev.key === "Enter") {
+      ev.preventDefault();
+      choose(active);
+    } else if (ev.key === "Escape") {
+      ev.preventDefault();
+      setQuery("");
+      inputRef.current?.focus();
+    }
+  };
+
+  const open = query.trim().length > 0;
+  const activeId = results[active] ? `ward-opt-${results[active]!.e.info.id}` : undefined;
+
+  return (
+    <div>
+      <label className="rule-heading block text-foreground" htmlFor="ward-search" lang={lang}>
+        {t("mapSearchLabel")}
+      </label>
+      <div className="mt-1.5 flex items-start gap-2">
+        <input
+          id="ward-search"
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={t("mapSearchPlaceholder")}
+          autoComplete="off"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="ward-search-results"
+          aria-autocomplete="list"
+          {...(activeId ? { "aria-activedescendant": activeId } : {})}
+          className="min-w-0 flex-1 border border-border bg-background px-2 py-1.5 text-sm"
+        />
+        {open && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            aria-label={t("mapSearchClear")}
+            className="shrink-0 border border-border px-1.5 py-1 text-[10px] uppercase hover:bg-secondary"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+      <p className="mt-1.5 text-[11px] text-muted-foreground" lang={lang}>
+        {t("mapSearchHint")}
+      </p>
+
+      {open && (
+        <ul
+          id="ward-search-results"
+          role="listbox"
+          aria-label={t("mapSearchResultsLabel")}
+          className="mt-2 border border-border"
+        >
+          {results.map((r, i) => {
+            const w = r.e.info;
+            const primary = lang === "kn" ? w.nameKn : w.name;
+            const secondary = lang === "kn" ? w.name : w.nameKn;
+            return (
+              <li key={w.id} className="border-b border-border last:border-b-0">
+                <button
+                  type="button"
+                  id={`ward-opt-${w.id}`}
+                  role="option"
+                  aria-selected={i === active}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => choose(i)}
+                  className={`block w-full px-2 py-1.5 text-left ${
+                    i === active ? "bg-secondary" : "hover:bg-secondary"
+                  }`}
+                >
+                  <span className="block text-sm leading-tight">{primary}</span>
+                  <span className="block text-xs text-muted-foreground">{secondary}</span>
+                  <span className="mono-stamp mt-0.5 block">
+                    {t("mapWardLabel")} {w.number} · {corpShort(w.corporation)}
+                  </span>
+                  {r.rank === OLD_WARD_KEY && r.e.oldWard && (
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground" lang={lang}>
+                      {t("mapSearchWasBbmp").replace("{ward}", r.e.oldWard)}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+          {!results.length && (
+            <li className="px-2 py-2">
+              <p className="text-sm" lang={lang}>
+                {t("mapSearchNoResults")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground" lang={lang}>
+                {t("mapSearchNoResultsHint")}
+              </p>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
 function WardPanel({ ward }: { ward: WardInfo }) {
   const { t, lang } = useLang();
