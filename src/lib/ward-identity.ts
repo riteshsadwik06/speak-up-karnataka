@@ -55,10 +55,12 @@ export function identityFor(ward: Ward | undefined | null, oldBbmpWard?: string 
   return {
     name: ward.ward_name,
     nameKn: ward.ward_name_kn || null,
-    number: ward.ward_id,
+    number: wardNumberOf(ward.ward_id),
     corporation: ward.corporation,
     zone: ward.zone_name,
+    assembly: ward.assembly || null,
     oldBbmpWard: oldBbmpWard ?? null,
+
   };
 }
 
