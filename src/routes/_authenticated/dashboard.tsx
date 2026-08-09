@@ -153,17 +153,11 @@ function Dashboard() {
 
   const [doneOpen, setDoneOpen] = useState(false);
 
-  /** Presentation-only triage: which pile does this row belong in? */
+  /** Shared with the detail page's next-action card, so the two cannot disagree. */
   function bucket(r: AppRow): "needs" | "waiting" | "done" {
-    if (r.status === "closed") return "done";
-    if (issueFor(r)) return "needs";
-    if (r.status === "draft") return "needs";
-    if (r.stage === "complaint" && r.closure_claimed_date) return "needs";
-    const clock = clockFor(r, byApp[r.id]);
-    if (clock.tone === "danger") return "needs";
-    if (r.status === "replied") return "needs";
-    return "waiting";
+    return triageOf(r, byApp[r.id]);
   }
+
 
   const groups = {
     needs: rows.filter((r) => bucket(r) === "needs"),
