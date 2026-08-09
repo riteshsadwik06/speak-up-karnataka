@@ -40,18 +40,7 @@ export type WardInfo = {
 export { CORP_COLOR } from "@/lib/ward-3d";
 
 
-const PORTAL_ZONE_COLOR: Record<string, string> = {
-  Mahadevapura: "#2c5c4f",
-  Yelahanka: "#8a6220",
-  Bommanahalli: "#8c3626",
-  Rajarajeshwarinagar: "#3b4a6b",
-};
-
 const GREY = "#a9a396";
-
-const SAHAAYA = "#7a3f8f";
-
-export type MapMode = "gba" | "portal" | "complaints";
 
 function hasWebGL(): boolean {
   try {
@@ -66,26 +55,18 @@ function easeInOut(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
-export function WardMap3D({ mode }: { mode: MapMode }) {
-  const { t, lang } = useLang();
+export function WardMap3D() {
+  const { t } = useLang();
   const corpShort = useCorporationShort();
-  const legendAllWards = t("mapLegendAllWards");
   const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const modeRef = useRef(mode);
   const [webgl, setWebgl] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<{ w: WardInfo; x: number; y: number } | null>(null);
   const [selected, setSelected] = useState<WardInfo | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const setModeColorsRef = useRef<((m: MapMode) => void) | null>(null);
 
   useEffect(() => setWebgl(hasWebGL()), []);
-
-  useEffect(() => {
-    modeRef.current = mode;
-    setModeColorsRef.current?.(mode);
-  }, [mode]);
 
   useEffect(() => {
     if (webgl !== true) return;
@@ -170,10 +151,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           zone: string;
           corp: string;
           baseColor: InstanceType<typeof THREE.Color>;
-          fromColor: InstanceType<typeof THREE.Color>;
-          toColor: InstanceType<typeof THREE.Color>;
-          fromOpacity: number;
-          toOpacity: number;
           delay: number;
           targetY: number;
         };
@@ -238,10 +215,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           zone: w.z,
           corp: w.c,
           baseColor: color,
-          fromColor: color.clone(),
-          toColor: color.clone(),
-          fromOpacity: 1,
-          toOpacity: 1,
           delay: Math.min(dist / 70, 1) * 0.45,
           targetY: 0,
         };
@@ -250,43 +223,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
         meshes.push(mesh);
       }
       setCounts(corpCounts);
-
-      // ---- colour + camera transition state
-      let colorT = 1;
-      let colorDur = 700;
-      let colorStart = 0;
-      const camFrom = new THREE.Vector3();
-      const camTo = new THREE.Vector3();
-      let camT = 1;
-
-      const CAM_A = new THREE.Vector3(60, 78, 92);
-      const CAM_B = new THREE.Vector3(48, 118, 74);
-
-      function targetFor(m: WardMesh, md: MapMode) {
-        if (md === "complaints") return { c: new THREE.Color(SAHAAYA), o: 1 };
-        if (md === "gba") return { c: new THREE.Color(CORP_COLOR[m.userData.corp] ?? GREY), o: 1 };
-        const pz = PORTAL_ZONE_COLOR[m.userData.zone];
-        return pz ? { c: new THREE.Color(pz), o: 1 } : { c: new THREE.Color(GREY), o: 0.45 };
-      }
-
-      function applyMode(md: MapMode, animate = true) {
-        for (const m of meshes) {
-          const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
-          const t = targetFor(m, md);
-          m.userData.fromColor = mat.color.clone();
-          m.userData.fromOpacity = mat.opacity;
-          m.userData.toColor = t.c;
-          m.userData.toOpacity = t.o;
-        }
-        colorStart = performance.now();
-        colorDur = animate ? 700 : 1;
-        colorT = 0;
-        camFrom.copy(camera.position);
-        camTo.copy(md === "portal" ? CAM_B : CAM_A);
-        camT = 0;
-      }
-      setModeColorsRef.current = (md) => applyMode(md);
-      applyMode(modeRef.current, false);
 
       // ---- interaction
       const raycaster = new THREE.Raycaster();
@@ -357,22 +293,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           if (m.scale.z < 1) m.scale.z = s;
         }
 
-        // colour transition
-        if (colorT < 1) {
-          colorT = Math.min(1, (now - colorStart) / colorDur);
-          const e = easeInOut(colorT);
-          for (const m of meshes) {
-            const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
-            mat.color.copy(m.userData.fromColor).lerp(m.userData.toColor, e);
-            mat.opacity = m.userData.fromOpacity + (m.userData.toOpacity - m.userData.fromOpacity) * e;
-          }
-        }
-        if (camT < 1) {
-          camT = Math.min(1, camT + 0.02);
-          const e = easeInOut(camT);
-          camera.position.lerpVectors(camFrom, camTo, e);
-        }
-
         // hover
         if (pointerActive) {
           const m = pick();
@@ -440,7 +360,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
         }
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
-        setModeColorsRef.current = null;
       });
     })();
 
@@ -450,32 +369,15 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
     };
   }, [webgl]);
 
-  const legend = useMemo(() => {
-    if (mode === "complaints") {
-      return [
-        {
-          color: SAHAAYA,
-          label: "Sahaaya 2.0",
-          note: legendAllWards.replace(
-            "{n}",
-            String(Object.values(counts).reduce((a, b) => a + b, 0)),
-          ),
-        },
-      ];
-    }
-    if (mode === "gba") {
-      return Object.keys(CORP_COLOR).map((c) => ({
+  const legend = useMemo(
+    () =>
+      Object.keys(CORP_COLOR).map((c) => ({
         color: CORP_COLOR[c]!,
         label: `${t("bengaluruWord")} ${corpShort(`Bengaluru ${c} City Corporation`)}`,
         note: legendWardCount.replace("{n}", String(counts[c] ?? 0)),
-      }));
-    }
-    return Object.keys(PORTAL_ZONE_COLOR).map((z) => ({
-      color: PORTAL_ZONE_COLOR[z]!,
-      label: z,
-      note: t("mapLegendVerifiedZone"),
-    }));
-  }, [mode, counts, t, corpShort, legendAllWards, legendWardCount]);
+      })),
+    [counts, t, corpShort, legendWardCount],
+  );
 
   if (webgl === false) {
     return (
@@ -524,19 +426,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
               <span className="mono-stamp">{l.note}</span>
             </span>
           ))}
-          {mode === "complaints" && (
-            <span className="text-[11px] text-muted-foreground" lang={lang}>
-              <T id="mapLegendComplaintsNote" />
-            </span>
-          )}
-          {mode === "portal" && (
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 opacity-50" style={{ backgroundColor: GREY }} />
-              <span className="text-[11px] text-muted-foreground" lang={lang}>
-                <T id="mapLegendNoPortalEquivalent" />
-              </span>
-            </span>
-          )}
         </div>
         <p className="border-t border-border p-3 text-[11px] text-muted-foreground sm:hidden">
           <T id="mapRotateHint" />
