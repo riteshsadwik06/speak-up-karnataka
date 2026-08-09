@@ -228,6 +228,7 @@ export function WardMap3D() {
           baseColor: color,
           delay: Math.min(dist / 70, 1) * 0.45,
           targetY: 0,
+          center: { x: cx, z: -cy },
         };
         corpCounts[w.c] = (corpCounts[w.c] ?? 0) + 1;
         scene.add(mesh);
