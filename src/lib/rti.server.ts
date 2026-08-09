@@ -1,4 +1,8 @@
 import { LEGAL } from "./rti-data";
+import { applicantFieldFor, applicantSignature, type Applicant } from "./applicant";
+
+export type { Applicant };
+
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
 const MODEL = "openai/gpt-5.6-sol";
