@@ -42,13 +42,18 @@ function useHomeTarget() {
 export function Wordmark({
   size = "sm",
   inline = false,
+  link = false,
   className = "",
 }: {
   size?: Size;
   /** Kannada beside Latin on one line, for tight vertical space. */
   inline?: boolean;
+  /** Wrap in a link home (registry when signed in, landing otherwise). */
+  link?: boolean;
   className?: string;
 }) {
+  const to = useHomeTarget();
+
   const kannada = (
     <span
       lang="kn"
@@ -68,19 +73,24 @@ export function Wordmark({
     </span>
   );
 
-  if (inline) {
-    return (
-      <span className={`flex items-baseline gap-2.5 ${className}`}>
-        {kannada}
-        {latin}
-      </span>
-    );
-  }
-
-  return (
+  const mark = inline ? (
+    <span className={`flex items-baseline gap-2.5 ${className}`}>
+      {kannada}
+      {latin}
+    </span>
+  ) : (
     <span className={`flex flex-col ${size === "lg" ? "gap-1" : "gap-0.5"} ${className}`}>
       {kannada}
       {latin}
     </span>
   );
+
+  if (!link) return mark;
+
+  return (
+    <Link to={to} aria-label="Vicharane home" className="pointer-events-auto inline-block">
+      {mark}
+    </Link>
+  );
 }
+
