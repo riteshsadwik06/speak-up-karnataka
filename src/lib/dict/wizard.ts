@@ -60,6 +60,11 @@ export const DICT_WIZARD = {
     kn: "ಉದಾ. ನಮ್ಮ ಗಲ್ಲಿಯ ಮಳೆನೀರು ಚರಂಡಿ ಕಳೆದ ಮಳೆಗಾಲದಿಂದ ಬ್ಲಾಕ್ ಆಗಿದ್ದು, ಮಳೆ ಬಂದಾಗಲೆಲ್ಲಾ ರಸ್ತೆ ಮುಳುಗುತ್ತದೆ…",
   },
   languageLabel: { en: "Language", kn: "ಭಾಷೆ" },
+  applicationLanguageLabel: { en: "Language of the application", kn: "ಅರ್ಜಿಯ ಭಾಷೆ" },
+  applicationLanguageHelp: {
+    en: "This sets the language of the letter that gets filed, not the language of this site. Change the site language with the toggle in the header.",
+    kn: "ಇದು ಸಲ್ಲಿಸಲಾಗುವ ಪತ್ರದ ಭಾಷೆಯನ್ನು ನಿರ್ಧರಿಸುತ್ತದೆ, ಈ ತಾಣದ ಭಾಷೆಯನ್ನಲ್ಲ. ತಾಣದ ಭಾಷೆಯನ್ನು ಶಿರೋಭಾಗದ ಟಾಗಲ್‌ನಿಂದ ಬದಲಾಯಿಸಿ.",
+  },
   continueButton: { en: "Continue", kn: "ಮುಂದುವರಿಸಿ" },
 
   step2WhoseProblem: { en: "Step 2 · Whose problem is this?", kn: "ಹಂತ 2 · ಇದು ಯಾರ ಜವಾಬ್ದಾರಿ?" },
