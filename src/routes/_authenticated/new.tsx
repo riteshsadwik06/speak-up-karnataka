@@ -34,7 +34,7 @@ import {
 } from "@/lib/rti.functions";
 import { findPlaceholders } from "@/lib/placeholders";
 import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
-import { identityWithHistory, wardForLocality } from "@/lib/ward-identity";
+import { identityWithHistory, wardForLocality, wardKey } from "@/lib/ward-identity";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useLang } from "@/lib/i18n";
@@ -145,7 +145,14 @@ function NewApplication() {
   /** Routing pass — the app proposes the owning authority instead of asking the user cold. */
   const routeFn = useServerFn(suggestRouting);
   const [routing, setRouting] = useState(false);
-  const [routeNote, setRouteNote] = useState<{ authority: string; ward: string; category: string; low: boolean } | null>(null);
+  const [routeNote, setRouteNote] = useState<{
+    authority: string;
+    ward: string;
+    category: string;
+    low: boolean;
+    unknownAuthority: boolean;
+    unknownLocality: string;
+  } | null>(null);
   const [keepCorpChoice, setKeepCorpChoice] = useState(false);
 
 
