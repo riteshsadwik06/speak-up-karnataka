@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import asset from "@/assets/gba-wards-3d.json.asset.json";
 import { portalZoneForGbaZone, PORTAL_AUTHORITIES } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
+import { acquireGlSlot, CORP_COLOR } from "@/lib/ward-3d";
 
 type RawWard = {
   id: string;
@@ -27,13 +28,8 @@ export type WardInfo = {
   number: string;
 };
 
-export const CORP_COLOR: Record<string, string> = {
-  Central: "#1f1d1a",
-  North: "#8a6220",
-  East: "#2c5c4f",
-  South: "#8c3626",
-  West: "#3b4a6b",
-};
+export { CORP_COLOR } from "@/lib/ward-3d";
+
 
 const PORTAL_ZONE_COLOR: Record<string, string> = {
   Mahadevapura: "#2c5c4f",
@@ -80,11 +76,16 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
 
   useEffect(() => {
     if (webgl !== true) return;
+    const release = acquireGlSlot();
+    if (!release) return;
     const mount = mountRef.current;
-    if (!mount) return;
+    if (!mount) {
+      release();
+      return;
+    }
 
     let disposed = false;
-    const cleanups: (() => void)[] = [];
+    const cleanups: (() => void)[] = [() => release()];
 
     (async () => {
       const THREE = await import("three");

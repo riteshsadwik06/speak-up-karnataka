@@ -1,12 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
+import { WardCity3D } from "@/components/ward-city-3d";
+import { NEUTRAL } from "@/lib/ward-3d";
 import { toast } from "sonner";
+
+const TONE_COLOR: Record<string, string> = {
+  danger: "#8c3626",
+  warn: "#8a6220",
+  calm: "#2c5c4f",
+  neutral: "#6f6a5f",
+};
+
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -82,11 +93,27 @@ function Dashboard() {
   }, [isLoading, data, seed, qc]);
 
   const byApp = data?.byApp ?? {};
-  const rows = [...(data?.apps ?? [])].sort(
+  const allRows = [...(data?.apps ?? [])].sort(
     (a, b) => clockFor(a, byApp[a.id]).urgency - clockFor(b, byApp[b.id]).urgency,
   );
-  const hasDemo = rows.some((r) => r.is_seeded);
-  const pending = rows.filter((r) => r.status !== "draft" && r.status !== "closed").length;
+  const [wardFilter, setWardFilter] = useState<string>("");
+  const rows = wardFilter ? allRows.filter((r) => r.ward_name === wardFilter) : allRows;
+  const hasDemo = allRows.some((r) => r.is_seeded);
+  const pending = allRows.filter((r) => r.status !== "draft" && r.status !== "closed").length;
+
+  const RANK: Record<string, number> = { danger: 3, warn: 2, calm: 1, neutral: 0 };
+  const wardTone = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of allRows) {
+      if (!r.ward_name) continue;
+      const tone = clockFor(r, byApp[r.id]).tone;
+      const prev = m[r.ward_name];
+      if (!prev || (RANK[tone] ?? 0) > (RANK[prev] ?? 0)) m[r.ward_name] = tone;
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+  const litCount = Object.keys(wardTone).length;
 
   return (
     <AppShell bare>
@@ -104,6 +131,36 @@ function Dashboard() {
           NEW FILING
         </Link>
       </header>
+
+      <section className="relative border-b border-border">
+        <WardCity3D
+          colorFor={(w) => {
+            const tone = wardTone[w.n];
+            return tone ? (TONE_COLOR[tone] ?? NEUTRAL) : NEUTRAL;
+          }}
+          colorKey={`${litCount}:${Object.entries(wardTone).sort().join(",")}`}
+          onWardClick={(w) => {
+            if (wardTone[w.n]) setWardFilter((cur) => (cur === w.n ? "" : w.n));
+          }}
+
+          className="h-[180px] w-full sm:h-[220px]"
+        />
+        <p className="mono-stamp absolute bottom-2 left-4">
+          {litCount === 0
+            ? "No applications yet."
+            : `${litCount} ${litCount === 1 ? "ward" : "wards"} with live filings`}
+          {wardFilter ? ` · filtered to ${wardFilter}` : ""}
+        </p>
+        {wardFilter && (
+          <button
+            onClick={() => setWardFilter("")}
+            className="absolute bottom-2 right-4 text-[11px] font-bold uppercase tracking-tight underline"
+          >
+            Clear filter
+          </button>
+        )}
+      </section>
+
 
       {isLoading && <p className="p-6 text-sm text-muted-foreground">Loading…</p>}
 

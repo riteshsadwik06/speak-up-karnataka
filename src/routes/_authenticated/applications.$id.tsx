@@ -28,6 +28,7 @@ import {
   type StageRailId,
 } from "@/lib/rti-data";
 import { StageRail } from "@/components/stage-rail";
+import { WardInset3D } from "@/components/ward-inset-3d";
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
 
@@ -235,11 +236,24 @@ function Detail() {
         )}
       </div>
 
-      <h1 className="mt-2 text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {app.public_authority}
-        {app.ward_name ? ` · ${app.ward_name} ward` : ""}
-      </p>
+      <div className="mt-2 flex flex-wrap items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {app.public_authority}
+            {app.ward_name ? ` · ${app.ward_name} ward` : ""}
+          </p>
+        </div>
+        {app.ward_id && (
+          <div className="hidden w-36 shrink-0 sm:block">
+            <WardInset3D
+              wardId={app.ward_id}
+              corporation={WARDS.find((w) => w.ward_id === app.ward_id)?.corporation ?? ""}
+              height={100}
+            />
+          </div>
+        )}
+      </div>
 
       <div className="mt-4">
         <StageRail current={currentStage} completed={railCompleted} />
