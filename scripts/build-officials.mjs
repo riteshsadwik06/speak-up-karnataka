@@ -20,7 +20,9 @@ const DEPARTMENT_BLOCKS = {
   bescom_subdivision: "bescomSubdivision",
   police_city: "policeCity",
   election_ac: "electionAc",
-  old_corporator: "oldCorporator",
+  bbmp_wards_old: "oldCorporator",
+  bwssb_service_station: "bwssbServiceStation",
+  bescom_section: "bescomSection",
 };
 
 const clean = (v) => (typeof v === "string" ? v.trim() : "");

@@ -17,14 +17,26 @@ import {
 import { WardMap } from "@/components/ward-map";
 import { WardInset3D } from "@/components/ward-inset-3d";
 import { StageRail } from "@/components/stage-rail";
+import {
+  OfficialsCaveat,
+  OfficialsCredit,
+  OfficialsList,
+  OfficialsSkeleton,
+  relevantOfficials,
+  useWardOfficials,
+} from "@/components/officials";
 import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/new")({
-  validateSearch: (search: Record<string, unknown>): { ward?: string | undefined } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { ward?: string | undefined; stage?: "complaint" | undefined } => ({
     ward: typeof search["ward"] === "string" ? search["ward"] : undefined,
+    stage: search["stage"] === "complaint" ? "complaint" : undefined,
   }),
+
   head: () => ({
 
     meta: [
@@ -77,8 +89,10 @@ function NewApplication() {
   const revise = useServerFn(reviseDraft);
   const runComplaint = useServerFn(generateComplaint);
 
+  const search = Route.useSearch();
   const [step, setStep] = useState(1);
-  const [path, setPath] = useState<Path | null>(null);
+  const [path, setPath] = useState<Path | null>(search.stage === "complaint" ? "complaint" : null);
+
   const [prior, setPrior] = useState<PriorOutcome | null>(null);
   const [complaintRef, setComplaintRef] = useState("");
   const [priorFiledDate, setPriorFiledDate] = useState("");
@@ -91,7 +105,7 @@ function NewApplication() {
   const [pioName, setPioName] = useState("");
   const [pioAddress, setPioAddress] = useState("");
   const [wardQuery, setWardQuery] = useState("");
-  const preselectedWard = Route.useSearch().ward ?? "";
+  const preselectedWard = search.ward ?? "";
   const [wardId, setWardId] = useState(
     preselectedWard && WARDS.some((w) => w.ward_id === preselectedWard) ? preselectedWard : "",
   );
@@ -727,6 +741,10 @@ function NewApplication() {
             </div>
           </div>
 
+          {ward && <ResponsibleOfficials wardName={ward.ward_name} category={complaint.category} />}
+
+
+
           <div className="paper-card p-5">
             <SectionLabel>Where to send it</SectionLabel>
             <p className="text-xs text-muted-foreground">
@@ -1035,5 +1053,36 @@ function NewApplication() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function ResponsibleOfficials({ wardName, category }: { wardName: string; category: string }) {
+  const { data, loading } = useWardOfficials(wardName);
+  const list = useMemo(
+    () => relevantOfficials(data?.officials ?? [], category),
+    [data, category],
+  );
+
+  return (
+    <div className="paper-card p-5">
+      <SectionLabel>Who is responsible</SectionLabel>
+      <p className="text-sm text-muted-foreground">
+        This is who is responsible. Call them, and quote your complaint number.
+      </p>
+      {loading ? (
+        <OfficialsSkeleton />
+      ) : (
+        <>
+          {data?.oldBbmpWard ? (
+            <p className="mt-2 text-xs">
+              {wardName} was <strong>{data.oldBbmpWard}</strong> ward under BBMP (pre-2025).
+            </p>
+          ) : null}
+          <OfficialsList officials={list} />
+          <OfficialsCaveat />
+          <OfficialsCredit />
+        </>
+      )}
+    </div>
   );
 }

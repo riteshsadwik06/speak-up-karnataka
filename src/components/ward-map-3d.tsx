@@ -4,6 +4,14 @@ import asset from "@/assets/gba-wards-3d.json.asset.json";
 import { portalZoneForGbaZone, PORTAL_AUTHORITIES } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
 import { acquireGlSlot, CORP_COLOR } from "@/lib/ward-3d";
+import {
+  OfficialsCaveat,
+  OfficialsCredit,
+  OfficialsList,
+  OfficialsSkeleton,
+  useWardOfficials,
+} from "@/components/officials";
+
 
 type RawWard = {
   id: string;
@@ -539,6 +547,9 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
 
 function WardPanel({ ward }: { ward: WardInfo }) {
   const portal = portalZoneForGbaZone(ward.zone);
+  const { data, loading } = useWardOfficials(ward.name);
+  const oldWard = data?.oldBbmpWard;
+
   return (
     <div>
       <p className="rule-heading">Ward {ward.number}</p>
@@ -566,12 +577,23 @@ function WardPanel({ ward }: { ward: WardInfo }) {
         ) : (
           <>
             <p className="mt-1.5 text-xs">
-              No verified mapping. The portal has no entry for {ward.zone}; pick the closest BBMP zone yourself:
+              No verified mapping. The portal has no entry for {ward.zone}; pick the closest BBMP zone
+              yourself:
             </p>
-            <ul className="mt-2 space-y-0.5">
+            <p className="mt-2 text-xs text-muted-foreground">
+              Picking the wrong zone is not fatal. Under Section 6(3) the authority must transfer your
+              application to the correct one within 5 days — you lose about five days, not your application.
+            </p>
+            {oldWard ? (
+              <p className="mt-2 text-xs">
+                This ward was <strong>{oldWard}</strong> under BBMP, which may help you choose.
+              </p>
+            ) : null}
+            <ul className="mt-2 space-y-1">
               {PORTAL_AUTHORITIES.bbmpZones.map((z) => (
-                <li key={z} className="mono-stamp leading-snug">
-                  {z}
+                <li key={z} className="flex items-start gap-2">
+                  <span className="mono-stamp min-w-0 flex-1 break-words leading-snug">{z}</span>
+                  <CopyZone value={z} />
                 </li>
               ))}
             </ul>
@@ -579,13 +601,56 @@ function WardPanel({ ward }: { ward: WardInfo }) {
         )}
       </div>
 
+      <div className="mt-4 border border-border p-3">
+        <p className="rule-heading text-foreground">Officials for this ward</p>
+        {loading ? (
+          <OfficialsSkeleton />
+        ) : (
+          <>
+            {oldWard ? (
+              <p className="mt-1.5 text-xs">
+                Was <strong>{oldWard}</strong> ward under BBMP (pre-2025).
+              </p>
+            ) : null}
+            <OfficialsList officials={data?.officials ?? []} />
+            <OfficialsCaveat />
+            <OfficialsCredit />
+          </>
+        )}
+      </div>
+
+      <Link
+        to="/new"
+        search={{ ward: ward.id, stage: "complaint" }}
+        className="mt-4 block bg-foreground px-4 py-2 text-center font-display text-sm font-bold text-background"
+      >
+        REPORT A PROBLEM HERE
+      </Link>
       <Link
         to="/new"
         search={{ ward: ward.id }}
-        className="mt-4 block bg-foreground px-4 py-2 text-center font-display text-sm font-bold text-background"
+        className="mt-2 block border border-foreground px-4 py-2 text-center font-display text-sm font-bold"
       >
-        DRAFT AN RTI FOR THIS WARD
+        DRAFT AN RTI
       </Link>
     </div>
   );
 }
+
+function CopyZone({ value }: { value: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void navigator.clipboard.writeText(value);
+        setDone(true);
+        window.setTimeout(() => setDone(false), 1500);
+      }}
+      className="shrink-0 border border-border px-1.5 py-0.5 text-[10px] uppercase hover:bg-secondary"
+    >
+      {done ? "Copied" : "Copy"}
+    </button>
+  );
+}
+

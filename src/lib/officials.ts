@@ -33,7 +33,10 @@ export type OfficialsData = {
   gbaCorporation: DepartmentBlock;
   bbmpZone: DepartmentBlock;
   bwssbSubdivision: DepartmentBlock;
+  bwssbServiceStation: DepartmentBlock;
   bescomSubdivision: DepartmentBlock;
+  bescomSection: DepartmentBlock;
+
   policeCity: DepartmentBlock;
   electionAc: DepartmentBlock;
   oldCorporator: DepartmentBlock;
