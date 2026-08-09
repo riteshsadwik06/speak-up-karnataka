@@ -20,15 +20,19 @@ const TONE_COLOR: Record<string, string> = {
   neutral: "#6f6a5f",
 };
 
-
-
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "What you have filed — Vicharane" },
-      { name: "description", content: "Track every civic complaint and RTI application, and its deadline." },
+      {
+        name: "description",
+        content: "Track every civic complaint and RTI application, and its deadline.",
+      },
       { property: "og:title", content: "What you have filed — Vicharane" },
-      { property: "og:description", content: "Live day counters for every complaint and RTI you have filed." },
+      {
+        property: "og:description",
+        content: "Live day counters for every complaint and RTI you have filed.",
+      },
     ],
   }),
   component: Dashboard,
@@ -159,7 +163,6 @@ function Dashboard() {
     return triageOf(r, byApp[r.id]);
   }
 
-
   const groups = {
     needs: rows.filter((r) => bucket(r) === "needs"),
     waiting: rows.filter((r) => bucket(r) === "waiting"),
@@ -211,7 +214,10 @@ function Dashboard() {
           }`}
         >
           <h3 className="min-w-0 truncate">
-            <span lang={lang} className={`rule-heading ${tone === "urgent" ? "text-destructive" : ""} ${lang === "kn" ? KN_TEXT : ""}`}>
+            <span
+              lang={lang}
+              className={`rule-heading ${tone === "urgent" ? "text-destructive" : ""} ${lang === "kn" ? KN_TEXT : ""}`}
+            >
               {title}
             </span>{" "}
             <span className="mono-stamp">{count}</span>
@@ -222,11 +228,15 @@ function Dashboard() {
               aria-expanded={open}
               className="shrink-0 text-[11px] font-bold uppercase tracking-tight underline"
             >
-              <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>{toggleLabel}</span>
+              <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+                {toggleLabel}
+              </span>
             </button>
           )}
         </div>
-        {children ? <ul className="divide-y divide-border border-t border-border">{children}</ul> : null}
+        {children ? (
+          <ul className="divide-y divide-border border-t border-border">{children}</ul>
+        ) : null}
       </section>
     );
   }
@@ -282,8 +292,6 @@ function Dashboard() {
     );
   }
 
-
-
   return (
     <AppShell bare>
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-6">
@@ -327,12 +335,18 @@ function Dashboard() {
           className="h-[180px] w-full sm:h-[220px]"
           ariaLabel={t("dashboardCityMapAriaLabel")}
         />
-        <p lang={lang} className={`mono-stamp absolute bottom-2 left-4 ${lang === "kn" ? KN_TEXT : ""}`}>
+        <p
+          lang={lang}
+          className={`mono-stamp absolute bottom-2 left-4 ${lang === "kn" ? KN_TEXT : ""}`}
+        >
           {litCount === 0
             ? t("dashboardNoApplicationsYet")
             : t("dashboardWardsWithLiveFilings")
                 .replace("{n}", String(litCount))
-                .replace("{noun}", litCount === 1 ? t("dashboardWardSingular") : t("dashboardWardPlural"))}
+                .replace(
+                  "{noun}",
+                  litCount === 1 ? t("dashboardWardSingular") : t("dashboardWardPlural"),
+                )}
           {wardFilter
             ? ` · ${t("dashboardFilteredTo").replace("{ward}", wardKnFor(wardFilter) ?? wardFilter)}`
             : ""}
@@ -349,13 +363,17 @@ function Dashboard() {
         )}
       </section>
 
-
       {isLoading && <p className="p-6 text-sm text-muted-foreground">{t("loading")}</p>}
 
       {!isLoading && rows.length === 0 && (
         <div className="p-10 text-center">
-          <p lang={lang} className={`font-display text-xl ${lang === "kn" ? KN_TEXT : ""}`}>{t("nothingFiled")}</p>
-          <Link to="/new" className="mt-4 inline-block bg-foreground px-4 py-2 text-sm font-bold text-background">
+          <p lang={lang} className={`font-display text-xl ${lang === "kn" ? KN_TEXT : ""}`}>
+            {t("nothingFiled")}
+          </p>
+          <Link
+            to="/new"
+            className="mt-4 inline-block bg-foreground px-4 py-2 text-sm font-bold text-background"
+          >
             <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
               {t("draftFirstRecord")}
             </span>
@@ -392,36 +410,34 @@ function Dashboard() {
         </Group>
       )}
 
-
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
         <p className="text-[11px] text-muted-foreground">{t("legalCalendarDays")}</p>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-        <button
-          onClick={() => void loadDemo()}
-          disabled={seeding}
-          className="min-h-10 flex-1 border border-foreground bg-foreground px-3 py-2 text-[11px] font-bold uppercase tracking-tight text-background disabled:opacity-50 sm:flex-none"
-        >
-          <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-            {seeding ? t("demoDataLoading") : t("loadDemoData")}
-          </span>
-        </button>
-        {hasDemo && (
           <button
-            onClick={async () => {
-              await clear();
-              await qc.invalidateQueries({ queryKey: ["applications"] });
-              toast.success(t("demoDataCleared"));
-            }}
-            className="min-h-10 flex-1 border border-border bg-background px-3 py-2 text-[11px] font-bold uppercase tracking-tight text-muted-foreground sm:flex-none"
+            onClick={() => void loadDemo()}
+            disabled={seeding}
+            className="min-h-10 flex-1 border border-foreground bg-foreground px-3 py-2 text-[11px] font-bold uppercase tracking-tight text-background disabled:opacity-50 sm:flex-none"
           >
             <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-              {t("clearDemoData")}
+              {seeding ? t("demoDataLoading") : t("loadDemoData")}
             </span>
           </button>
-        )}
+          {hasDemo && (
+            <button
+              onClick={async () => {
+                await clear();
+                await qc.invalidateQueries({ queryKey: ["applications"] });
+                toast.success(t("demoDataCleared"));
+              }}
+              className="min-h-10 flex-1 border border-border bg-background px-3 py-2 text-[11px] font-bold uppercase tracking-tight text-muted-foreground sm:flex-none"
+            >
+              <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+                {t("clearDemoData")}
+              </span>
+            </button>
+          )}
         </div>
       </footer>
     </AppShell>
   );
 }
-

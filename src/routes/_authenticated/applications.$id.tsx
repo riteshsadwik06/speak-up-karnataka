@@ -45,9 +45,15 @@ export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
     meta: [
       { title: "Filing — Vicharane" },
-      { name: "description", content: "The full complaint or RTI, its timeline, and your next legal step." },
+      {
+        name: "description",
+        content: "The full complaint or RTI, its timeline, and your next legal step.",
+      },
       { property: "og:title", content: "Filing — Vicharane" },
-      { property: "og:description", content: "Track the statutory clock and draft appeals on time." },
+      {
+        property: "og:description",
+        content: "Track the statutory clock and draft appeals on time.",
+      },
     ],
   }),
   component: Detail,
@@ -71,7 +77,11 @@ const POSTAL_PAYMENT_IDS = ["paymentModeIpo", "paymentModeDd", "paymentModeStamp
 
 const APPEAL_GROUND_IDS: Record<
   string,
-  "appealGroundRefused" | "appealGroundNoResponse" | "appealGroundExcessFee" | "appealGroundIncomplete" | "appealGroundOther"
+  | "appealGroundRefused"
+  | "appealGroundNoResponse"
+  | "appealGroundExcessFee"
+  | "appealGroundIncomplete"
+  | "appealGroundOther"
 > = {
   refused: "appealGroundRefused",
   no_response: "appealGroundNoResponse",
@@ -85,7 +95,8 @@ const inputClass =
 
 const primaryBtn =
   "w-full rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background disabled:opacity-50";
-const quietBtn = "w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50";
+const quietBtn =
+  "w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50";
 
 function Detail() {
   const { id } = Route.useParams();
@@ -128,26 +139,28 @@ function Detail() {
     },
   });
 
-  async function patch(values: Partial<{
-    status: string;
-    stage: string;
-    filed_date: string | null;
-    response_due_date: string | null;
-    reply_received_date: string | null;
-    reply_notes: string | null;
-    registration_number: string | null;
-    transferred_to: string | null;
-    transfer_date: string | null;
-    transfer_registration_number: string | null;
-    portal_authority: string | null;
-    complaint_ref: string | null;
-    complaint_filed_date: string | null;
-    closure_claimed_date: string | null;
-    escalation_count: number;
-    generated_requests: { text: string; rationale: string }[];
-    application_body: string;
-    application_body_kn: string | null;
-  }>) {
+  async function patch(
+    values: Partial<{
+      status: string;
+      stage: string;
+      filed_date: string | null;
+      response_due_date: string | null;
+      reply_received_date: string | null;
+      reply_notes: string | null;
+      registration_number: string | null;
+      transferred_to: string | null;
+      transfer_date: string | null;
+      transfer_registration_number: string | null;
+      portal_authority: string | null;
+      complaint_ref: string | null;
+      complaint_filed_date: string | null;
+      closure_claimed_date: string | null;
+      escalation_count: number;
+      generated_requests: { text: string; rationale: string }[];
+      application_body: string;
+      application_body_kn: string | null;
+    }>,
+  ) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -181,7 +194,8 @@ function Detail() {
   const clockStart = app.transfer_date ?? app.filed_date;
   const overdue = clockStart ? daysBetween(clockStart) > LEGAL.pioDays : false;
   const faaSilentDays = firstAppeal?.filed_date ? daysBetween(firstAppeal.filed_date) : 0;
-  const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
+  const secondAvailable =
+    !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
   /** The registry list and this page read the same classifier, so they cannot disagree. */
   const action = nextActionKind(app, data.appeals);
   // Portal-safe text is ALWAYS derived from the English body. toPortalSafe strips
@@ -272,7 +286,11 @@ function Detail() {
           : "rti";
 
   const railCompleted: StageRailId[] =
-    app.stage === "complaint" ? [] : app.complaint_ref || app.complaint_filed_date ? ["complaint"] : [];
+    app.stage === "complaint"
+      ? []
+      : app.complaint_ref || app.complaint_filed_date
+        ? ["complaint"]
+        : [];
 
   const isComplaint = app.stage === "complaint";
   const channel = complaintChannel(app.complaint_channel);
@@ -302,7 +320,12 @@ function Detail() {
     const issueText = clock.tone === "danger" ? clock.label : "";
     void issueText;
 
-    const shell = (title: string, body?: string, control?: React.ReactNode, tone: "urgent" | "calm" = "urgent") => (
+    const shell = (
+      title: string,
+      body?: string,
+      control?: React.ReactNode,
+      tone: "urgent" | "calm" = "urgent",
+    ) => (
       <section
         className={`border-2 p-5 ${tone === "urgent" ? "border-foreground bg-secondary/50" : "border-border bg-background"}`}
       >
@@ -445,7 +468,10 @@ function Detail() {
         t("naOverdueTitle"),
         `${t("deemedRefusalNotice")
           .replace("{days}", String(LEGAL.pioDays))
-          .replace("{window}", String(LEGAL.firstAppealWindowDays))} ${t("portalGroundToSelectLabel")}: ${groundLabel("no_response")}`,
+          .replace(
+            "{window}",
+            String(LEGAL.firstAppealWindowDays),
+          )} ${t("portalGroundToSelectLabel")}: ${groundLabel("no_response")}`,
         <>
           <button
             disabled={busy}
@@ -475,7 +501,9 @@ function Detail() {
     if (action === "second_appeal") {
       return shell(
         secondAvailable ? t("naSecondTitle") : t("sectionSecondAppealHeading"),
-        `${t("daysSinceFirstAppeal").replace("{n}", String(faaSilentDays))} ${t("secondAppealNotice")
+        `${t("daysSinceFirstAppeal").replace("{n}", String(faaSilentDays))} ${t(
+          "secondAppealNotice",
+        )
           .replace("{decisionDays}", String(LEGAL.faaDecisionDays))
           .replace("{maxDays}", String(LEGAL.faaMaxDays))
           .replace("{ksic}", LEGAL.ksicAddress)
@@ -587,7 +615,9 @@ function Detail() {
       <Fold
         id="where-to-send"
         label={t("sectionWhereToSend")}
-        summary={isComplaint ? (channel?.name ?? t("channelNotRecorded")) : t("summaryOnlineOrPost")}
+        summary={
+          isComplaint ? (channel?.name ?? t("channelNotRecorded")) : t("summaryOnlineOrPost")
+        }
       >
         {isComplaint ? (
           channel ? (
@@ -598,7 +628,12 @@ function Detail() {
                 <p className="mt-1 font-mono text-xs">{channel.phone}</p>
               ) : null}
               {"url" in channel && channel.url ? (
-                <a href={channel.url} target="_blank" rel="noreferrer" className="mt-1 block text-xs underline">
+                <a
+                  href={channel.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 block text-xs underline"
+                >
                   {channel.url}
                 </a>
               ) : null}
@@ -688,7 +723,9 @@ function Detail() {
                     {t("wardZoneNoEquivalentPrefix")} {wardZone}. {t("wardZoneNoEquivalentSuffix")}
                   </p>
                 )}
-                {kind === "bwssb" && <p className="mt-2 text-xs text-warning">{t("bwssbSplitWarning")}</p>}
+                {kind === "bwssb" && (
+                  <p className="mt-2 text-xs text-warning">{t("bwssbSplitWarning")}</p>
+                )}
                 <button
                   disabled={!(portalChoice || portalValue)}
                   onClick={() => patch({ portal_authority: portalChoice || portalValue })}
@@ -707,8 +744,14 @@ function Detail() {
           {isComplaint ? (
             <>
               <dl className="space-y-1.5 text-sm">
-                <TimelineRow label={t("complaintReferenceLabel")} value={app.complaint_ref ?? "—"} />
-                <TimelineRow label={t("sentOnLabel")} value={app.complaint_filed_date ?? t("notSentYet")} />
+                <TimelineRow
+                  label={t("complaintReferenceLabel")}
+                  value={app.complaint_ref ?? "—"}
+                />
+                <TimelineRow
+                  label={t("sentOnLabel")}
+                  value={app.complaint_filed_date ?? t("notSentYet")}
+                />
                 <TimelineRow
                   label={t("serviceExpectationLabel")}
                   value={`${COMPLAINT_EXPECTATION_DAYS} ${t("serviceExpectationDaysSuffix")}`}
@@ -722,7 +765,10 @@ function Detail() {
           ) : (
             <>
               <ul className="space-y-2 text-sm">
-                <TimelineRow label={t("timelineCreated")} value={String(app.created_at).slice(0, 10)} />
+                <TimelineRow
+                  label={t("timelineCreated")}
+                  value={String(app.created_at).slice(0, 10)}
+                />
                 <TimelineRow label={t("filedOn")} value={app.filed_date ?? "—"} />
                 {app.registration_number && (
                   <>
@@ -739,18 +785,26 @@ function Detail() {
                     </li>
                   </>
                 )}
-                {app.transfer_date && <TimelineRow label={t("timelineTransferred")} value={app.transfer_date} />}
+                {app.transfer_date && (
+                  <TimelineRow label={t("timelineTransferred")} value={app.transfer_date} />
+                )}
                 {app.transferred_to && (
                   <TimelineRow label={t("timelineTransferredTo")} value={app.transferred_to} />
                 )}
                 {app.transfer_registration_number && (
-                  <TimelineRow label={t("timelineNewRegNumber")} value={app.transfer_registration_number} />
+                  <TimelineRow
+                    label={t("timelineNewRegNumber")}
+                    value={app.transfer_registration_number}
+                  />
                 )}
                 <TimelineRow
                   label={app.transfer_date ? t("replyDueTransfer") : t("replyDueFiled")}
                   value={app.response_due_date ?? "—"}
                 />
-                <TimelineRow label={t("timelineReplyReceived")} value={app.reply_received_date ?? "—"} />
+                <TimelineRow
+                  label={t("timelineReplyReceived")}
+                  value={app.reply_received_date ?? "—"}
+                />
                 {firstAppeal && (
                   <TimelineRow
                     label={`${t("firstAppeal")} ${t("filedSuffix")}`}
@@ -907,7 +961,11 @@ function Detail() {
                 />
                 <button
                   onClick={() =>
-                    patch({ status: "replied", reply_received_date: replyDate, reply_notes: replyNotes })
+                    patch({
+                      status: "replied",
+                      reply_received_date: replyDate,
+                      reply_notes: replyNotes,
+                    })
                   }
                   className={quietBtn}
                 >
@@ -924,7 +982,10 @@ function Detail() {
               summary={
                 firstAppeal
                   ? `${t("firstAppeal")} ${firstAppeal.filed_date ? t("filedSuffix") : t("draftedValue")}`
-                  : t("firstAppealMustFileNotice").replace("{window}", String(LEGAL.firstAppealWindowDays))
+                  : t("firstAppealMustFileNotice").replace(
+                      "{window}",
+                      String(LEGAL.firstAppealWindowDays),
+                    )
               }
             >
               <div className="space-y-2 px-1">
@@ -999,7 +1060,10 @@ function Detail() {
                         ? t("secondAppealDraftedLabel")
                         : secondAvailable
                           ? t("btnDraftSecondAppeal")
-                          : t("availableAfterDays").replace("{n}", String(LEGAL.secondAppealAfterDays))}
+                          : t("availableAfterDays").replace(
+                              "{n}",
+                              String(LEGAL.secondAppealAfterDays),
+                            )}
                     </button>
                   </>
                 ) : null}
@@ -1068,7 +1132,9 @@ function Detail() {
                       <span className="font-medium">
                         {i + 1}. {r.text}
                       </span>
-                      <span className="mt-1 block text-xs text-muted-foreground">{r.rationale}</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {r.rationale}
+                      </span>
                     </li>
                   ))}
                 </ol>
@@ -1113,7 +1179,9 @@ function Detail() {
                 <button
                   disabled={bodyHasBlanks}
                   onClick={() => {
-                    const blob = new Blob([app.application_body], { type: "text/plain;charset=utf-8" });
+                    const blob = new Blob([app.application_body], {
+                      type: "text/plain;charset=utf-8",
+                    });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
@@ -1131,7 +1199,9 @@ function Detail() {
 
             {bodyKn ? (
               <>
-                <p className="mb-3 text-xs text-muted-foreground">{t("portalLatinOnlyNoticeApplication")}</p>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  {t("portalLatinOnlyNoticeApplication")}
+                </p>
                 <div className="mb-3 flex flex-wrap gap-2">
                   <button
                     onClick={() => setLetterVersion("kn")}
@@ -1167,7 +1237,9 @@ function Detail() {
                 <p className="mt-3 text-xs text-muted-foreground">{t("fileEnUsePortalNotice")}</p>
               )
             ) : null}
-            <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
+            <p
+              className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}
+            >
               {t("charactersOfLimit")
                 .replace("{count}", portalSafeBody.length.toLocaleString())
                 .replace("{limit}", PORTAL_MAX_CHARS.toLocaleString())}
@@ -1187,7 +1259,9 @@ function Detail() {
           </SectionLabel>
           <p className="text-xs text-muted-foreground">
             {t("groundsLabel")}: {ap.grounds}
-            {ap.filed_date ? ` · ${t("filedOnMiddot")} ${ap.filed_date}` : ` · ${t("notFiledYetMiddot")}`}
+            {ap.filed_date
+              ? ` · ${t("filedOnMiddot")} ${ap.filed_date}`
+              : ` · ${t("notFiledYetMiddot")}`}
             {ap.tier === "first"
               ? ap.due_date
                 ? ` · ${t("faaDecisionDueMiddot")} ${ap.due_date}`
@@ -1206,7 +1280,9 @@ function Detail() {
           )}
           {ap.body_kn ? (
             <>
-              <p className="mt-3 text-xs text-muted-foreground">{t("portalLatinOnlyNoticeAppeal")}</p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {t("portalLatinOnlyNoticeAppeal")}
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   onClick={() => setLetterVersion("kn")}
@@ -1371,7 +1447,8 @@ function ResponsibleOfficials({
           <>
             {data?.oldBbmpWard ? (
               <p className="mt-2 text-xs">
-                {t("oldBbmpWardPrefix")} <strong>{data.oldBbmpWard}</strong> {t("oldBbmpWardSuffix")}
+                {t("oldBbmpWardPrefix")} <strong>{data.oldBbmpWard}</strong>{" "}
+                {t("oldBbmpWardSuffix")}
               </p>
             ) : null}
             <OfficialsList officials={list} />
