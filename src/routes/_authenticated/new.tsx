@@ -97,7 +97,7 @@ function NewApplication() {
   const [pioName, setPioName] = useState("");
   const [pioAddress, setPioAddress] = useState("");
   const [wardQuery, setWardQuery] = useState("");
-  const preselectedWard = Route.useSearch().ward ?? "";
+  const preselectedWard = search.ward ?? "";
   const [wardId, setWardId] = useState(
     preselectedWard && WARDS.some((w) => w.ward_id === preselectedWard) ? preselectedWard : "",
   );
