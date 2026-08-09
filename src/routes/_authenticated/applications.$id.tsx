@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,14 @@ import {
 } from "@/lib/rti-data";
 import { StageRail } from "@/components/stage-rail";
 import { WardInset3D } from "@/components/ward-inset-3d";
+import {
+  OfficialsCaveat,
+  OfficialsCredit,
+  OfficialsList,
+  OfficialsSkeleton,
+  relevantOfficials,
+  useWardOfficials,
+} from "@/components/officials";
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
 
@@ -284,6 +292,13 @@ function Detail() {
                 Copy
               </button>
             </div>
+
+            {app.ward_name ? (
+              <ResponsibleOfficials
+                wardName={app.ward_name}
+                category={`${app.grievance_text ?? ""} ${app.subject ?? ""}`}
+              />
+            ) : null}
 
             <div className="paper-card p-5">
               <SectionLabel>What happened next?</SectionLabel>
@@ -1065,6 +1080,34 @@ function PortalString({ value }: { value: string }) {
       >
         Copy
       </button>
+    </div>
+  );
+}
+
+function ResponsibleOfficials({ wardName, category }: { wardName: string; category: string }) {
+  const { data, loading } = useWardOfficials(wardName);
+  const list = useMemo(() => relevantOfficials(data?.officials ?? [], category), [data, category]);
+
+  return (
+    <div className="paper-card p-5">
+      <SectionLabel>Who is responsible</SectionLabel>
+      <p className="text-sm text-muted-foreground">
+        This is who is responsible. Call them and quote your complaint number.
+      </p>
+      {loading ? (
+        <OfficialsSkeleton />
+      ) : (
+        <>
+          {data?.oldBbmpWard ? (
+            <p className="mt-2 text-xs">
+              {wardName} was <strong>{data.oldBbmpWard}</strong> ward under BBMP (pre-2025).
+            </p>
+          ) : null}
+          <OfficialsList officials={list} />
+          <OfficialsCaveat />
+          <OfficialsCredit />
+        </>
+      )}
     </div>
   );
 }
