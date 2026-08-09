@@ -4,6 +4,14 @@ import asset from "@/assets/gba-wards-3d.json.asset.json";
 import { portalZoneForGbaZone, PORTAL_AUTHORITIES } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
 import { acquireGlSlot, CORP_COLOR } from "@/lib/ward-3d";
+import {
+  OfficialsCaveat,
+  OfficialsCredit,
+  OfficialsList,
+  OfficialsSkeleton,
+  useWardOfficials,
+} from "@/components/officials";
+
 
 type RawWard = {
   id: string;
