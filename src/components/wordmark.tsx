@@ -3,6 +3,9 @@
  * No punctuation between the two lines — the pattern used on Namma Metro
  * and GBA signage. Latin stays in <title> tags; branding lives here.
  */
+import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type Size = "lg" | "sm";
 
@@ -15,6 +18,26 @@ const LATIN_SIZE: Record<Size, string> = {
   lg: "text-[0.9375rem] sm:text-[1.1rem]",
   sm: "text-[0.5rem]",
 };
+
+/** Signed-in users go to their registry; everyone else to the landing page. */
+function useHomeTarget() {
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (alive) setSignedIn(!!data.session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setSignedIn(!!session);
+    });
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+  return signedIn ? "/dashboard" : "/";
+}
+
 
 export function Wordmark({
   size = "sm",
