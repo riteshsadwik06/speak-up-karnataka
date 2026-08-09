@@ -565,7 +565,7 @@ function WardPanel({ ward }: { ward: WardInfo }) {
 function ZonePicker() {
   const { t, lang } = useLang();
   const zones = PORTAL_AUTHORITIES.bbmpZones;
-  const [zone, setZone] = useState(zones[0]!);
+  const [zone, setZone] = useState<string>(zones[0]!);
   return (
     <div className="mt-3">
       <label className="rule-heading block text-foreground" htmlFor="bbmp-zone" lang={lang}>
