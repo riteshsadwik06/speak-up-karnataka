@@ -170,6 +170,16 @@ export const STATUS_LABEL: Record<string, string> = {
   closed: "Closed",
 };
 
+/** Kannada forms of STATUS_LABEL, in the register the state portal uses. */
+export const STATUS_LABEL_KN: Record<string, string> = {
+  draft: "ಕರಡು",
+  filed: "ಸಲ್ಲಿಸಲಾಗಿದೆ",
+  replied: "ಉತ್ತರ ಬಂದಿದೆ",
+  first_appeal_filed: "ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+  second_appeal_filed: "ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+  closed: "ಮುಚ್ಚಲಾಗಿದೆ",
+};
+
 export function daysBetween(from: string | Date, to: string | Date = new Date()): number {
   const a = new Date(typeof from === "string" ? `${from}T00:00:00` : from);
   const b = new Date(typeof to === "string" ? `${to}T00:00:00` : to);
