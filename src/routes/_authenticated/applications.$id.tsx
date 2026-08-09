@@ -39,6 +39,8 @@ import {
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
 import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
+import { hasPlaceholders } from "@/lib/placeholders";
+import { PlaceholderBlockNote } from "@/components/missing-details";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
@@ -173,6 +175,7 @@ function Detail() {
   // Portal-safe text is ALWAYS derived from the English body. toPortalSafe strips
   // non-Latin characters, so running it over the Kannada version would empty it.
   const portalSafeBody = toPortalSafe(app.application_body);
+  const bodyHasBlanks = hasPlaceholders(app.application_body) || hasPlaceholders(bodyKn);
   const bodyKn = (app.application_body_kn as string | null) ?? "";
   const showKn = !!bodyKn && letterVersion === "kn";
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
