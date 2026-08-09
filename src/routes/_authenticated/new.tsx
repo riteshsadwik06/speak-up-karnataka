@@ -37,6 +37,8 @@ import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-detai
 import { identityWithHistory, wardForLocality, wardKey } from "@/lib/ward-identity";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
+import { useHydrated } from "@/hooks/use-hydrated";
+import { clearDraftCache, readDraftCache, writeDraftCache } from "@/lib/draft-cache";
 import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useChannelLabel, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
@@ -173,6 +175,42 @@ function NewApplication() {
   /** Hard guard against a double click firing two inserts before state updates. */
   const savingRef = useRef(false);
   const [dismissedAuthorityHint, setDismissedAuthorityHint] = useState(false);
+
+  /**
+   * The wizard is not interactive until React has hydrated. Until then we show
+   * a skeleton rather than a form that silently swallows taps and keystrokes.
+   */
+  const ready = useHydrated();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const [restored, setRestored] = useState(false);
+
+  // Restore anything typed before a reload, hydration reset or stray navigation.
+  useEffect(() => {
+    const cachedGrievance = readDraftCache("new:grievance");
+    const cachedStillWrong = readDraftCache("new:stillWrong");
+    if (cachedGrievance) {
+      setGrievance((prev) => prev || cachedGrievance);
+      setRestored(true);
+    }
+    if (cachedStillWrong) setStillWrong((prev) => prev || cachedStillWrong);
+    // Focus a neutral landmark, never a destructive control.
+    headingRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    writeDraftCache("new:grievance", grievance);
+  }, [ready, grievance]);
+
+  useEffect(() => {
+    if (!ready) return;
+    writeDraftCache("new:stillWrong", stillWrong);
+  }, [ready, stillWrong]);
+
+  function clearWizardCache() {
+    clearDraftCache("new:grievance", "new:stillWrong");
+  }
+
 
   const authority =
     authorityId === "other"
@@ -366,6 +404,7 @@ function NewApplication() {
         .select("id")
         .single();
       if (error) throw error;
+      clearWizardCache();
       router.navigate({ to: "/applications/$id", params: { id: data.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("couldNotSave"));
@@ -499,6 +538,7 @@ function NewApplication() {
         .select("id")
         .single();
       if (error) throw error;
+      clearWizardCache();
       if (drafts.length > 1) {
         updateActive({ saved: true, savedId: data.id });
         toast.success(t("savedSubject").replace("{subject}", active.subject));
@@ -545,6 +585,7 @@ function NewApplication() {
           results[d.subject] ? { ...d, saved: true, savedId: results[d.subject]! } : d,
         ),
       );
+      clearWizardCache();
       router.navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("couldNotSave"));
