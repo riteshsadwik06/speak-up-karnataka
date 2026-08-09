@@ -399,6 +399,86 @@ export function clockFor(
 }
 
 /**
+ * Contradiction guard. A record can only be described by one story: if the
+ * stored state cannot be reached by any lawful sequence of events, we say so
+ * instead of printing a status and a clock that disagree with each other.
+ * This reads state only — it never changes the statutory arithmetic above.
+ */
+export type Inconsistency = { reason: string; reasonKn: string };
+
+export function consistencyIssue(
+  app: {
+    status: string;
+    stage?: string | null;
+    filed_date: string | null;
+    reply_received_date: string | null;
+    complaint_filed_date?: string | null;
+    closure_claimed_date?: string | null;
+  },
+  appeals?: { tier: string; filed_date: string | null }[],
+): Inconsistency | null {
+  const list = appeals ?? [];
+
+  if (app.status === "closed" && !app.closure_claimed_date && !app.reply_received_date) {
+    return {
+      reason: "Recorded as closed but no closure date was captured.",
+      reasonKn: "ಮುಚ್ಚಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಆದರೆ ಮುಕ್ತಾಯದ ದಿನಾಂಕ ಇಲ್ಲ.",
+    };
+  }
+
+  if (app.stage === "complaint") {
+    if (app.status !== "draft" && !app.complaint_filed_date) {
+      return {
+        reason: "Marked as sent but no date of sending was recorded.",
+        reasonKn: "ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ, ಆದರೆ ಕಳುಹಿಸಿದ ದಿನಾಂಕ ಇಲ್ಲ.",
+      };
+    }
+    return null;
+  }
+
+  if (app.status !== "draft" && !app.filed_date) {
+    return {
+      reason: "Marked as filed but no filing date was recorded.",
+      reasonKn: "ಸಲ್ಲಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ, ಆದರೆ ಸಲ್ಲಿಕೆಯ ದಿನಾಂಕ ಇಲ್ಲ.",
+    };
+  }
+
+  if (app.status === "first_appeal_filed" && !list.some((a) => a.tier === "first")) {
+    return {
+      reason: "Status says a first appeal was filed, but no appeal record exists.",
+      reasonKn: "ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಲಾಗಿದೆ ಎಂದಿದೆ, ಆದರೆ ಮೇಲ್ಮನವಿ ದಾಖಲೆ ಇಲ್ಲ.",
+    };
+  }
+
+  const first = list.find((a) => a.tier === "first" && a.filed_date);
+  if (first?.filed_date && app.filed_date) {
+    const gap = daysBetween(app.filed_date, first.filed_date);
+    if (gap < 0) {
+      return {
+        reason: "An appeal is dated before the application it appeals against.",
+        reasonKn: "ಮೇಲ್ಮನವಿಯ ದಿನಾಂಕ ಅರ್ಜಿಯ ದಿನಾಂಕಕ್ಕಿಂತ ಮೊದಲಿದೆ.",
+      };
+    }
+    if (gap === 0) {
+      return {
+        reason: "An appeal is dated the same day the application was filed, which cannot happen.",
+        reasonKn: "ಅರ್ಜಿ ಸಲ್ಲಿಸಿದ ಅದೇ ದಿನ ಮೇಲ್ಮನವಿ ದಾಖಲಾಗಿದೆ — ಇದು ಸಾಧ್ಯವಿಲ್ಲ.",
+      };
+    }
+    if (!app.reply_received_date && gap < LEGAL.pioDays) {
+      return {
+        reason: `An appeal is recorded on day ${gap}, before the ${LEGAL.pioDays}-day reply period ended and with no reply on record.`,
+        reasonKn: `${gap}ನೇ ದಿನ ಮೇಲ್ಮನವಿ ದಾಖಲಾಗಿದೆ — ${LEGAL.pioDays} ದಿನಗಳ ಉತ್ತರ ಅವಧಿ ಮುಗಿಯುವ ಮೊದಲು ಮತ್ತು ಯಾವುದೇ ಉತ್ತರವಿಲ್ಲದೆ.`,
+      };
+    }
+  }
+
+  return null;
+}
+
+
+
+/**
  * Verified live URLs from the Karnataka RTI portal's own navigation.
  * Submit Request and Submit First Appeal both land on a guidelines page where
  * the user ticks an acknowledgement before the form appears — that is the

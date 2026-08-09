@@ -16,6 +16,19 @@ export const DICT_DASHBOARD = {
   dashboardWardSingular: { en: "ward", kn: "ವಾರ್ಡ್" },
   dashboardWardPlural: { en: "wards", kn: "ವಾರ್ಡ್" },
   dashboardFilteredTo: { en: "filtered to {ward}", kn: "{ward} ಗೆ ಸೀಮಿತ" },
+  dashboardRecordSummary: {
+    en: "{total} {recordNoun} tracked · {live} with a live statutory deadline.",
+    kn: "{total} {recordNoun} ಗಮನಿಸಲಾಗುತ್ತಿದೆ · {live} ಸಕ್ರಿಯ ಶಾಸನಬದ್ಧ ಕಾಲಮಿತಿಯೊಂದಿಗೆ.",
+  },
+  dashboardRecordSingular: { en: "record", kn: "ದಾಖಲೆ" },
+  dashboardRecordPlural: { en: "records", kn: "ದಾಖಲೆಗಳು" },
+  dashboardInconsistent: {
+    en: "Needs attention — inconsistent state",
+    kn: "ಗಮನ ಅಗತ್ಯ — ಹೊಂದಾಣಿಕೆಯಾಗದ ಸ್ಥಿತಿ",
+  },
+  loadDemoData: { en: "Load demo data", kn: "ಮಾದರಿ ದತ್ತಾಂಶ ಲೋಡ್ ಮಾಡಿ" },
+  demoDataLoaded: { en: "Demo data loaded", kn: "ಮಾದರಿ ದತ್ತಾಂಶ ಲೋಡ್ ಆಗಿದೆ" },
+  demoDataLoading: { en: "Loading demo data…", kn: "ಮಾದರಿ ದತ್ತಾಂಶ ಲೋಡ್ ಆಗುತ್ತಿದೆ…" },
   dashboardDemoTag: { en: "demo", kn: "ಮಾದರಿ" },
   dashboardComplaintTag: { en: "complaint", kn: "ದೂರು" },
   dashboardCityMapAriaLabel: {

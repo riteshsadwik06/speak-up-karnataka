@@ -22,20 +22,20 @@ export const DICT_COMMON = {
   secondAppeal: { en: "Second appeal", kn: "ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ" },
 
   // --- Navigation / shell ---
-  navRegistry: { en: "Registry", kn: "ನೋಂದಣಿ ಪಟ್ಟಿ" },
+  navRegistry: { en: "My filings", kn: "ನನ್ನ ಸಲ್ಲಿಕೆಗಳು" },
   navNewFiling: { en: "New filing", kn: "ಹೊಸ ಸಲ್ಲಿಕೆ" },
   navWardMap: { en: "Ward map", kn: "ವಾರ್ಡ್ ನಕ್ಷೆ" },
   navSignOut: { en: "Sign out", kn: "ನಿರ್ಗಮಿಸಿ" },
   navMenu: { en: "Menu", kn: "ಮೆನು" },
-  tagline: { en: "Public Records Tracker", kn: "ಸಾರ್ವಜನಿಕ ದಾಖಲೆಗಳ ಟ್ರ್ಯಾಕರ್" },
+  tagline: { en: "Complaints & RTI Tracker", kn: "ದೂರು ಮತ್ತು ಮಾಹಿತಿ ಹಕ್ಕು ಟ್ರ್ಯಾಕರ್" },
   dashboard: { en: "Dashboard", kn: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್" },
   logIn: { en: "Log in", kn: "ಪ್ರವೇಶಿಸಿ" },
   signUp: { en: "Sign up", kn: "ನೋಂದಾಯಿಸಿ" },
 
   // --- Registry / dashboard (legacy keys kept for existing call sites) ---
-  registryTitle: { en: "RTI Registry", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ನೋಂದಣಿ ಪಟ್ಟಿ" },
+  registryTitle: { en: "Complaints & RTIs", kn: "ದೂರುಗಳು ಮತ್ತು ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿಗಳು" },
   newFilingCta: { en: "NEW FILING", kn: "ಹೊಸ ಸಲ್ಲಿಕೆ" },
-  colRefStatus: { en: "Ref / Status", kn: "ಸಂಖ್ಯೆ / ಸ್ಥಿತಿ" },
+  colRefStatus: { en: "Status", kn: "ಸ್ಥಿತಿ" },
   colGrievance: { en: "Grievance & Authority", kn: "ದೂರು ಮತ್ತು ಪ್ರಾಧಿಕಾರ" },
   colTimeline: { en: "Timeline", kn: "ಕಾಲಾನುಕ್ರಮ" },
   colDeadline: { en: "Deadline", kn: "ಕಾಲಮಿತಿ" },
@@ -44,6 +44,7 @@ export const DICT_COMMON = {
   statusInProgress: { en: "In progress", kn: "ಪ್ರಗತಿಯಲ್ಲಿದೆ" },
   loading: { en: "Loading…", kn: "ಲೋಡ್ ಆಗುತ್ತಿದೆ…" },
   nothingFiled: { en: "Nothing filed yet", kn: "ಇನ್ನೂ ಏನೂ ಸಲ್ಲಿಸಿಲ್ಲ" },
+  draftFirstRecord: { en: "Report a problem or draft an RTI", kn: "ಸಮಸ್ಯೆ ವರದಿ ಮಾಡಿ ಅಥವಾ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿ ರಚಿಸಿ" },
   draftFirstRti: { en: "Draft your first RTI", kn: "ನಿಮ್ಮ ಮೊದಲ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿ ರಚಿಸಿ" },
   filedOn: { en: "Filed", kn: "ಸಲ್ಲಿಸಿದ್ದು" },
   awaitingAction: { en: "Awaiting your action", kn: "ನಿಮ್ಮ ಕ್ರಮಕ್ಕಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ" },

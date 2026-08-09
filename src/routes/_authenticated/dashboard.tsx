@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 import { WARDS } from "@/lib/wards";
 import { AppShell, StatusPill } from "@/components/app-shell";
-import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
+import { clockFor, consistencyIssue, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
 import { WardCity3D } from "@/components/ward-city-3d";
 import { NEUTRAL } from "@/lib/ward-3d";
@@ -24,10 +24,10 @@ const TONE_COLOR: Record<string, string> = {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "RTI registry — Vicharane" },
-      { name: "description", content: "Track every RTI application and its statutory deadline." },
-      { property: "og:title", content: "RTI registry — Vicharane" },
-      { property: "og:description", content: "Live day counters for every RTI you have filed." },
+      { title: "Complaints & RTIs — Vicharane" },
+      { name: "description", content: "Track every civic complaint and RTI application, and its deadline." },
+      { property: "og:title", content: "Complaints & RTIs — Vicharane" },
+      { property: "og:description", content: "Live day counters for every complaint and RTI you have filed." },
     ],
   }),
   component: Dashboard,
@@ -43,6 +43,8 @@ type AppRow = {
   response_due_date: string | null;
   reply_received_date: string | null;
   registration_number: string | null;
+  complaint_ref: string | null;
+  closure_claimed_date: string | null;
   is_seeded: boolean;
   created_at: string;
   stage: string;
@@ -72,7 +74,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("applications")
         .select(
-          "id, grievance_text, public_authority, ward_name, status, filed_date, response_due_date, reply_received_date, registration_number, is_seeded, created_at, stage, complaint_filed_date, escalation_count, transfer_date",
+          "id, grievance_text, public_authority, ward_name, status, filed_date, response_due_date, reply_received_date, registration_number, complaint_ref, closure_claimed_date, is_seeded, created_at, stage, complaint_filed_date, escalation_count, transfer_date",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -94,11 +96,32 @@ function Dashboard() {
     },
   });
 
+  const [seeding, setSeeding] = useState(false);
+  const autoSeeded = useRef(false);
+
   useEffect(() => {
+    if (autoSeeded.current) return;
     if (!isLoading && data && data.apps.length === 0) {
-      seed().then(() => qc.invalidateQueries({ queryKey: ["applications"] }));
+      autoSeeded.current = true;
+      setSeeding(true);
+      seed({ data: {} })
+        .then(() => qc.invalidateQueries({ queryKey: ["applications"] }))
+        .finally(() => setSeeding(false));
     }
   }, [isLoading, data, seed, qc]);
+
+  async function loadDemo() {
+    setSeeding(true);
+    try {
+      await seed({ data: { force: true } });
+      await qc.invalidateQueries({ queryKey: ["applications"] });
+      toast.success(t("demoDataLoaded"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load demo data");
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   const byApp = data?.byApp ?? {};
   const allRows = [...(data?.apps ?? [])].sort(
@@ -107,7 +130,16 @@ function Dashboard() {
   const [wardFilter, setWardFilter] = useState<string>("");
   const rows = wardFilter ? allRows.filter((r) => r.ward_name === wardFilter) : allRows;
   const hasDemo = allRows.some((r) => r.is_seeded);
-  const pending = allRows.filter((r) => r.status !== "draft" && r.status !== "closed").length;
+  /** One source of truth per row: either it is inconsistent, or it has a clock. */
+  const issueFor = (r: AppRow) => consistencyIssue(r, byApp[r.id]);
+  /** Counted only if it is actually being watched: filed, open, and coherent. */
+  const liveCount = allRows.filter(
+    (r) =>
+      r.status !== "draft" &&
+      r.status !== "closed" &&
+      !issueFor(r) &&
+      clockFor(r, byApp[r.id]).tone !== "neutral",
+  ).length;
 
   const RANK: Record<string, number> = { danger: 3, warn: 2, calm: 1, neutral: 0 };
   const wardTone = useMemo(() => {
@@ -132,9 +164,13 @@ function Dashboard() {
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-              {t("dashboardMonitoringDeadlines")
-                .replace("{n}", String(pending))
-                .replace("{noun}", pending === 1 ? t("dashboardDeadlineSingular") : t("dashboardDeadlinePlural"))}
+              {t("dashboardRecordSummary")
+                .replace("{total}", String(allRows.length))
+                .replace(
+                  "{recordNoun}",
+                  allRows.length === 1 ? t("dashboardRecordSingular") : t("dashboardRecordPlural"),
+                )
+                .replace("{live}", String(liveCount))}
             </span>
           </p>
         </div>
@@ -192,7 +228,7 @@ function Dashboard() {
           <p lang={lang} className={`font-display text-xl ${lang === "kn" ? KN_TEXT : ""}`}>{t("nothingFiled")}</p>
           <Link to="/new" className="mt-4 inline-block bg-foreground px-4 py-2 text-sm font-bold text-background">
             <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-              {t("draftFirstRti")}
+              {t("draftFirstRecord")}
             </span>
           </Link>
         </div>
@@ -211,20 +247,26 @@ function Dashboard() {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((row) => {
+                const issue = issueFor(row);
                 const clock = clockFor(row, byApp[row.id]);
-                const day = row.filed_date ? daysBetween(row.filed_date) : 0;
+                const ref = row.registration_number ?? row.complaint_ref;
+                // A complaint's clock starts when it was sent, not when an RTI was filed.
+                const startDate = row.stage === "complaint" ? row.complaint_filed_date ?? null : row.filed_date;
+                const day = startDate ? daysBetween(startDate) : 0;
                 const pct = Math.min(100, Math.round((day / LEGAL.pioDays) * 100));
                 return (
                   <tr key={row.id} className="group transition-colors hover:bg-muted">
                     <td className="p-4 align-top">
-                      <div className="mono-stamp mb-1.5">{row.registration_number ?? "———"}</div>
-                      <StatusPill tone={clock.tone}>
+                      {ref ? <div className="mono-stamp mb-1.5 hidden sm:block">{ref}</div> : null}
+                      <StatusPill tone={issue ? "danger" : clock.tone}>
                         <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-                          {row.status === "draft"
-                            ? t("statusNotFiled")
-                            : clock.tone === "danger"
-                              ? t("statusActionDue")
-                              : t("statusInProgress")}
+                          {issue
+                            ? t("dashboardInconsistent")
+                            : row.status === "draft"
+                              ? t("statusNotFiled")
+                              : clock.tone === "danger"
+                                ? t("statusActionDue")
+                                : t("statusInProgress")}
                         </span>
                       </StatusPill>
                     </td>
@@ -254,9 +296,9 @@ function Dashboard() {
                       </Link>
                     </td>
                     <td className="hidden p-4 align-top sm:table-cell">
-                      {row.filed_date ? (
+                      {startDate ? (
                         <div className="flex flex-col gap-1.5">
-                          <span className="mono-stamp">{t("filedOn")} {stamp(row.filed_date)}</span>
+                          <span className="mono-stamp">{t("filedOn")} {stamp(startDate)}</span>
                           <div className="h-1 w-28 bg-secondary">
                             <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
                           </div>
@@ -266,16 +308,27 @@ function Dashboard() {
                       )}
                     </td>
                     <td className="p-4 text-right align-top">
-                      <div
-                        className={`font-display text-base font-bold ${row.status === "draft" ? "text-muted-foreground/40" : ""}`}
-                      >
-                        {`${t("day")} ${row.filed_date ? day : 0}`}
-                      </div>
-                      <div
-                        className={`mt-0.5 text-[10px] font-bold uppercase leading-tight ${clock.tone === "danger" ? "text-destructive" : "text-muted-foreground"}`}
-                      >
-                        {lang === "kn" ? clock.labelKn : clock.label}
-                      </div>
+                      {issue ? (
+                        <div
+                          lang={lang}
+                          className={`text-[11px] font-medium leading-tight text-destructive ${lang === "kn" ? KN_TEXT : ""}`}
+                        >
+                          {lang === "kn" ? issue.reasonKn : issue.reason}
+                        </div>
+                      ) : (
+                        <>
+                          <div
+                            className={`font-display text-base font-bold ${row.status === "draft" ? "text-muted-foreground/40" : ""}`}
+                          >
+                            {`${t("day")} ${startDate ? day : 0}`}
+                          </div>
+                          <div
+                            className={`mt-0.5 text-[10px] font-bold uppercase leading-tight ${clock.tone === "danger" ? "text-destructive" : "text-muted-foreground"}`}
+                          >
+                            {lang === "kn" ? clock.labelKn : clock.label}
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );
@@ -287,6 +340,16 @@ function Dashboard() {
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
         <p className="text-[11px] text-muted-foreground">{t("legalCalendarDays")}</p>
+        <div className="flex flex-wrap items-center gap-4">
+        <button
+          onClick={() => void loadDemo()}
+          disabled={seeding}
+          className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground underline disabled:opacity-50"
+        >
+          <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+            {seeding ? t("demoDataLoading") : t("loadDemoData")}
+          </span>
+        </button>
         {hasDemo && (
           <button
             onClick={async () => {
@@ -301,6 +364,7 @@ function Dashboard() {
             </span>
           </button>
         )}
+        </div>
       </footer>
     </AppShell>
   );
