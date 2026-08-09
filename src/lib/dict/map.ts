@@ -8,10 +8,6 @@ export const DICT_MAP = {
     en: "The city is now the Greater Bengaluru Authority — five corporations, 369 wards. The RTI portal still lists the nine legacy BBMP zones. Height is population.",
     kn: "ನಗರ ಈಗ ಗ್ರೇಟರ್ ಬೆಂಗಳೂರು ಪ್ರಾಧಿಕಾರ — ಐದು ನಿಗಮಗಳು, 369 ವಾರ್ಡ್‌ಗಳು. ಮಾಹಿತಿ ಹಕ್ಕು ಪೋರ್ಟಲ್ ಇನ್ನೂ ಹಳೆಯ ಒಂಬತ್ತು ಬಿಬಿಎಂಪಿ ವಲಯಗಳನ್ನೇ ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ. ಎತ್ತರವು ಜನಸಂಖ್ಯೆಯನ್ನು ಸೂಚಿಸುತ್ತದೆ.",
   },
-  mapModeGba: { en: "GBA (today)", kn: "ಜಿಬಿಎ (ಇಂದು)" },
-  mapModePortal: { en: "RTI portal (still BBMP)", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ಪೋರ್ಟಲ್ (ಇನ್ನೂ ಬಿಬಿಎಂಪಿ)" },
-  mapModeComplaints: { en: "Where complaints go", kn: "ದೂರುಗಳು ಎಲ್ಲಿಗೆ ಹೋಗುತ್ತವೆ" },
-
   mapNoWebgl: {
     en: "Your browser cannot render 3D graphics, so this is the flat ward map instead.",
     kn: "ನಿಮ್ಮ ಬ್ರೌಸರ್ 3D ಗ್ರಾಫಿಕ್ಸ್ ರೆಂಡರ್ ಮಾಡಲಾಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಇದು ಬದಲಿಗೆ ಸಪಾಟ ವಾರ್ಡ್ ನಕ್ಷೆ.",
@@ -28,15 +24,12 @@ export const DICT_MAP = {
     kn: "ಎಲ್ಲಾ {n} ವಾರ್ಡ್‌ಗಳು, ಐದು ನಿಗಮಗಳು",
   },
   mapLegendWardCount: { en: "{n} wards", kn: "{n} ವಾರ್ಡ್‌ಗಳು" },
-  mapLegendVerifiedZone: { en: "verified portal zone", kn: "ಪರಿಶೀಲಿಸಲಾದ ಪೋರ್ಟಲ್ ವಲಯ" },
-  mapLegendComplaintsNote: {
-    en: "All five city corporations route civic complaints through Sahaaya 2.0. Water and sewerage go to BWSSB (1916) and power to BESCOM (1912) instead - those are not ward-mapped.",
-    kn: "ಐದೂ ನಗರ ನಿಗಮಗಳು ನಾಗರಿಕ ದೂರುಗಳನ್ನು Sahaaya 2.0 ಮೂಲಕ ರವಾನಿಸುತ್ತವೆ. ನೀರು ಮತ್ತು ಒಳಚರಂಡಿ ಸಮಸ್ಯೆಗಳು BWSSB (1916) ಗೆ ಮತ್ತು ವಿದ್ಯುತ್ ಸಮಸ್ಯೆಗಳು BESCOM (1912) ಗೆ ಹೋಗುತ್ತವೆ - ಅವು ವಾರ್ಡ್-ಆಧಾರಿತವಲ್ಲ.",
+  mapMatchedFromZone: {
+    en: "Matched from this ward's GBA zone.",
+    kn: "ಈ ವಾರ್ಡ್‌ನ ಜಿಬಿಎ ವಲಯದಿಂದ ಹೊಂದಿಸಲಾಗಿದೆ.",
   },
-  mapLegendNoPortalEquivalent: {
-    en: "No verified portal equivalent — you must choose the BBMP zone yourself when filing.",
-    kn: "ಪರಿಶೀಲಿಸಲಾದ ಪೋರ್ಟಲ್ ಸಮಾನಾಂತರವಿಲ್ಲ — ಸಲ್ಲಿಸುವಾಗ ನೀವೇ ಬಿಬಿಎಂಪಿ ವಲಯವನ್ನು ಆಯ್ಕೆಮಾಡಬೇಕು.",
-  },
+  mapChooseBbmpZone: { en: "Choose the BBMP zone", kn: "ಬಿಬಿಎಂಪಿ ವಲಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ" },
+  mapGbaZoneLine: { en: "GBA zone: {zone} ({corp})", kn: "ಜಿಬಿಎ ವಲಯ: {zone} ({corp})" },
 
   mapWardDetailHeading: { en: "Ward detail", kn: "ವಾರ್ಡ್ ವಿವರ" },
   mapWardDetailHint: {
@@ -51,8 +44,8 @@ export const DICT_MAP = {
 
   mapOnPortalHeading: { en: "On the RTI portal", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ಪೋರ್ಟಲ್‌ನಲ್ಲಿ" },
   mapNoVerifiedMapping: {
-    en: "No verified mapping. The portal has no entry for {zone}; pick the closest BBMP zone yourself:",
-    kn: "ಪರಿಶೀಲಿಸಲಾದ ಸಮಾನಾಂತರವಿಲ್ಲ. {zone} ಗೆ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ನಮೂದು ಇಲ್ಲ; ಹತ್ತಿರದ ಬಿಬಿಎಂಪಿ ವಲಯವನ್ನು ನೀವೇ ಆಯ್ಕೆಮಾಡಿ:",
+    en: "No verified mapping. The portal has no entry for {ward}.",
+    kn: "ಪರಿಶೀಲಿಸಲಾದ ಸಮಾನಾಂತರವಿಲ್ಲ. {ward} ಗೆ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ನಮೂದು ಇಲ್ಲ.",
   },
   mapSection63Note: {
     en: "Picking the wrong zone is not fatal. Under Section 6(3) the authority must transfer your application to the correct one within 5 days — you lose about five days, not your application.",
