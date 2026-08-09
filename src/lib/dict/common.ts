@@ -26,6 +26,20 @@ export const DICT_COMMON = {
   navNewFiling: { en: "New filing", kn: "ಹೊಸ ಸಲ್ಲಿಕೆ" },
   navWardMap: { en: "Ward map", kn: "ವಾರ್ಡ್ ನಕ್ಷೆ" },
   navSignOut: { en: "Sign out", kn: "ನಿರ್ಗಮಿಸಿ" },
+  navSignOutConfirm: { en: "Tap again to sign out", kn: "ನಿರ್ಗಮಿಸಲು ಮತ್ತೊಮ್ಮೆ ಒತ್ತಿ" },
+  formPreparing: {
+    en: "Getting the form ready…",
+    kn: "ಫಾರ್ಮ್ ಸಿದ್ಧವಾಗುತ್ತಿದೆ…",
+  },
+  formPreparingHelp: {
+    en: "Do not start typing yet — the fields turn on in a moment.",
+    kn: "ಇನ್ನೂ ಟೈಪ್ ಮಾಡಬೇಡಿ — ಕ್ಷಣದಲ್ಲಿ ಫೀಲ್ಡ್‌ಗಳು ಸಕ್ರಿಯವಾಗುತ್ತವೆ.",
+  },
+  restoredFromSession: {
+    en: "We brought back what you had typed.",
+    kn: "ನೀವು ಟೈಪ್ ಮಾಡಿದ್ದನ್ನು ಮರಳಿ ತಂದಿದ್ದೇವೆ.",
+  },
+
   navMenu: { en: "Menu", kn: "ಮೆನು" },
   tagline: { en: "Track what you have filed", kn: "ನೀವು ಸಲ್ಲಿಸಿದ್ದನ್ನು ಗಮನಿಸಿ" },
   dashboard: { en: "Dashboard", kn: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್" },
