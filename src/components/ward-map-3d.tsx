@@ -512,7 +512,10 @@ export function WardMap3D() {
         </p>
       </div>
 
-      <aside ref={panelRef} className="w-full shrink-0 self-start p-5 lg:w-80">
+      <aside
+        ref={panelRef}
+        className="order-3 min-w-0 self-start p-5 lg:order-none lg:col-start-2 lg:row-start-2"
+      >
         {!selected && (
           <>
             <p className="rule-heading">
