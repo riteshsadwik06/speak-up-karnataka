@@ -81,9 +81,9 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
  * A fabricated official identifier in a document a citizen files is worse than none.
  */
 const IDENTIFIER_PATTERNS: RegExp[] = [
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|number|#)\s*)?[A-Z]-?\d{1,4}\b/g,
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|number|#)\s*)?\d{1,4}\b/g,
-  /\b[A-Z]-\d{3}\b/g,
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?[A-Z]-?\d{1,4}\b/gi,
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?\d{1,4}\b/gi,
+  /\b[A-Z]-\d{3}\b/gi,
 ];
 
 export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
