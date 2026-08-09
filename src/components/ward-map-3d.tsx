@@ -460,10 +460,20 @@ export function WardMap3D() {
     );
   }
 
+  const pickWard = (w: WardInfo) => {
+    setSelected(w);
+    focusRef.current?.(w.id);
+  };
+
   return (
-    <div className="flex flex-col items-start lg:flex-row">
+    <div className="grid items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* Search sits first on mobile (above the stacked map) and top-right on desktop. */}
+      <div className="order-1 border-b border-border p-5 lg:order-none lg:col-start-2 lg:row-start-1">
+        <WardSearch onPick={pickWard} />
+      </div>
+
       {/* Sticky only in the two-column (lg) layout; stacked mobile keeps its normal flow. */}
-      <div className="min-w-0 w-full flex-1 border-b border-border lg:sticky lg:top-[var(--map-header-h,0px)] lg:flex lg:h-[calc(100svh-var(--map-header-h,0px))] lg:w-auto lg:flex-col lg:self-start lg:border-b-0 lg:border-r">
+      <div className="order-2 min-w-0 border-b border-border lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-[var(--map-header-h,0px)] lg:flex lg:h-[calc(100svh-var(--map-header-h,0px))] lg:flex-col lg:self-start lg:border-b-0 lg:border-r">
         <div className="relative lg:min-h-0 lg:flex-1">
           <div
             ref={mountRef}
