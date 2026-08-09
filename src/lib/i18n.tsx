@@ -60,12 +60,34 @@ const LangContext = createContext<Ctx>({
   t: (id) => DICT[id].en,
 });
 
+/**
+ * Runs in <head> before hydration. It applies the stored language to the
+ * document immediately AND captures a language-toggle click that lands before
+ * React has hydrated, so the very first tap always counts (BUG 1: the first
+ * click used to be swallowed on a slow connection).
+ */
+export const EARLY_LANG_SCRIPT = `(function(){try{var K=${JSON.stringify(STORAGE_KEY)};var v=localStorage.getItem(K);if(v!=='kn'&&v!=='en'){v='en';}window.__vLang=v;document.documentElement.lang=v;document.addEventListener('click',function(e){if(window.__vLangHydrated){return;}var t=e.target;var el=t&&t.closest?t.closest('[data-lang-toggle]'):null;if(!el){return;}var next=el.getAttribute('data-lang-next')||(window.__vLang==='kn'?'en':'kn');window.__vLang=next;document.documentElement.lang=next;try{localStorage.setItem(K,next);}catch(_){}},true);}catch(_){}})();`;
+
+declare global {
+  interface Window {
+    __vLang?: Lang;
+    __vLangHydrated?: boolean;
+  }
+}
+
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    // The early script already resolved the stored value, and folded in any
+    // pre-hydration toggle click. Read from it, then take over.
+    const early = window.__vLang;
+    const stored = early ?? window.localStorage.getItem(STORAGE_KEY);
     if (stored === "kn" || stored === "en") setLangState(stored);
+    window.__vLangHydrated = true;
+    return () => {
+      window.__vLangHydrated = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -74,12 +96,14 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
+    if (typeof window !== "undefined") window.__vLang = l;
     try {
       window.localStorage.setItem(STORAGE_KEY, l);
     } catch {
       /* storage unavailable — the toggle still works for this session */
     }
   }, []);
+
 
   const t = useCallback((id: StrId) => {
     const entry = DICT[id] as { en: string; kn: string } | undefined;
@@ -215,9 +239,12 @@ export function LangToggle({ className = "" }: { className?: string }) {
   return (
     <button
       type="button"
+      data-lang-toggle=""
+      data-lang-next={next}
       onClick={() => setLang(next)}
       lang={next}
       aria-label={next === "kn" ? t("langToggleLabelKn") : t("langToggleLabelEn")}
+
       className={`shrink-0 whitespace-nowrap rounded-sm border border-border px-2.5 py-1.5 text-xs font-medium leading-[1.6] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         next === "kn" ? "font-kannada" : ""
       } ${className}`}
