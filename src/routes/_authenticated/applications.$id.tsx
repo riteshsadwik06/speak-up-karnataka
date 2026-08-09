@@ -317,9 +317,6 @@ function Detail() {
   /* ---------------- Next action ---------------- */
 
   function NextAction() {
-    const issueText = clock.tone === "danger" ? clock.label : "";
-    void issueText;
-
     const shell = (
       title: string,
       body?: string,
