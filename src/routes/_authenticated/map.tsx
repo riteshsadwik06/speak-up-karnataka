@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AppShell } from "@/components/app-shell";
 import { WardMap3D } from "@/components/ward-map-3d";
 import { T, useLang } from "@/lib/i18n";
