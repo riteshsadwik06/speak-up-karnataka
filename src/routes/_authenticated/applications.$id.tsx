@@ -167,7 +167,7 @@ function Detail() {
   async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
     try {
-      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround } });
+      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround, lang } });
       await qc.invalidateQueries({ queryKey: ["application", id] });
       toast.success(`${tier === "first" ? "First" : "Second"} appeal drafted`);
     } catch (err) {
@@ -195,6 +195,7 @@ function Detail() {
           authority: app.public_authority,
           ward: app.ward_name,
           language: app.language,
+          lang,
           falseClosure: {
             ref: app.complaint_ref ?? "",
             complaintText: app.complaint_text ?? app.grievance_text,
@@ -210,6 +211,7 @@ function Detail() {
         closure_claimed_date: closureDate || null,
         generated_requests: result.draft.requests,
         application_body: result.body,
+        application_body_kn: result.bodyKn ?? null,
       });
       toast.success("RTI drafted against the closure");
     } catch (err) {
