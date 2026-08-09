@@ -27,13 +27,8 @@ export type WardInfo = {
   number: string;
 };
 
-export const CORP_COLOR: Record<string, string> = {
-  Central: "#1f1d1a",
-  North: "#8a6220",
-  East: "#2c5c4f",
-  South: "#8c3626",
-  West: "#3b4a6b",
-};
+export { CORP_COLOR } from "@/lib/ward-3d";
+
 
 const PORTAL_ZONE_COLOR: Record<string, string> = {
   Mahadevapura: "#2c5c4f",
