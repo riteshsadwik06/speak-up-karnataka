@@ -41,7 +41,7 @@ function Landing() {
         <header className="flex items-center justify-between gap-4 border-b border-border p-6">
           <div>
             <h1>
-              <Wordmark size="sm" />
+              <Wordmark size="sm" link />
             </h1>
             <p className="rule-heading mt-1.5">Public Records Tracker</p>
           </div>
@@ -68,7 +68,7 @@ function Landing() {
               className="h-[240px] w-full sm:h-[340px]"
             />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <Wordmark size="lg" className="items-center text-center" />
+              <Wordmark size="lg" link className="items-center text-center" />
             </div>
             <p className="mono-stamp absolute bottom-2 left-4">
               369 wards · five city corporations · extruded by population
@@ -135,7 +135,7 @@ function Landing() {
         </section>
 
         <footer className="p-6">
-          <Wordmark size="sm" inline className="mb-3" />
+          <Wordmark size="sm" inline link className="mb-3" />
           <p className="mono-stamp">
             Section 6(2): a public authority cannot require you to give a reason for wanting the information.
             Vicharane never asks you for one.
