@@ -227,7 +227,17 @@ function Dashboard() {
                         </h3>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {row.public_authority}
-                          {row.ward_name ? ` • ${wardKnFor(row.ward_name) ?? row.ward_name}` : ""}
+                          {row.ward_name ? (
+                            <>
+                              {" • "}
+                              <span lang={wardKnFor(row.ward_name) ? "kn" : undefined} className={wardKnFor(row.ward_name) ? KN_TEXT : undefined}>
+                                {wardKnFor(row.ward_name) ?? row.ward_name}
+                              </span>
+                              {wardKnFor(row.ward_name) ? (
+                                <span className="text-[11px] text-muted-foreground/70"> ({row.ward_name})</span>
+                              ) : null}
+                            </>
+                          ) : null}
                           {row.is_seeded ? " • demo" : ""}
                           {row.stage === "complaint" ? " • complaint" : ""}
                         </p>
