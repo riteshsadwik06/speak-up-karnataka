@@ -1302,6 +1302,15 @@ function Detail() {
           {ap.body_kn && letterVersion === "kn" ? (
             <p className="mt-2 text-xs text-muted-foreground">{t("postThisVersionNote")}</p>
           ) : null}
+          {hasPlaceholders(ap.body) ? <PlaceholderBlockNote /> : null}
+          <div className="mt-3">
+            <MissingDetails
+              placeholders={findPlaceholders(ap.body)}
+              busy={appealBusy === ap.id}
+              onFill={(instruction, fields) => void fillAppealBlanks(ap.id, instruction, fields)}
+            />
+          </div>
+
           {!ap.filed_date && (
             <div className="mt-3">
               <label className="rule-heading block">{t("portalRegNumberOptionalLabel")}</label>
