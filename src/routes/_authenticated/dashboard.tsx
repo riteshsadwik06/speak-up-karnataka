@@ -101,7 +101,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (autoSeeded.current) return;
-    if (!isLoading && data && data.apps.length === 0) {
+    if (!isLoading && data && !data.apps.some((app) => app.is_seeded)) {
       autoSeeded.current = true;
       setSeeding(true);
       seed({ data: {} })
@@ -350,11 +350,11 @@ function Dashboard() {
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
         <p className="text-[11px] text-muted-foreground">{t("legalCalendarDays")}</p>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
         <button
           onClick={() => void loadDemo()}
           disabled={seeding}
-          className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground underline disabled:opacity-50"
+          className="min-h-10 flex-1 border border-foreground bg-foreground px-3 py-2 text-[11px] font-bold uppercase tracking-tight text-background disabled:opacity-50 sm:flex-none"
         >
           <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
             {seeding ? t("demoDataLoading") : t("loadDemoData")}
@@ -367,7 +367,7 @@ function Dashboard() {
               await qc.invalidateQueries({ queryKey: ["applications"] });
               toast.success(t("demoDataCleared"));
             }}
-            className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground underline"
+            className="min-h-10 flex-1 border border-border bg-background px-3 py-2 text-[11px] font-bold uppercase tracking-tight text-muted-foreground sm:flex-none"
           >
             <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
               {t("clearDemoData")}

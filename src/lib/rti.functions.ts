@@ -203,6 +203,7 @@ export const seedDemoData = createServerFn({ method: "POST" })
   .inputValidator((input: { force?: boolean } | undefined) => input ?? {})
   .handler(async ({ data, context }) => {
     const force = data.force === true;
+    const rows = buildSeedRows(context.userId);
 
     if (force) {
       // Re-runnable on demand: wipe only previously seeded rows, never real ones.
@@ -216,11 +217,21 @@ export const seedDemoData = createServerFn({ method: "POST" })
       const { count } = await context.supabase
         .from("applications")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", context.userId);
-      if ((count ?? 0) > 0) return { seeded: 0 };
+        .eq("user_id", context.userId)
+        .eq("is_seeded", true);
+      if ((count ?? 0) === rows.length) return { seeded: 0 };
+
+      // Repair missing or older partial seed sets without touching real filings.
+      if ((count ?? 0) > 0) {
+        const { error: delError } = await context.supabase
+          .from("applications")
+          .delete()
+          .eq("user_id", context.userId)
+          .eq("is_seeded", true);
+        if (delError) throw new Error(delError.message);
+      }
     }
 
-    const rows = buildSeedRows(context.userId);
     const inserts = rows.map(({ _first_appeal_date, ...row }) => row);
     const { data: created, error } = await context.supabase
       .from("applications")
