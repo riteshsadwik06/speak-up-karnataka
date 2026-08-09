@@ -28,21 +28,36 @@ export const Route = createFileRoute("/_authenticated/map")({
 
 function MapPage() {
   const { lang } = useLang();
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerH, setHeaderH] = useState(0);
+
+  // Measure the real header height so the sticky offset never guesses.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeaderH(el.getBoundingClientRect().height));
+    ro.observe(el);
+    setHeaderH(el.getBoundingClientRect().height);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <AppShell bare>
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-6">
-        <div>
+      <div style={{ "--map-header-h": `${headerH}px` } as CSSProperties}>
+        <header
+          ref={headerRef}
+          className="border-b border-border bg-background p-6 lg:sticky lg:top-0 lg:z-20"
+        >
           <h2 className="font-display text-2xl leading-tight" lang={lang}>
             <T id="mapPageTitle" />
           </h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             <T id="mapPageIntro" />
           </p>
-        </div>
-      </header>
+        </header>
 
-      <WardMap3D />
+        <WardMap3D />
+      </div>
     </AppShell>
   );
 }
