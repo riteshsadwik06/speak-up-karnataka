@@ -179,10 +179,10 @@ function Dashboard() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-border bg-background text-left">
-                <th className="rule-heading p-4">Ref / Status</th>
-                <th className="rule-heading p-4">Grievance &amp; Authority</th>
-                <th className="rule-heading hidden p-4 sm:table-cell">Timeline</th>
-                <th className="rule-heading p-4 text-right">Deadline</th>
+                <th className={`rule-heading p-4 ${knCell}`}>{t("colRefStatus")}</th>
+                <th className={`rule-heading p-4 ${knCell}`}>{t("colGrievance")}</th>
+                <th className={`rule-heading hidden p-4 sm:table-cell ${knCell}`}>{t("colTimeline")}</th>
+                <th className={`rule-heading p-4 text-right ${knCell}`}>{t("colDeadline")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
