@@ -193,9 +193,15 @@ function NewApplication() {
       setRestored(true);
     }
     if (cachedStillWrong) setStillWrong((prev) => prev || cachedStillWrong);
-    // Focus a neutral landmark, never a destructive control.
-    headingRef.current?.focus();
   }, []);
+
+  // Once the form is live, park focus on a neutral landmark — never on a
+  // destructive control such as Sign out.
+  useEffect(() => {
+    if (!ready) return;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    headingRef.current?.focus({ preventScroll: true });
+  }, [ready]);
 
   useEffect(() => {
     if (!ready) return;
