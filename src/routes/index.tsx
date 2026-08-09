@@ -1,4 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { WardCity3D } from "@/components/ward-city-3d";
+import { CORP_COLOR, NEUTRAL } from "@/lib/ward-3d";
+
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
