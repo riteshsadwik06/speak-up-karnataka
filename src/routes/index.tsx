@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { WardCity3D } from "@/components/ward-city-3d";
+import { Wordmark } from "@/components/wordmark";
 import { DataCredit } from "@/components/app-shell";
 
 import { CORP_COLOR, NEUTRAL } from "@/lib/ward-3d";
@@ -39,8 +40,10 @@ function Landing() {
       <div className="registry-frame mx-auto w-full max-w-5xl">
         <header className="flex items-center justify-between gap-4 border-b border-border p-6">
           <div>
-            <h1 className="font-display text-xl font-bold tracking-tight">VICHARANE</h1>
-            <p className="rule-heading mt-1">Public Records Tracker</p>
+            <h1>
+              <Wordmark size="sm" />
+            </h1>
+            <p className="rule-heading mt-1.5">Public Records Tracker</p>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/auth" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -64,9 +67,13 @@ function Landing() {
               colorFor={(w) => CORP_COLOR[w.c] ?? NEUTRAL}
               className="h-[240px] w-full sm:h-[340px]"
             />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <Wordmark size="lg" className="items-center text-center" />
+            </div>
             <p className="mono-stamp absolute bottom-2 left-4">
               369 wards · five city corporations · extruded by population
             </p>
+
           </div>
         </section>
 
@@ -128,6 +135,7 @@ function Landing() {
         </section>
 
         <footer className="p-6">
+          <Wordmark size="sm" inline className="mb-3" />
           <p className="mono-stamp">
             Section 6(2): a public authority cannot require you to give a reason for wanting the information.
             Vicharane never asks you for one.
