@@ -532,6 +532,218 @@ export function WardMap3D() {
   );
 }
 
+// ------------------------------------------------------------------ ward search
+
+type SearchEntry = { info: WardInfo; oldWard?: string; keys: string[] };
+
+/** Lowercase, strip punctuation, collapse spacing: "K.R. Pura" === "kr pura". */
+function normalise(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function useWardSearchIndex() {
+  const [entries, setEntries] = useState<SearchEntry[]>([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const [wards, officials] = await Promise.all([
+        loadWards(),
+        loadOfficials().catch(() => null),
+      ]);
+      if (!alive) return;
+      const olds: Record<string, string | undefined> = {};
+      if (officials)
+        for (const [name, block] of Object.entries(officials.wards))
+          olds[normalise(name)] = block.oldBbmpWard;
+      setEntries(
+        wards.map((w) => {
+          const info: WardInfo = {
+            id: w.id,
+            name: w.n,
+            nameKn: w.kn,
+            corporation: `Bengaluru ${w.c} City Corporation`,
+            zone: w.z,
+            assembly: w.a,
+            population: w.pop,
+            number: w.w,
+          };
+          const oldWard = olds[normalise(w.n)];
+          return {
+            info,
+            ...(oldWard ? { oldWard } : {}),
+            // priority order: name, Kannada name, number, old BBMP ward, corporation, assembly
+            keys: [
+              normalise(w.n),
+              normalise(w.kn),
+              normalise(w.w),
+              normalise(oldWard ?? ""),
+              normalise(`Bengaluru ${w.c} City Corporation`),
+              normalise(w.a),
+            ],
+          };
+        }),
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return entries;
+}
+
+const OLD_WARD_KEY = 3;
+
+function WardSearch({ onPick }: { onPick: (w: WardInfo) => void }) {
+  const { t, lang } = useLang();
+  const corpShort = useCorporationShort();
+  const entries = useWardSearchIndex();
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const results = useMemo(() => {
+    const q = normalise(query);
+    if (q.length < 1) return [];
+    const scored: { e: SearchEntry; rank: number; starts: boolean }[] = [];
+    for (const e of entries) {
+      const rank = e.keys.findIndex((k) => k.length > 0 && k.includes(q));
+      if (rank < 0) continue;
+      scored.push({ e, rank, starts: e.keys[rank]!.startsWith(q) });
+    }
+    scored.sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        Number(b.starts) - Number(a.starts) ||
+        a.e.info.name.localeCompare(b.e.info.name),
+    );
+    return scored.slice(0, 8);
+  }, [entries, query]);
+
+  useEffect(() => setActive(0), [query]);
+
+  const choose = (i: number) => {
+    const hit = results[i];
+    if (!hit) return;
+    onPick(hit.e.info);
+  };
+
+  const onKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+    if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      setActive((a) => (results.length ? (a + 1) % results.length : 0));
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      setActive((a) => (results.length ? (a - 1 + results.length) % results.length : 0));
+    } else if (ev.key === "Enter") {
+      ev.preventDefault();
+      choose(active);
+    } else if (ev.key === "Escape") {
+      ev.preventDefault();
+      setQuery("");
+      inputRef.current?.focus();
+    }
+  };
+
+  const open = query.trim().length > 0;
+  const activeId = results[active] ? `ward-opt-${results[active]!.e.info.id}` : undefined;
+
+  return (
+    <div>
+      <label className="rule-heading block text-foreground" htmlFor="ward-search" lang={lang}>
+        {t("mapSearchLabel")}
+      </label>
+      <div className="mt-1.5 flex items-start gap-2">
+        <input
+          id="ward-search"
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={t("mapSearchPlaceholder")}
+          autoComplete="off"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="ward-search-results"
+          aria-autocomplete="list"
+          {...(activeId ? { "aria-activedescendant": activeId } : {})}
+          className="min-w-0 flex-1 border border-border bg-background px-2 py-1.5 text-sm"
+        />
+        {open && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            aria-label={t("mapSearchClear")}
+            className="shrink-0 border border-border px-1.5 py-1 text-[10px] uppercase hover:bg-secondary"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+      <p className="mt-1.5 text-[11px] text-muted-foreground" lang={lang}>
+        {t("mapSearchHint")}
+      </p>
+
+      {open && (
+        <ul
+          id="ward-search-results"
+          role="listbox"
+          aria-label={t("mapSearchResultsLabel")}
+          className="mt-2 border border-border"
+        >
+          {results.map((r, i) => {
+            const w = r.e.info;
+            const primary = lang === "kn" ? w.nameKn : w.name;
+            const secondary = lang === "kn" ? w.name : w.nameKn;
+            return (
+              <li key={w.id} className="border-b border-border last:border-b-0">
+                <button
+                  type="button"
+                  id={`ward-opt-${w.id}`}
+                  role="option"
+                  aria-selected={i === active}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => choose(i)}
+                  className={`block w-full px-2 py-1.5 text-left ${
+                    i === active ? "bg-secondary" : "hover:bg-secondary"
+                  }`}
+                >
+                  <span className="block text-sm leading-tight">{primary}</span>
+                  <span className="block text-xs text-muted-foreground">{secondary}</span>
+                  <span className="mono-stamp mt-0.5 block">
+                    {t("mapWardLabel")} {w.number} · {corpShort(w.corporation)}
+                  </span>
+                  {r.rank === OLD_WARD_KEY && r.e.oldWard && (
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground" lang={lang}>
+                      {t("mapSearchWasBbmp").replace("{ward}", r.e.oldWard)}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+          {!results.length && (
+            <li className="px-2 py-2">
+              <p className="text-sm" lang={lang}>
+                {t("mapSearchNoResults")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground" lang={lang}>
+                {t("mapSearchNoResultsHint")}
+              </p>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
 function WardPanel({ ward }: { ward: WardInfo }) {
   const { t, lang } = useLang();
   const authorityLabel = useAuthorityLabel();
