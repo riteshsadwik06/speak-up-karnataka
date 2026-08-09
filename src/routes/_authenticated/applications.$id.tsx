@@ -288,7 +288,7 @@ function Detail() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {app.public_authority}
+            {authorityLabel(app.public_authority)}
             {app.ward_name ? ` · ${wardKn ?? app.ward_name} ${t("wardSuffix")}` : ""}
           </p>
           {wardKn ? (

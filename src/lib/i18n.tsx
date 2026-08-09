@@ -28,6 +28,11 @@ import { DICT_DASHBOARD } from "@/lib/dict/dashboard";
 import { DICT_MAP } from "@/lib/dict/map";
 import { DICT_DETAIL } from "@/lib/dict/detail";
 import { DICT_OFFICIALS } from "@/lib/dict/officials";
+import {
+  AUTHORITY_NAME_KN,
+  AUTHORITY_NOTE_KN,
+  CORPORATION_SHORT_KN,
+} from "@/lib/dict/authorities";
 
 export type Lang = "en" | "kn";
 
@@ -121,6 +126,40 @@ export function T({
     <Tag lang={lang} className={`${lang === "kn" ? KN_TEXT : ""} ${className}`.trim()}>
       {t(id)}
     </Tag>
+  );
+}
+
+/**
+ * Public authority label in the active language. Acronyms stay Latin because
+ * that is how the portal prints them.
+ */
+export function useAuthorityLabel() {
+  const { lang } = useLang();
+  return useCallback(
+    (name: string | null | undefined) =>
+      !name ? "" : lang === "kn" ? (AUTHORITY_NAME_KN[name] ?? name) : name,
+    [lang],
+  );
+}
+
+/** Note beside an authority in the picker, keyed by AUTHORITIES[].id. */
+export function useAuthorityNote() {
+  const { lang } = useLang();
+  return useCallback(
+    (id: string, en: string) => (lang === "kn" ? (AUTHORITY_NOTE_KN[id] ?? en) : en),
+    [lang],
+  );
+}
+
+/** "Bengaluru East City Corporation" -> "ಪೂರ್ವ" / "East" for compact chips. */
+export function useCorporationShort() {
+  const { lang } = useLang();
+  return useCallback(
+    (corporation: string) => {
+      const short = corporation.replace("Bengaluru ", "").replace(" City Corporation", "");
+      return lang === "kn" ? (CORPORATION_SHORT_KN[short] ?? short) : short;
+    },
+    [lang],
   );
 }
 

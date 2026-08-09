@@ -571,7 +571,7 @@ function NewApplication() {
             </button>
           </div>
           <p className="mt-4 rounded-md bg-secondary/70 p-3 text-xs text-muted-foreground">
-            {LEGAL.section62}
+            {t("legalSection62")}
           </p>
         </div>
       )}
@@ -590,8 +590,10 @@ function NewApplication() {
                   authorityId === a.id ? "border-accent bg-accent/8" : "border-border hover:bg-secondary"
                 }`}
               >
-                <span className="block text-sm font-medium">{a.name}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{a.note}</span>
+                <span className={`block text-sm font-medium ${knClass}`}>{authorityLabel(a.name)}</span>
+                <span className={`mt-0.5 block text-xs text-muted-foreground ${knClass}`}>
+                  {authorityNote(a.id, a.note)}
+                </span>
               </button>
             ))}
           </div>
@@ -693,7 +695,7 @@ function NewApplication() {
                     </>
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {ward.corporation} · {ward.zone_name} {t("zoneWord")} · {ward.assembly}
+                    {authorityLabel(ward.corporation)} · {ward.zone_name} {t("zoneWord")} · {ward.assembly}
                   </p>
                 </div>
                 <div className="w-full sm:w-40 sm:shrink-0">

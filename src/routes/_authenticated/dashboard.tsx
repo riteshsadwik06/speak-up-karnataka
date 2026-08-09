@@ -235,7 +235,7 @@ function Dashboard() {
                           {row.grievance_text}
                         </h3>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {row.public_authority}
+                          {authorityLabel(row.public_authority)}
                           {row.ward_name ? (
                             <>
                               {" • "}
@@ -285,7 +285,7 @@ function Dashboard() {
       )}
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
-        <p className="text-[11px] text-muted-foreground">{LEGAL.calendarDays}</p>
+        <p className="text-[11px] text-muted-foreground">{t("legalCalendarDays")}</p>
         {hasDemo && (
           <button
             onClick={async () => {

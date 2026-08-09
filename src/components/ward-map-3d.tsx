@@ -510,7 +510,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
               <p className="font-display text-xs font-bold">{hover.w.name}</p>
               <p className="mono-stamp">
                 {t("mapWardLabel")} {hover.w.number} ·{" "}
-                {hover.w.corporation.replace("Bengaluru ", "").replace(" City Corporation", "")}
+                {corpShort(hover.w.corporation)}
               </p>
             </div>
           )}
@@ -575,7 +575,7 @@ function WardPanel({ ward }: { ward: WardInfo }) {
 
       <dl className="mt-4 space-y-2 text-xs">
         {[
-          [t("mapDlCorporation"), ward.corporation],
+          [t("mapDlCorporation"), authorityLabel(ward.corporation)],
           [t("mapDlAssembly"), ward.assembly],
           [t("mapDlGbaZone"), ward.zone],
           [t("mapDlPopulation"), ward.population ? ward.population.toLocaleString("en-IN") : "—"],
