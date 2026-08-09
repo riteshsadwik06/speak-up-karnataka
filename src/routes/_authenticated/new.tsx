@@ -90,7 +90,7 @@ function NewApplication() {
   const runComplaint = useServerFn(generateComplaint);
 
   const search = Route.useSearch();
-  const [step, setStep] = useState(search.stage === "complaint" ? 2 : 1);
+  const [step, setStep] = useState(1);
   const [path, setPath] = useState<Path | null>(search.stage === "complaint" ? "complaint" : null);
 
   const [prior, setPrior] = useState<PriorOutcome | null>(null);
