@@ -5,6 +5,7 @@ import {
   draftAppeal,
   draftComplaint,
   draftRequests,
+  reviseLetter,
   reviseRequests,
   routeGrievance,
   translateLetterToKannada,
@@ -68,7 +69,7 @@ export const generateDraft = createServerFn({ method: "POST" })
 
     const { data: profile } = await context.supabase
       .from("profiles")
-      .select("full_name, address, phone, is_bpl")
+      .select("full_name, address, phone, email, is_bpl")
       .eq("id", context.userId)
       .maybeSingle();
 
@@ -80,6 +81,7 @@ export const generateDraft = createServerFn({ method: "POST" })
       applicantName: profile?.full_name ?? null,
       applicantAddress: profile?.address ?? null,
       applicantPhone: profile?.phone ?? null,
+      applicantEmail: profile?.email ?? null,
       isBpl: profile?.is_bpl ?? false,
     });
 
@@ -115,7 +117,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
 
     const { data: profile } = await context.supabase
       .from("profiles")
-      .select("full_name, address, phone, is_bpl")
+      .select("full_name, address, phone, email, is_bpl")
       .eq("id", context.userId)
       .maybeSingle();
 
@@ -127,6 +129,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
       applicantName: profile?.full_name ?? null,
       applicantAddress: profile?.address ?? null,
       applicantPhone: profile?.phone ?? null,
+      applicantEmail: profile?.email ?? null,
       isBpl: profile?.is_bpl ?? false,
     });
 
