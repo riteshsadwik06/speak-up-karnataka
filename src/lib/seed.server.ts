@@ -1,4 +1,5 @@
 import { addDays } from "./rti-data";
+import { applicantSignature, type Applicant } from "./applicant";
 
 type SeedApp = {
   grievance_text: string;
@@ -21,7 +22,9 @@ type SeedApp = {
   complaint_filed_offset?: number;
 };
 
-function body(authority: string, ward: string, reqs: { text: string }[]) {
+function body(authority: string, ward: string, reqs: { text: string }[], applicant: Applicant) {
+  // Demo letters must never trip the placeholder backstop: real values or nothing.
+  const signature = applicantSignature(applicant);
   return `To,
 The Public Information Officer
 ${authority}
@@ -39,9 +42,7 @@ The prescribed application fee of Rs. 10 is enclosed. I undertake to pay the cop
 If any part is refused, please state the specific exemption under Section 8 or 9 relied upon, along with the particulars of the First Appellate Authority under Section 19(1), as required by Section 7(8).
 
 Yours faithfully,
-
-[Your full name]
-[Your postal address]`;
+${signature ? `\n${signature}` : ""}`.trimEnd();
 }
 
 const SEEDS: SeedApp[] = [
@@ -61,7 +62,7 @@ const SEEDS: SeedApp[] = [
     complaint_channel: "Sahaaya 2.0",
     complaint_ref: "SAH-2026-DEMO-0431",
     complaint_text:
-      "[Demo record] Garbage has not been collected from the street for over a week. Requesting immediate clearance and restoration of the daily collection round.",
+      "Demo record — garbage has not been collected from the street for over a week. Requesting immediate clearance and restoration of the daily collection round.",
   },
   {
     grievance_text:
@@ -202,7 +203,7 @@ const SEEDS: SeedApp[] = [
   },
 ];
 
-export function buildSeedRows(userId: string) {
+export function buildSeedRows(userId: string, applicant: Applicant = {}) {
   const now = new Date();
   return SEEDS.map((s) => {
     const filed = s.filed_offset === null ? null : addDays(now, s.filed_offset);
@@ -214,7 +215,7 @@ export function buildSeedRows(userId: string) {
       ward_name: s.ward_name,
       corporation: s.corporation,
       generated_requests: s.generated_requests,
-      application_body: filed === null ? "" : body(s.public_authority, s.ward_name, s.generated_requests),
+      application_body: filed === null ? "" : body(s.public_authority, s.ward_name, s.generated_requests, applicant),
       status: s.status,
       stage: s.stage ?? "rti",
       complaint_text: s.complaint_text ?? null,
