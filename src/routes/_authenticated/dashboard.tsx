@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { useLang } from "@/lib/i18n";
+import { KN_TEXT, useLang } from "@/lib/i18n";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
@@ -55,6 +55,8 @@ function stamp(date: string | null) {
 }
 
 function Dashboard() {
+  const { lang, t } = useLang();
+  const knCell = lang === "kn" ? `${KN_TEXT} normal-case` : "";
   const qc = useQueryClient();
   const seed = useServerFn(seedDemoData);
   const clear = useServerFn(clearDemoData);
