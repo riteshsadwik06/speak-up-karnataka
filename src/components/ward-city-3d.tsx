@@ -31,16 +31,31 @@ type Props = {
   fallback?: React.ReactNode;
   /** Accessible label describing the (decorative but data-bearing) surface. */
   ariaLabel?: string;
+  /** Seconds for one full orbit. */
+  orbitSeconds?: number;
+  /** Staggered rise animation on first paint. */
+  intro?: boolean;
+  /** Frame cap for the render loop. */
+  maxFps?: number;
 };
-
-const ORBIT_SECONDS = 90;
 
 /**
  * A whole-city view of the 369 GBA wards, extruded by population.
  * Shared by the landing hero (ambient, no interaction) and the dashboard
  * (muted city with lit wards). Only one WebGL context is ever mounted.
  */
-export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick, className, fallback, ariaLabel }: Props) {
+export function WardCity3D({
+  colorFor,
+  colorKey = "",
+  spin = false,
+  onWardClick,
+  className,
+  fallback,
+  ariaLabel,
+  orbitSeconds = 90,
+  intro = true,
+  maxFps = 60,
+}: Props) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const colorForRef = useRef(colorFor);
   const clickRef = useRef(onWardClick);
