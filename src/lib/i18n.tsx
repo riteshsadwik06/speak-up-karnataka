@@ -1,9 +1,14 @@
 /**
  * Lightweight two-language layer (English / Kannada).
  *
- * NOTE FOR REVIEWERS: the Kannada strings below were generated. The government
- * vocabulary block at the top is taken verbatim from the Karnataka RTI portal;
- * everything else needs a native-speaker pass before this is demoed.
+ * NOTE FOR REVIEWERS: the Kannada strings in src/lib/dict/* were generated.
+ * The government vocabulary block in dict/common.ts is taken from the Karnataka
+ * RTI portal; everything else needs a native-speaker pass before a demo.
+ *
+ * Every user-visible string in the app must live in a dictionary module under
+ * src/lib/dict/ and be rendered via `t(...)` or <T id="..."/>. In development,
+ * an untranslated-string checker warns about literal English left in the DOM
+ * while Kannada is active (see useUntranslatedScan below).
  */
 import {
   createContext,
@@ -11,9 +16,18 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { DICT_COMMON } from "@/lib/dict/common";
+import { DICT_LANDING } from "@/lib/dict/landing";
+import { DICT_AUTH } from "@/lib/dict/auth";
+import { DICT_WIZARD } from "@/lib/dict/wizard";
+import { DICT_DASHBOARD } from "@/lib/dict/dashboard";
+import { DICT_MAP } from "@/lib/dict/map";
+import { DICT_DETAIL } from "@/lib/dict/detail";
+import { DICT_OFFICIALS } from "@/lib/dict/officials";
 
 export type Lang = "en" | "kn";
 
@@ -21,72 +35,14 @@ const STORAGE_KEY = "vicharane.lang";
 
 /** id -> { en, kn } */
 export const DICT = {
-  // --- Government vocabulary (verbatim from the Karnataka RTI portal) ---
-  rti: { en: "Right to Information", kn: "ಮಾಹಿತಿ ಹಕ್ಕು" },
-  submitRequest: { en: "Submit request", kn: "ವಿನಂತಿಯನ್ನು ಸಲ್ಲಿಸಿ" },
-  firstAppeal: { en: "First appeal", kn: "ಪ್ರಥಮ ಮೇಲ್ಮನವಿ" },
-  submitFirstAppeal: { en: "Submit first appeal", kn: "ಪ್ರಥಮ ಮೇಲ್ಮನವಿಯನ್ನು ಸಲ್ಲಿಸಿ" },
-  viewStatus: { en: "View status", kn: "ಸ್ಥಿತಿಯನ್ನು ವೀಕ್ಷಿಸಿ" },
-  viewHistory: { en: "View history", kn: "ಇತಿಹಾಸವನ್ನು ವೀಕ್ಷಿಸಿ" },
-  registrationNumber: { en: "Registration number", kn: "ನೋಂದಣಿ ಸಂಖ್ಯೆ" },
-  publicAuthority: { en: "Public authority", kn: "ಸಾರ್ವಜನಿಕ ಪ್ರಾಧಿಕಾರ" },
-  pio: { en: "Public Information Officer", kn: "ಸಾರ್ವಜನಿಕ ಮಾಹಿತಿ ಅಧಿಕಾರಿ" },
-  applicant: { en: "Applicant", kn: "ಅರ್ಜಿದಾರ" },
-  fee: { en: "Fee", kn: "ಶುಲ್ಕ" },
-  payment: { en: "Payment", kn: "ಪಾವತಿ" },
-  filingDate: { en: "Filing date", kn: "ಫೈಲಿಂಗ್ ದಿನಾಂಕ" },
-  record: { en: "Record", kn: "ದಾಖಲೆ" },
-  bpl: { en: "Below poverty line", kn: "ಬಡತನ ರೇಖೆಗಿಂತ ಕೆಳಗಿನ" },
-  secondAppeal: { en: "Second appeal", kn: "ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ" },
-
-  // --- Navigation / shell ---
-  navRegistry: { en: "Registry", kn: "ನೋಂದಣಿ ಪಟ್ಟಿ" },
-  navNewFiling: { en: "New filing", kn: "ಹೊಸ ಸಲ್ಲಿಕೆ" },
-  navWardMap: { en: "Ward map", kn: "ವಾರ್ಡ್ ನಕ್ಷೆ" },
-  navSignOut: { en: "Sign out", kn: "ನಿರ್ಗಮಿಸಿ" },
-  tagline: { en: "Public Records Tracker", kn: "ಸಾರ್ವಜನಿಕ ದಾಖಲೆಗಳ ಟ್ರ್ಯಾಕರ್" },
-  dashboard: { en: "Dashboard", kn: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್" },
-  logIn: { en: "Log in", kn: "ಪ್ರವೇಶಿಸಿ" },
-  signUp: { en: "Sign up", kn: "ನೋಂದಾಯಿಸಿ" },
-
-  // --- Registry / dashboard ---
-  registryTitle: { en: "RTI Registry", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ನೋಂದಣಿ ಪಟ್ಟಿ" },
-  newFilingCta: { en: "NEW FILING", kn: "ಹೊಸ ಸಲ್ಲಿಕೆ" },
-  colRefStatus: { en: "Ref / Status", kn: "ಸಂಖ್ಯೆ / ಸ್ಥಿತಿ" },
-  colGrievance: { en: "Grievance & Authority", kn: "ದೂರು ಮತ್ತು ಪ್ರಾಧಿಕಾರ" },
-  colTimeline: { en: "Timeline", kn: "ಕಾಲಾನುಕ್ರಮ" },
-  colDeadline: { en: "Deadline", kn: "ಕಾಲಮಿತಿ" },
-  statusNotFiled: { en: "Not filed", kn: "ಸಲ್ಲಿಸಿಲ್ಲ" },
-  statusActionDue: { en: "Action due", kn: "ಕ್ರಮ ಬಾಕಿ" },
-  statusInProgress: { en: "In progress", kn: "ಪ್ರಗತಿಯಲ್ಲಿದೆ" },
-  loading: { en: "Loading…", kn: "ಲೋಡ್ ಆಗುತ್ತಿದೆ…" },
-  nothingFiled: { en: "Nothing filed yet", kn: "ಇನ್ನೂ ಏನೂ ಸಲ್ಲಿಸಿಲ್ಲ" },
-  draftFirstRti: { en: "Draft your first RTI", kn: "ನಿಮ್ಮ ಮೊದಲ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿ ರಚಿಸಿ" },
-  filedOn: { en: "Filed", kn: "ಸಲ್ಲಿಸಿದ್ದು" },
-  awaitingAction: { en: "Awaiting your action", kn: "ನಿಮ್ಮ ಕ್ರಮಕ್ಕಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ" },
-  day: { en: "DAY", kn: "ದಿನ" },
-  clearFilter: { en: "Clear filter", kn: "ಶೋಧನೆ ತೆರವುಗೊಳಿಸಿ" },
-  clearDemo: { en: "Clear demo data", kn: "ಮಾದರಿ ದತ್ತಾಂಶ ತೆರವುಗೊಳಿಸಿ" },
-
-  // --- Drafts / filing route ---
-  theApplication: { en: "The application", kn: "ಅರ್ಜಿ" },
-  copy: { en: "Copy", kn: "ನಕಲಿಸಿ" },
-  copyPortalSafe: { en: "Copy portal-safe", kn: "ಪೋರ್ಟಲ್‌ಗೆ ಸೂಕ್ತವಾದ ಪಠ್ಯ ನಕಲಿಸಿ" },
-  download: { en: "Download", kn: "ಡೌನ್‌ಲೋಡ್" },
-  clearDemoData: { en: "Clear demo data", kn: "ಡೆಮೊ ಮಾಹಿತಿ ಅಳಿಸಿ" },
-  demoDataCleared: { en: "Demo data cleared", kn: "ಡೆಮೊ ಮಾಹಿತಿ ಅಳಿಸಲಾಗಿದೆ" },
-  yourComplaint: { en: "Your complaint", kn: "ನಿಮ್ಮ ದೂರು" },
-  whoIsResponsible: { en: "Who is responsible", kn: "ಯಾರು ಜವಾಬ್ದಾರರು" },
-  official: { en: "Official", kn: "ಅಧಿಕಾರಿ" },
-  informationRequested: { en: "Information requested", kn: "ಕೋರಲಾದ ಮಾಹಿತಿ" },
-  noOfficials: {
-    en: "No officials listed for this ward.",
-    kn: "ಈ ವಾರ್ಡ್‌ಗೆ ಯಾವುದೇ ಅಧಿಕಾರಿಗಳ ಪಟ್ಟಿ ಇಲ್ಲ.",
-  },
-
-  // --- Language toggle ---
-  switchToKannada: { en: "ಕನ್ನಡ", kn: "ಕನ್ನಡ" },
-  switchToEnglish: { en: "English", kn: "English" },
+  ...DICT_COMMON,
+  ...DICT_LANDING,
+  ...DICT_AUTH,
+  ...DICT_WIZARD,
+  ...DICT_DASHBOARD,
+  ...DICT_MAP,
+  ...DICT_DETAIL,
+  ...DICT_OFFICIALS,
 } as const;
 
 export type StrId = keyof typeof DICT;
@@ -120,9 +76,23 @@ export function LangProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const t = useCallback((id: StrId) => DICT[id][lang] ?? DICT[id].en, [lang]);
+  const t = useCallback((id: StrId) => {
+    const entry = DICT[id] as { en: string; kn: string } | undefined;
+    if (!entry) {
+      if (import.meta.env.DEV) console.warn(`[i18n] missing dictionary id: ${String(id)}`);
+      return String(id);
+    }
+    const value = entry[lang] ?? entry.en;
+    if (import.meta.env.DEV && lang === "kn" && (!entry.kn || entry.kn === entry.en)) {
+      console.warn(`[i18n] no Kannada for id: ${String(id)}`);
+    }
+    return value;
+  }, [lang]);
 
   const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);
+
+  useUntranslatedScan(lang);
+
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
@@ -132,6 +102,33 @@ export function useLang() {
 
 /** Kannada needs a taller line box than Latin. Apply wherever script is rendered. */
 export const KN_TEXT = "font-kannada leading-[1.65]";
+
+/**
+ * Dictionary-backed text node. Applies the Kannada line box and lang attribute
+ * automatically, so callers never need to repeat the conditional.
+ */
+export function T({
+  id,
+  as: Tag = "span",
+  className = "",
+}: {
+  id: StrId;
+  as?: "span" | "p" | "div" | "h1" | "h2" | "h3" | "li" | "label" | "strong";
+  className?: string;
+}) {
+  const { lang, t } = useLang();
+  return (
+    <Tag lang={lang} className={`${lang === "kn" ? KN_TEXT : ""} ${className}`.trim()}>
+      {t(id)}
+    </Tag>
+  );
+}
+
+/** Class helper: adds the Kannada line box only when Kannada is active. */
+export function useKnClass() {
+  const { lang } = useLang();
+  return lang === "kn" ? KN_TEXT : "";
+}
 
 /**
  * Authoritative bilingual pair from the datasets (ward names, officials).
@@ -172,16 +169,16 @@ export function Bi({
 
 /** Header language toggle. Always visible — no menu, works at 375px. */
 export function LangToggle({ className = "" }: { className?: string }) {
-  const { lang, setLang } = useLang();
+  const { lang, setLang, t } = useLang();
   const next: Lang = lang === "en" ? "kn" : "en";
-  const label = next === "kn" ? "ಕನ್ನಡ" : "English";
+  const label = next === "kn" ? t("switchToKannada") : t("switchToEnglish");
 
   return (
     <button
       type="button"
       onClick={() => setLang(next)}
       lang={next}
-      aria-label={next === "kn" ? "ಕನ್ನಡದಲ್ಲಿ ವೀಕ್ಷಿಸಿ" : "View in English"}
+      aria-label={next === "kn" ? t("langToggleLabelKn") : t("langToggleLabelEn")}
       className={`shrink-0 whitespace-nowrap rounded-sm border border-border px-2.5 py-1.5 text-xs font-medium leading-[1.6] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         next === "kn" ? "font-kannada" : ""
       } ${className}`}
@@ -189,4 +186,76 @@ export function LangToggle({ className = "" }: { className?: string }) {
       {label}
     </button>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Dev-only untranslated-string checker                                */
+/* ------------------------------------------------------------------ */
+
+/** Proper nouns, data values and identifiers that stay Latin on purpose. */
+const ALLOWED_LATIN =
+  /^(?:[\s\d\W]*|BWSSB|BESCOM|BBMP|GBA|BMTC|BDA|Sahaaya(?:\s?2\.0)?|RTI|PIO|APIO|IPO|DD|CC BY 4\.0|Vicharane|Bengawalk City Officials|Khajane-II|karnataka|rtionline\.karnataka\.gov\.in|English \(portal\)|[A-Z0-9/\-.]+)$/i;
+
+function collectDictLatin(): Set<string> {
+  const set = new Set<string>();
+  for (const entry of Object.values(DICT) as { en: string; kn: string }[]) {
+    set.add(entry.en.trim());
+    set.add(entry.kn.trim());
+  }
+  return set;
+}
+
+/**
+ * While Kannada is active in development, walk the rendered text nodes and warn
+ * about any Latin-script string that is not a dictionary value. Gaps become
+ * visible in the console instead of silently shipping English.
+ */
+function useUntranslatedScan(lang: Lang) {
+  const known = useRef<Set<string> | null>(null);
+  const reported = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || lang !== "kn" || typeof window === "undefined") return;
+    known.current ??= collectDictLatin();
+
+    const scan = () => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const misses: string[] = [];
+      let node = walker.nextNode();
+      while (node) {
+        const parent = node.parentElement;
+        const text = (node.textContent ?? "").trim();
+        if (
+          text &&
+          parent &&
+          !parent.closest("script,style,pre,textarea,code,[data-i18n-ignore]") &&
+          /[A-Za-z]{3,}/.test(text) &&
+          !ALLOWED_LATIN.test(text) &&
+          !known.current!.has(text) &&
+          !reported.current.has(text)
+        ) {
+          reported.current.add(text);
+          misses.push(text);
+        }
+        node = walker.nextNode();
+      }
+      if (misses.length) {
+        console.warn(
+          `[i18n] ${misses.length} string(s) rendered outside the dictionary while Kannada is active:`,
+          misses,
+        );
+      }
+    };
+
+    const id = window.setTimeout(scan, 800);
+    const observer = new MutationObserver(() => {
+      window.clearTimeout(id);
+      window.setTimeout(scan, 800);
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => {
+      window.clearTimeout(id);
+      observer.disconnect();
+    };
+  }, [lang]);
 }
