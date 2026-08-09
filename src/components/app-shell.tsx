@@ -1,4 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
+import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 import { OFFICIALS_SOURCE } from "@/lib/officials";
@@ -17,8 +18,10 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
       <div className="registry-frame mx-auto flex w-full max-w-6xl flex-col md:flex-row">
         <aside className="w-full shrink-0 border-b border-border bg-background p-6 md:w-60 md:border-b-0 md:border-r">
           <Link to="/dashboard" className="block">
-            <h1 className="font-display text-xl font-bold tracking-tight">VICHARANE</h1>
-            <p className="rule-heading mt-1">Public Records Tracker</p>
+            <h1>
+              <Wordmark size="sm" />
+            </h1>
+            <p className="rule-heading mt-1.5">Public Records Tracker</p>
           </Link>
 
           <nav className="mt-8 space-y-1">
