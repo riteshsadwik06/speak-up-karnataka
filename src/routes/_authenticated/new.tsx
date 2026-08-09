@@ -443,11 +443,12 @@ function NewApplication() {
                 path === "complaint" ? "border-foreground bg-secondary/60" : "border-border"
               }`}
             >
-              <span className="block text-sm font-semibold">I haven't reported this yet</span>
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Start with a civic complaint. It is faster, free, and it creates the paper trail an RTI
-                can later test.
-              </span>
+              <T id="haventReportedYet" as="span" className="block text-sm font-semibold" />
+              <T
+                id="haventReportedYetHelp"
+                as="span"
+                className="mt-1 block text-xs text-muted-foreground"
+              />
             </button>
             <button
               onClick={() => setPath("rti")}
@@ -455,10 +456,12 @@ function NewApplication() {
                 path === "rti" ? "border-foreground bg-secondary/60" : "border-border"
               }`}
             >
-              <span className="block text-sm font-semibold">I already reported it</span>
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Go straight to an RTI application for the records behind what happened next.
-              </span>
+              <T id="alreadyReported" as="span" className="block text-sm font-semibold" />
+              <T
+                id="alreadyReportedHelp"
+                as="span"
+                className="mt-1 block text-xs text-muted-foreground"
+              />
             </button>
           </div>
 
