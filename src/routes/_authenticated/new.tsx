@@ -34,10 +34,10 @@ import {
 } from "@/lib/rti.functions";
 import { findPlaceholders } from "@/lib/placeholders";
 import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
-import { identityWithHistory, wardForLocality } from "@/lib/ward-identity";
+import { identityWithHistory, wardForLocality, wardKey } from "@/lib/ward-identity";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
-import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useLang } from "@/lib/i18n";
+import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useChannelLabel, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (
@@ -100,6 +100,7 @@ function NewApplication() {
   const { lang, t } = useLang();
   const authorityLabel = useAuthorityLabel();
   const authorityNote = useAuthorityNote();
+  const channelLabel = useChannelLabel();
   const knClass = lang === "kn" ? KN_TEXT : "";
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
@@ -145,7 +146,14 @@ function NewApplication() {
   /** Routing pass — the app proposes the owning authority instead of asking the user cold. */
   const routeFn = useServerFn(suggestRouting);
   const [routing, setRouting] = useState(false);
-  const [routeNote, setRouteNote] = useState<{ authority: string; ward: string; category: string; low: boolean } | null>(null);
+  const [routeNote, setRouteNote] = useState<{
+    authority: string;
+    ward: string;
+    category: string;
+    low: boolean;
+    unknownAuthority: boolean;
+    unknownLocality: string;
+  } | null>(null);
   const [keepCorpChoice, setKeepCorpChoice] = useState(false);
 
 
@@ -194,10 +202,16 @@ function NewApplication() {
   async function continueToStep2() {
     setRouting(true);
     try {
-      const result = await routeFn({ data: { grievance } });
+      const result = await routeFn({ data: { grievance, lang } });
       if (result) {
-        let match = AUTHORITIES.find((a) => a.id === result.authority_id);
+        // "other" is not a routing answer — it means we could not tell. Never
+        // silently park the resident on "Other"; say so instead.
+        let match =
+          result.authority_id === "other"
+            ? undefined
+            : AUTHORITIES.find((a) => a.id === result.authority_id);
         let wardName = "";
+        let localityMissed = false;
         if (result.locality) {
           const hit = await wardForLocality(result.locality);
           if (hit) {
@@ -207,17 +221,28 @@ function NewApplication() {
             if (match && CORP_IDS.includes(match.id)) {
               match = AUTHORITIES.find((a) => a.name === hit.corporation) ?? match;
             }
+          } else {
+            localityMissed = true;
           }
         }
-        if (match) {
-          setAuthorityId(match.id);
-          setRouteNote({
-            authority: match.name,
-            ward: wardName,
-            category: result.category,
-            low: result.confidence === "low",
-          });
-        }
+        if (match) setAuthorityId(match.id);
+        setRouteNote({
+          authority: match?.name ?? "",
+          ward: wardName,
+          category: result.category,
+          low: result.confidence === "low",
+          unknownAuthority: !match,
+          unknownLocality: localityMissed ? result.locality : "",
+        });
+      } else {
+        setRouteNote({
+          authority: "",
+          ward: "",
+          category: "",
+          low: true,
+          unknownAuthority: true,
+          unknownLocality: "",
+        });
       }
     } catch {
       // Routing is best-effort: fall back to the blank selection.
@@ -230,12 +255,16 @@ function NewApplication() {
 
 
   const wardOptions = useMemo(() => {
-    const q = wardQuery.trim().toLowerCase();
+    // Kannada-aware: NFC, combining marks kept, spacing and "ward"/"ವಾರ್ಡ್" ignored.
+    const q = wardKey(wardQuery);
     const pool = q
-      ? WARDS.filter((w) => `${w.ward_name} ${w.ward_name_kn} ${w.zone_name} ${w.corporation} ${w.ward_id}`.toLowerCase().includes(q))
+      ? WARDS.filter((w) =>
+          wardKey(`${w.ward_name} ${w.ward_name_kn} ${w.zone_name} ${w.corporation} ${w.ward_id}`).includes(q),
+        )
       : WARDS;
     return pool.slice(0, 12);
   }, [wardQuery]);
+
 
   const active = drafts.find((d) => d.subject === activeSubject) ?? drafts[0] ?? null;
   const draft = active?.draft ?? null;
@@ -712,19 +741,29 @@ function NewApplication() {
 
           {routeNote && (
             <div className="rounded-md border border-accent/40 bg-accent/8 p-3">
-              <p className={`text-sm ${knClass}`}>
-                {(routeNote.ward ? t("routingSuggestionWard") : t("routingSuggestionNoWard"))
-                  .replace("{authority}", authorityLabel(routeNote.authority))
-                  .replace("{ward}", routeNote.ward)
-                  .replace("{category}", routeNote.category || t("stepGrievance"))}
-              </p>
-              {routeNote.low && (
+              {routeNote.unknownAuthority ? (
+                <p className={`text-sm ${knClass}`}>{t("routingUnknownAuthority")}</p>
+              ) : (
+                <p className={`text-sm ${knClass}`}>
+                  {(routeNote.ward ? t("routingSuggestionWard") : t("routingSuggestionNoWard"))
+                    .replace("{authority}", authorityLabel(routeNote.authority))
+                    .replace("{ward}", routeNote.ward)
+                    .replace("{category}", routeNote.category || t("stepGrievance"))}
+                </p>
+              )}
+              {routeNote.unknownLocality && (
+                <p className={`mt-1 text-xs text-muted-foreground ${knClass}`}>
+                  {t("routingUnknownWard").replace("{locality}", routeNote.unknownLocality)}
+                </p>
+              )}
+              {routeNote.low && !routeNote.unknownAuthority && (
                 <p className={`mt-1 text-xs text-muted-foreground ${knClass}`}>
                   {t("routingLowConfidence")}
                 </p>
               )}
             </div>
           )}
+
 
           <div className="grid gap-2 sm:grid-cols-2">
             {AUTHORITIES.map((a) => (
@@ -977,8 +1016,12 @@ function NewApplication() {
                     channelId === c.id ? "border-accent bg-accent/8" : "border-border hover:bg-secondary"
                   }`}
                 >
-                  <span className="block text-sm font-medium">{c.name}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">{c.note}</span>
+                  <span className={`block text-sm font-medium ${knClass}`}>
+                    {channelLabel(c.id, c.name, c.note).name}
+                  </span>
+                  <span className={`mt-0.5 block text-xs text-muted-foreground ${knClass}`}>
+                    {channelLabel(c.id, c.name, c.note).note}
+                  </span>
                   {"phone" in c && c.phone ? (
                     <span className="mt-1 block font-mono text-[11px]">{c.phone}</span>
                   ) : null}

@@ -540,10 +540,15 @@ type SearchEntry = { info: WardInfo; oldWard?: string; keys: string[] };
 /** Lowercase, strip punctuation, collapse spacing: "K.R. Pura" === "kr pura". */
 function normalise(s: string) {
   return s
+    .normalize("NFC")
+    // zero-width joiners come from Kannada input methods and must not block a match
+    .replace(/[\u200b-\u200d\ufeff]/g, "")
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    // \p{M} keeps Kannada vowel signs and the virama, which carry the word
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ")
     .trim();
 }
+
 
 function useWardSearchIndex() {
   const [entries, setEntries] = useState<SearchEntry[]>([]);

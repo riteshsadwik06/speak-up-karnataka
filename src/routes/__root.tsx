@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
-import { LangProvider, T, useLang } from "@/lib/i18n";
+import { EARLY_LANG_SCRIPT, LangProvider, T, useLang } from "@/lib/i18n";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -120,6 +120,8 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Applies the stored language and catches a pre-hydration toggle click. */}
+        <script dangerouslySetInnerHTML={{ __html: EARLY_LANG_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -128,6 +130,7 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

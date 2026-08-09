@@ -42,7 +42,7 @@ import {
   saveApplicantDetails,
 } from "@/lib/rti.functions";
 import { toast } from "sonner";
-import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
+import { KN_TEXT, useAuthorityLabel, useChannelLabel, useLang } from "@/lib/i18n";
 import { findPlaceholders, hasPlaceholders } from "@/lib/placeholders";
 import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
 
@@ -113,6 +113,7 @@ function Detail() {
   const [appealBusy, setAppealBusy] = useState<string | null>(null);
   const { lang, t } = useLang();
   const authorityLabel = useAuthorityLabel();
+  const channelLabel = useChannelLabel();
   const knClass = lang === "kn" ? KN_TEXT : "";
   const [busy, setBusy] = useState(false);
   const [filedDate, setFiledDate] = useState(today());
@@ -641,14 +642,18 @@ function Detail() {
         id="where-to-send"
         label={t("sectionWhereToSend")}
         summary={
-          isComplaint ? (channel?.name ?? t("channelNotRecorded")) : t("summaryOnlineOrPost")
+          isComplaint
+            ? (channel ? channelLabel(channel.id, channel.name, channel.note).name : t("channelNotRecorded"))
+            : t("summaryOnlineOrPost")
         }
       >
         {isComplaint ? (
           channel ? (
             <div className="px-1">
-              <p className="text-sm font-medium">{channel.name}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{channel.note}</p>
+              <p className="text-sm font-medium">{channelLabel(channel.id, channel.name, channel.note).name}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {channelLabel(channel.id, channel.name, channel.note).note}
+              </p>
               {"phone" in channel && channel.phone ? (
                 <p className="mt-1 font-mono text-xs">{channel.phone}</p>
               ) : null}
