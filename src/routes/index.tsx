@@ -50,9 +50,9 @@ function towardPaper(hex: string, amount: number) {
 }
 
 const WATERMARK: Record<string, string> = Object.fromEntries(
-  Object.entries(CORP_COLOR).map(([k, v]) => [k, towardPaper(v, 0.42)]),
+  Object.entries(CORP_COLOR).map(([k, v]) => [k, towardPaper(v, 0.18)]),
 );
-const WATERMARK_NEUTRAL = towardPaper(NEUTRAL, 0.42);
+const WATERMARK_NEUTRAL = towardPaper(NEUTRAL, 0.18);
 
 /** Fixed, non-interactive city watermark behind the whole page. */
 function CityBackdrop() {
@@ -65,7 +65,7 @@ function CityBackdrop() {
         orbitSeconds={180}
         maxFps={30}
         colorFor={(w) => WATERMARK[w.c] ?? WATERMARK_NEUTRAL}
-        className="absolute inset-0 h-full w-full opacity-35"
+        className="absolute inset-0 h-full w-full opacity-45"
       />
       <div
         className="absolute inset-0"
