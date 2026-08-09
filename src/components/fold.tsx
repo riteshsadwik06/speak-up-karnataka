@@ -12,10 +12,39 @@ import { KN_TEXT, useLang } from "@/lib/i18n";
 
 let cachedUid: string | null = null;
 
+/**
+ * The signed-in user id, resolved synchronously from the stored session where
+ * possible. `getUser()` is a network call and can settle after the user has
+ * already toggled a section, which would silently drop their preference.
+ */
+function readUidFromStorage(): string | null {
+  try {
+    for (const key of Object.keys(window.localStorage)) {
+      if (!key.startsWith("sb-") || !key.endsWith("-auth-token")) continue;
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as { user?: { id?: string } };
+      if (parsed?.user?.id) return parsed.user.id;
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return null;
+}
+
 function useUserId() {
   const [uid, setUid] = useState<string | null>(cachedUid);
   useEffect(() => {
-    if (cachedUid) return;
+    if (cachedUid) {
+      setUid(cachedUid);
+      return;
+    }
+    const local = readUidFromStorage();
+    if (local) {
+      cachedUid = local;
+      setUid(local);
+      return;
+    }
     let alive = true;
     supabase.auth.getUser().then(({ data }) => {
       cachedUid = data.user?.id ?? "anon";
@@ -27,6 +56,7 @@ function useUserId() {
   }, []);
   return uid;
 }
+
 
 function storageKey(uid: string) {
   return `vicharane.folds.${uid}`;
