@@ -99,13 +99,13 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
  * A fabricated official identifier in a document a citizen files is worse than none.
  */
 /** "Letter-hyphen-digits" constructions. No Karnataka department issues these. */
-const CODE_SHAPE = /\(?\b[A-Za-z]-?\s?\d{1,4}\b\)?/g;
+const CODE_SHAPE = /\(?\b[A-Za-z]-\d{1,4}\b\)?/g;
 /** "Ward 17" / "ವಾರ್ಡ್ ಸಂಖ್ಯೆ 17" — legitimate only when 17 is the supplied number. */
 const WARD_NUMBER_SHAPE =
   /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#|ಸಂಖ್ಯೆ)\s*[:.-]?\s*)?(\d{1,4})\b/gi;
 /** "Ward C-017", including the "Thindlu Ward (N-012)" trailing form. */
 const WARD_CODE_SHAPE =
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#|ಸಂಖ್ಯೆ)\s*[:.-]?\s*)?\(?[A-Za-z]-?\s?\d{1,4}\b\)?/gi;
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#|ಸಂಖ್ಯೆ)\s*[:.-]?\s*)?\(?[A-Za-z]-\d{1,4}\b\)?/gi;
 
 export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
   const allow = new Set(
