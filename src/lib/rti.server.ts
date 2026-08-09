@@ -437,7 +437,9 @@ export async function draftAppeal(input: {
   replyDate: string | null;
   replyNotes: string | null;
   firstAppealFiledDate?: string | null;
+  applicant?: Applicant;
 }): Promise<string> {
+  const applicant = input.applicant ?? {};
   const user = [
     `Appeal tier: ${input.tier === "first" ? "FIRST APPEAL, Section 19(1)" : "SECOND APPEAL, Section 19(3)"}`,
     `Reason for appeal: ${input.reason}`,
@@ -450,6 +452,8 @@ export async function draftAppeal(input: {
     input.firstAppealFiledDate ? `First appeal was filed on: ${input.firstAppealFiledDate}` : "",
     `Today's date: ${new Date().toISOString().slice(0, 10)}`,
     "",
+    applicantPromptBlock(applicant),
+    "",
     "Original grievance:",
     input.grievance,
     "",
@@ -459,8 +463,41 @@ export async function draftAppeal(input: {
     .filter(Boolean)
     .join("\n");
 
-  return callGateway(APPEAL_SYSTEM_PROMPT, user);
+  return resolveApplicantPlaceholders(await callGateway(APPEAL_SYSTEM_PROMPT, user), applicant);
 }
+
+export const REVISE_LETTER_SYSTEM_PROMPT = `You revise a formal letter written under the Right to Information Act 2005 for an applicant in Karnataka, India.
+
+You will be given the current letter and a revision instruction, usually supplying details the letter was missing. Apply the instruction and return the complete revised letter.
+
+Keep the structure, the statutory citations and every ground of appeal unchanged unless the instruction says otherwise. Do not soften or drop the relief sought.
+
+${NO_FABRICATION_RULE} ${NO_PLACEHOLDER_RULE}
+
+Return ONLY the letter text. No markdown, no commentary, no code fences.`;
+
+/** Revision path for an already-generated letter — used by the missing-details panel. */
+export async function reviseLetter(input: {
+  letter: string;
+  instruction: string;
+  applicant?: Applicant;
+}): Promise<string> {
+  const applicant = input.applicant ?? {};
+  const user = [
+    applicantPromptBlock(applicant),
+    "",
+    "Current letter:",
+    input.letter,
+    "",
+    "Revision instruction:",
+    input.instruction,
+  ].join("\n");
+  return resolveApplicantPlaceholders(
+    await callGateway(REVISE_LETTER_SYSTEM_PROMPT, user),
+    applicant,
+  );
+}
+
 
 export const REVISE_SYSTEM_PROMPT = `You revise draft Right to Information requests under the RTI Act 2005 for applicants in Karnataka.
 
