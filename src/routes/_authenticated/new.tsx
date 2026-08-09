@@ -618,24 +618,42 @@ function NewApplication() {
                 ))}
               </div>
             )}
-            <div className="mt-3">
-              <WardMap
-                selectedId={wardId}
-                onSelect={setWardId}
-                highlightIds={
-                  wardQuery.trim() ? wardOptions.map((w) => w.ward_id) : undefined
-                }
-              />
-            </div>
+
+            <button
+              onClick={() => setMapOpen((v) => !v)}
+              className="mt-2 text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              {mapOpen ? "Hide the map" : "Find it on the map"}
+            </button>
+            {mapOpen && (
+              <div className="mt-2">
+                <WardMap
+                  selectedId={wardId}
+                  onSelect={(id) => {
+                    setWardId(id);
+                    if (id) setMapOpen(false);
+                  }}
+                  highlightIds={wardQuery.trim() ? wardOptions.map((w) => w.ward_id) : undefined}
+                />
+              </div>
+            )}
+
             {ward && (
-              <div className="mt-2 space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  {ward.ward_name} · {ward.corporation} · {ward.assembly}
-                </p>
-                <WardInset3D wardId={ward.ward_id} corporation={ward.corporation} />
+              <div className="mt-3 flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="font-display text-sm font-semibold">{ward.ward_name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{ward.ward_name_kn}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {ward.corporation} · {ward.zone_name} zone · {ward.assembly}
+                  </p>
+                </div>
+                <div className="w-full sm:w-40 sm:shrink-0">
+                  <WardInset3D wardId={ward.ward_id} corporation={ward.corporation} height={110} />
+                </div>
               </div>
             )}
           </div>
+
 
 
           <div className="flex gap-2">
