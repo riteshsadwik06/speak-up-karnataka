@@ -394,14 +394,15 @@ export function WardMap3D() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row">
-      <div className="min-w-0 flex-1 border-b border-border lg:border-b-0 lg:border-r">
-        <div className="relative">
+    <div className="flex flex-col items-start lg:flex-row">
+      {/* Sticky only in the two-column (lg) layout; stacked mobile keeps its normal flow. */}
+      <div className="min-w-0 w-full flex-1 border-b border-border lg:sticky lg:top-[var(--map-header-h,0px)] lg:flex lg:h-[calc(100svh-var(--map-header-h,0px))] lg:w-auto lg:flex-col lg:self-start lg:border-b-0 lg:border-r">
+        <div className="relative lg:min-h-0 lg:flex-1">
           <div
             ref={mountRef}
             role="img"
             aria-label={t("mapCanvasAriaLabel")}
-            className="h-[360px] w-full sm:h-[520px]"
+            className="h-[360px] w-full sm:h-[520px] lg:h-full lg:min-h-0"
           />
           {!ready && (
             <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
