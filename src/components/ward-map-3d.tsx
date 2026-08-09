@@ -59,6 +59,7 @@ export function WardMap3D() {
   const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  const focusRef = useRef<((id: string) => void) | null>(null);
   const [webgl, setWebgl] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<{ w: WardInfo; x: number; y: number } | null>(null);
