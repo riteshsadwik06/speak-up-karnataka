@@ -309,12 +309,7 @@ export async function draftComplaint(input: {
   authority: string;
   ward?: string | null;
   wardNumber?: string | null;
-  lang?: "en" | "kn";
 }): Promise<ComplaintDraft> {
-  const system =
-    input.lang === "kn"
-      ? `${COMPLAINT_SYSTEM_PROMPT}\n\nWrite the complaint in Kannada, in the formal register a citizen would use when writing to a municipal authority. The "complaint" field must be in Kannada script. Keep "suggested_channel" and "category" in English.`
-      : COMPLAINT_SYSTEM_PROMPT;
   const user = [
     `Public authority / department: ${input.authority}`,
     input.ward
@@ -327,7 +322,7 @@ export async function draftComplaint(input: {
     .filter(Boolean)
     .join("\n");
 
-  const parsed = parseJson(await callGateway(system, user)) as Partial<ComplaintDraft>;
+  const parsed = parseJson(await callGateway(COMPLAINT_SYSTEM_PROMPT, user)) as Partial<ComplaintDraft>;
   return {
     complaint: typeof parsed.complaint === "string" ? parsed.complaint.trim() : "",
     suggested_channel:
@@ -335,38 +330,4 @@ export async function draftComplaint(input: {
     category: typeof parsed.category === "string" ? parsed.category : "",
     checkable_action: typeof parsed.checkable_action === "string" ? parsed.checkable_action : "",
   };
-}
-
-
-/**
- * Kannada rendering of a generated artifact, for POSTAL filing only.
- * The Karnataka RTI portal's text field accepts Latin characters only, so the
- * English text remains the portal artifact and this is never sanitised.
- */
-export const KANNADA_SYSTEM_PROMPT = `You translate Right to Information documents from English into Kannada for citizens in Karnataka, India.
-
-Register: formal official Kannada, the register a government portal uses when addressing a citizen.
-
-Use these exact terms:
-- Right to Information -> ಮಾಹಿತಿ ಹಕ್ಕು
-- Public authority -> ಸಾರ್ವಜನಿಕ ಪ್ರಾಧಿಕಾರ
-- Public Information Officer -> ಸಾರ್ವಜನಿಕ ಮಾಹಿತಿ ಅಧಿಕಾರಿ
-- Applicant -> ಅರ್ಜಿದಾರ
-- First appeal -> ಪ್ರಥಮ ಮೇಲ್ಮನವಿ
-- Second appeal -> ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ
-- Registration number -> ನೋಂದಣಿ ಸಂಖ್ಯೆ
-- Fee -> ಶುಲ್ಕ
-- Payment -> ಪಾವತಿ
-- Record / document -> ದಾಖಲೆ
-- Below poverty line -> ಬಡತನ ರೇಖೆಗಿಂತ ಕೆಳಗಿನ
-
-Do NOT translate or transliterate: the name of the public authority, ward names as they appear, personal names, addresses, phone numbers, registration numbers, dates, or anything inside square brackets. Leave section citations in the form "Section 6(1)" but you may write ಕಲಂ before them.
-
-Preserve the layout exactly: line breaks, blank lines, the numbered list and its numbering, the addressee block and the signature block.
-
-Return ONLY the translated text. No commentary, no code fences.`;
-
-export async function translateToKannada(text: string): Promise<string> {
-  if (!text.trim()) return "";
-  return callGateway(KANNADA_SYSTEM_PROMPT, text);
 }
