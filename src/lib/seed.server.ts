@@ -9,10 +9,16 @@ type SeedApp = {
   generated_requests: { text: string; rationale: string }[];
   application_body: string;
   status: string;
-  filed_offset: number;
+  /** Null for a complaint-stage record: nothing has been filed under the RTI Act. */
+  filed_offset: number | null;
   reply_offset?: number;
   reply_notes?: string;
   first_appeal_offset?: number;
+  stage?: "complaint" | "rti";
+  complaint_text?: string;
+  complaint_channel?: string;
+  complaint_ref?: string;
+  complaint_filed_offset?: number;
 };
 
 function body(authority: string, ward: string, reqs: { text: string }[]) {
@@ -39,6 +45,24 @@ Yours faithfully,
 }
 
 const SEEDS: SeedApp[] = [
+  {
+    grievance_text:
+      "Garbage has not been collected from our street for over a week and the pile has spread onto the footpath.",
+    language: "en",
+    public_authority: "Bengaluru North City Corporation",
+    ward_name: "Yelahanka",
+    corporation: "Bengaluru North City Corporation",
+    generated_requests: [],
+    application_body: "",
+    status: "filed",
+    stage: "complaint",
+    filed_offset: null,
+    complaint_filed_offset: -3,
+    complaint_channel: "Sahaaya 2.0",
+    complaint_ref: "SAH-2026-DEMO-0431",
+    complaint_text:
+      "[Demo record] Garbage has not been collected from the street for over a week. Requesting immediate clearance and restoration of the daily collection round.",
+  },
   {
     grievance_text:
       "The storm water drain behind our lane has been blocked for months and floods the road every time it rains. Nobody comes to clear it.",
@@ -181,7 +205,7 @@ const SEEDS: SeedApp[] = [
 export function buildSeedRows(userId: string) {
   const now = new Date();
   return SEEDS.map((s) => {
-    const filed = addDays(now, s.filed_offset);
+    const filed = s.filed_offset === null ? null : addDays(now, s.filed_offset);
     return {
       user_id: userId,
       grievance_text: s.grievance_text,
@@ -190,10 +214,16 @@ export function buildSeedRows(userId: string) {
       ward_name: s.ward_name,
       corporation: s.corporation,
       generated_requests: s.generated_requests,
-      application_body: body(s.public_authority, s.ward_name, s.generated_requests),
+      application_body: filed === null ? "" : body(s.public_authority, s.ward_name, s.generated_requests),
       status: s.status,
+      stage: s.stage ?? "rti",
+      complaint_text: s.complaint_text ?? null,
+      complaint_channel: s.complaint_channel ?? null,
+      complaint_ref: s.complaint_ref ?? null,
+      complaint_filed_date:
+        s.complaint_filed_offset === undefined ? null : addDays(now, s.complaint_filed_offset),
       filed_date: filed,
-      response_due_date: addDays(filed, 30),
+      response_due_date: filed === null ? null : addDays(filed, 30),
       reply_received_date: s.reply_offset ? addDays(now, s.reply_offset) : null,
       reply_notes: s.reply_notes ?? null,
       is_seeded: true,

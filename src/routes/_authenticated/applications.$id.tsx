@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,9 +45,9 @@ import { PlaceholderBlockNote } from "@/components/missing-details";
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
     meta: [
-      { title: "RTI application — Vicharane" },
-      { name: "description", content: "The full application, its timeline, and your next legal step." },
-      { property: "og:title", content: "RTI application — Vicharane" },
+      { title: "Filing — Vicharane" },
+      { name: "description", content: "The full complaint or RTI, its timeline, and your next legal step." },
+      { property: "og:title", content: "Filing — Vicharane" },
       { property: "og:description", content: "Track the statutory clock and draft appeals on time." },
     ],
   }),
@@ -154,6 +154,14 @@ function Detail() {
     await qc.invalidateQueries({ queryKey: ["application", id] });
     await qc.invalidateQueries({ queryKey: ["applications"] });
   }
+
+  const stage = data?.app.stage ?? null;
+  // Tab title must not say "RTI application" on a complaint record.
+  useEffect(() => {
+    if (!stage) return;
+    document.title =
+      stage === "complaint" ? "Complaint — Vicharane" : "RTI application — Vicharane";
+  }, [stage]);
 
   if (isLoading || !data) {
     return (
@@ -369,7 +377,7 @@ function Detail() {
                 </button>
                 <button
                   disabled={busy}
-                  onClick={() => void patch({ status: "closed" })}
+                  onClick={() => void patch({ status: "closed", closure_claimed_date: today() })}
                   className="rounded-md border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-50"
                 >
                   {t("btnFixed")}
@@ -454,7 +462,9 @@ function Detail() {
                   label={t("serviceExpectationLabel")}
                   value={`${COMPLAINT_EXPECTATION_DAYS} ${t("serviceExpectationDaysSuffix")}`}
                 />
-                <TimelineRow label={t("markedResolvedLabel")} value={app.closure_claimed_date ?? "—"} />
+                {app.closure_claimed_date ? (
+                  <TimelineRow label={t("markedResolvedLabel")} value={app.closure_claimed_date} />
+                ) : null}
               </dl>
               <p className="mt-3 text-xs text-muted-foreground">{t("complaintNotStatutory")}</p>
 

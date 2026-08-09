@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, SectionLabel } from "@/components/app-shell";
@@ -146,6 +146,8 @@ function NewApplication() {
   const [instruction, setInstruction] = useState("");
   const [revising, setRevising] = useState(false);
   const [saving, setSaving] = useState(false);
+  /** Hard guard against a double click firing two inserts before state updates. */
+  const savingRef = useRef(false);
   const [dismissedAuthorityHint, setDismissedAuthorityHint] = useState(false);
 
   const authority =
@@ -291,6 +293,8 @@ function NewApplication() {
   }
 
   async function saveComplaint(markSent: boolean) {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -320,6 +324,7 @@ function NewApplication() {
       router.navigate({ to: "/applications/$id", params: { id: data.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("couldNotSave"));
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -438,7 +443,8 @@ function NewApplication() {
   }
 
   async function save(markFiled: boolean, filedDate?: string) {
-    if (!active) return;
+    if (!active || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -451,21 +457,34 @@ function NewApplication() {
       if (drafts.length > 1) {
         updateActive({ saved: true, savedId: data.id });
         toast.success(t("savedSubject").replace("{subject}", active.subject));
+        savingRef.current = false;
         setSaving(false);
       } else {
         router.navigate({ to: "/applications/$id", params: { id: data.id } });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("couldNotSave"));
+      savingRef.current = false;
       setSaving(false);
     }
   }
 
   async function saveAll() {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      const unsaved = drafts.filter((d) => !d.saved);
+      // De-duplicate identical unsaved drafts before insert: same subject and
+      // same letter body is one record, not two.
+      const seen = new Set<string>();
+      const unsaved = drafts.filter((d) => {
+        if (d.saved) return false;
+        const key = `${d.subject}\u0000${d.body}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       const results: Record<string, string> = {};
       for (const entry of unsaved) {
         const { data, error } = await supabase
@@ -484,6 +503,7 @@ function NewApplication() {
       router.navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("couldNotSave"));
+      savingRef.current = false;
       setSaving(false);
     }
   }

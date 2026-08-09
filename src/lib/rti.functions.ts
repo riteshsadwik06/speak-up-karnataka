@@ -200,36 +200,54 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
 
 export const seedDemoData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { count } = await context.supabase
-      .from("applications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", context.userId);
-    if ((count ?? 0) > 0) return { seeded: 0 };
+  .inputValidator((input: { force?: boolean } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const force = data.force === true;
+
+    if (force) {
+      // Re-runnable on demand: wipe only previously seeded rows, never real ones.
+      const { error: delError } = await context.supabase
+        .from("applications")
+        .delete()
+        .eq("user_id", context.userId)
+        .eq("is_seeded", true);
+      if (delError) throw new Error(delError.message);
+    } else {
+      const { count } = await context.supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", context.userId);
+      if ((count ?? 0) > 0) return { seeded: 0 };
+    }
 
     const rows = buildSeedRows(context.userId);
     const inserts = rows.map(({ _first_appeal_date, ...row }) => row);
     const { data: created, error } = await context.supabase
       .from("applications")
       .insert(inserts)
-      .select("id, public_authority, status");
+      .select("id, grievance_text");
     if (error) throw new Error(error.message);
 
-    const appealRow = rows.findIndex((r) => r._first_appeal_date);
-    const appealApp = created?.find(
-      (c) => c.public_authority === "BWSSB" && c.status === "first_appeal_filed",
-    );
-    const filed = appealRow >= 0 ? rows[appealRow]?._first_appeal_date : undefined;
-    if (appealApp && filed) {
-      await context.supabase.from("appeals").insert({
-        application_id: appealApp.id,
+    // Link the appeal to its own seed row by grievance text, not by authority guesswork.
+    const appeals = rows
+      .filter((r) => r._first_appeal_date)
+      .map((r) => ({
+        filed: r._first_appeal_date as string,
+        id: created?.find((c) => c.grievance_text === r.grievance_text)?.id,
+      }))
+      .filter((a): a is { filed: string; id: string } => Boolean(a.id));
 
-        tier: "first",
-        grounds: "No reply within 30 days — deemed refusal under Section 7(2).",
-        body: "[Demo record] First appeal under Section 19(1) filed with the First Appellate Authority, BWSSB, on the ground of deemed refusal under Section 7(2).",
-        filed_date: filed,
-        due_date: addDays(filed, 45),
-      });
+    if (appeals.length) {
+      await context.supabase.from("appeals").insert(
+        appeals.map((a) => ({
+          application_id: a.id,
+          tier: "first",
+          grounds: "No reply within 30 days — deemed refusal under Section 7(2).",
+          body: "[Demo record] First appeal under Section 19(1) filed with the First Appellate Authority on the ground of deemed refusal under Section 7(2).",
+          filed_date: a.filed,
+          due_date: addDays(a.filed, 45),
+        })),
+      );
     }
 
     return { seeded: created?.length ?? 0 };
