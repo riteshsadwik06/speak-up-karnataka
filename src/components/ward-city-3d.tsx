@@ -25,7 +25,7 @@ type Props = {
   /** Slow ambient orbit, one rotation per ~90s. */
   spin?: boolean;
   /** Ward click handler. Omit for a purely decorative surface. */
-  onWardClick?: (wardId: string) => void;
+  onWardClick?: (ward: RawWard) => void;
   className?: string;
   /** Rendered when WebGL is unavailable or another 3D surface owns the context. */
   fallback?: React.ReactNode;
@@ -138,7 +138,7 @@ export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick,
           pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
           raycaster.setFromCamera(pointer, camera);
           const hit = raycaster.intersectObjects(meshes, false)[0];
-          if (hit) clickRef.current((hit.object.userData as { ward: RawWard }).ward.id);
+          if (hit) clickRef.current((hit.object.userData as { ward: RawWard }).ward);
         };
         if (onWardClick) renderer.domElement.addEventListener("click", onClick);
         renderer.domElement.style.cursor = onWardClick ? "pointer" : "default";
