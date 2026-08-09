@@ -60,7 +60,8 @@ export function nextActionKind(row: TriageRow, appeals?: Appealish[]): NextActio
 
   const clock = clockFor(row, list);
   if (clock.tone === "danger") {
-    return list.some((a) => a.tier === "first") ? "second_appeal" : "overdue_appeal";
+    // Only an appeal that was actually filed can make a second appeal the next step.
+    return list.some((a) => a.tier === "first" && a.filed_date) ? "second_appeal" : "overdue_appeal";
   }
   return "waiting";
 }

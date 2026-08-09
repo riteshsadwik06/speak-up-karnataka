@@ -122,7 +122,10 @@ export const DICT_DETAIL = {
     en: "Post this version by speed post with acknowledgement due, with the fee by IPO or DD.",
     kn: "ಈ ಆವೃತ್ತಿಯನ್ನು ಸ್ವೀಕೃತಿ ಸೂಚನೆಯೊಂದಿಗೆ ಸ್ಪೀಡ್ ಪೋಸ್ಟ್ ಮೂಲಕ, ಶುಲ್ಕವನ್ನು ಐಪಿಒ ಅಥವಾ ಡಿಡಿ ಮೂಲಕ ಪಾವತಿಸಿ ಕಳುಹಿಸಿ.",
   },
-  charactersOfLimit: { en: "characters (portal limit)", kn: "ಅಕ್ಷರಗಳು (ಪೋರ್ಟಲ್ ಮಿತಿ)" },
+  charactersOfLimit: {
+    en: "{count} of {limit} characters (portal limit)",
+    kn: "{limit} ಅಕ್ಷರಗಳಲ್ಲಿ {count} (ಪೋರ್ಟಲ್ ಮಿತಿ)",
+  },
   overLimitWarning: {
     en: "Over the portal limit - upload the full text as a PDF in the Supporting Document field instead (PDF only, max 5MB).",
     kn: "ಪೋರ್ಟಲ್ ಮಿತಿ ಮೀರಿದೆ - ಬದಲಿಗೆ ಪೂರ್ಣ ಪಠ್ಯವನ್ನು ಪೋಷಕ ದಾಖಲೆ ಕ್ಷೇತ್ರದಲ್ಲಿ ಪಿಡಿಎಫ್ ಆಗಿ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (ಪಿಡಿಎಫ್ ಮಾತ್ರ, ಗರಿಷ್ಠ 5MB).",
