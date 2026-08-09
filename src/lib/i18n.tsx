@@ -31,6 +31,8 @@ import { DICT_OFFICIALS } from "@/lib/dict/officials";
 import {
   AUTHORITY_NAME_KN,
   AUTHORITY_NOTE_KN,
+  CHANNEL_NAME_KN,
+  CHANNEL_NOTE_KN,
   CORPORATION_SHORT_KN,
 } from "@/lib/dict/authorities";
 
@@ -171,6 +173,18 @@ export function useAuthorityNote() {
   const { lang } = useLang();
   return useCallback(
     (id: string, en: string) => (lang === "kn" ? (AUTHORITY_NOTE_KN[id] ?? en) : en),
+    [lang],
+  );
+}
+
+/** Complaint channel name and note in the active language, keyed by channel id. */
+export function useChannelLabel() {
+  const { lang } = useLang();
+  return useCallback(
+    (id: string, name: string, note: string) =>
+      lang === "kn"
+        ? { name: CHANNEL_NAME_KN[id] ?? name, note: CHANNEL_NOTE_KN[id] ?? note }
+        : { name, note },
     [lang],
   );
 }

@@ -43,3 +43,19 @@ export const AUTHORITY_NOTE_KN: Record<string, string> = {
   bda: "ಬಡಾವಣೆಗಳು, ನಿವೇಶನಗಳು, ಅಭಿವೃದ್ಧಿ ಯೋಜನೆಗಳು",
   other: "ಕರ್ನಾಟಕದ ಇತರ ಯಾವುದೇ ಸಾರ್ವಜನಿಕ ಪ್ರಾಧಿಕಾರ",
 };
+
+/** Complaint channels, keyed by COMPLAINT_CHANNELS[].id in rti-data.ts. */
+export const CHANNEL_NAME_KN: Record<string, string> = {
+  sahaaya: "ಸಹಾಯ 2.0 (ನಮ್ಮ ಬೆಂಗಳೂರು)",
+  bwssb: "BWSSB (ಜಲಮಂಡಳಿ)",
+  bescom: "BESCOM (ವಿದ್ಯುತ್)",
+  other: "ಇತರೆ / ನೀವೇ ನಮೂದಿಸಿದ್ದು",
+};
+
+export const CHANNEL_NOTE_KN: Record<string, string> = {
+  sahaaya:
+    "GBA ನಾಗರಿಕ ಸಮಸ್ಯೆಗಳು — ರಸ್ತೆ, ಚರಂಡಿ, ಕಸ, ಬೀದಿ ದೀಪ, ಮರಗಳು, ಒತ್ತುವರಿ, ಕಟ್ಟಡ ಉಲ್ಲಂಘನೆ",
+  bwssb: "ನೀರು ಸರಬರಾಜು ಮತ್ತು ಒಳಚರಂಡಿ",
+  bescom: "ವಿದ್ಯುತ್ ಸರಬರಾಜು, ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮರ್, ಬಿಲ್ಲಿಂಗ್",
+  other: "ಇತರ ಯಾವುದೇ ಸಾರ್ವಜನಿಕ ಪ್ರಾಧಿಕಾರ",
+};
