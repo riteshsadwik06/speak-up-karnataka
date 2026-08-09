@@ -726,7 +726,8 @@ function NewApplication() {
               value={complaintText}
               onChange={(e) => setComplaintText(e.target.value)}
               rows={12}
-              className={`${inputClass} mt-3 resize-y font-mono text-xs`}
+              lang={lang}
+              className={`${inputClass} mt-3 resize-y ${lang === "kn" ? `${KN_TEXT} text-sm` : "font-mono text-xs"}`}
             />
             <div className="mt-3 flex flex-wrap gap-2">
               <button
