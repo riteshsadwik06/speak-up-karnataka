@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 import { WARDS } from "@/lib/wards";
-import { AppShell, StatusPill } from "@/components/app-shell";
+import { AppShell } from "@/components/app-shell";
 import { clockFor, consistencyIssue, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
 import { WardCity3D } from "@/components/ward-city-3d";
@@ -52,10 +52,6 @@ type AppRow = {
   escalation_count: number;
   transfer_date: string | null;
 };
-
-function stamp(date: string | null) {
-  return date ? date.replaceAll("-", ".") : "—";
-}
 
 function Dashboard() {
   const { lang, t } = useLang();
@@ -210,7 +206,7 @@ function Dashboard() {
     open?: boolean;
     onToggle?: () => void;
     toggleLabel?: string;
-    children?: React.ReactNode;
+    children?: ReactNode;
   }) {
     return (
       <section className="border-b border-border">
