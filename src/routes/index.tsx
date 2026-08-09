@@ -31,10 +31,11 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const CLOCKS = [
-  { day: "30", tId: "clockReplyDueTitle", dId: "clockReplyDueDesc" },
-  { day: "30", tId: "clockFirstAppealTitle", dId: "clockFirstAppealDesc" },
-  { day: "90", tId: "clockSecondAppealTitle", dId: "clockSecondAppealDesc" },
+const STEPS = [
+  { tId: "step1Title", bId: "step1Body" },
+  { tId: "step2Title", bId: "step2Body" },
+  { tId: "step3Title", bId: "step3Body" },
+  { tId: "step4Title", bId: "step4Body" },
 ] as const;
 
 function Landing() {
