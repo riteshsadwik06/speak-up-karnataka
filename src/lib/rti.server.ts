@@ -143,6 +143,84 @@ export function stripUnsuppliedIdentifiers(text: string, supplied: (string | nul
     .replace(/\(\s*\)/g, "")
     .replace(/[ \t]+([.,;:])/g, "$1");
 }
+/* ------------------------------------------------------------------ *
+ * Applicant identity — interpolated, never left as a blank
+ * ------------------------------------------------------------------ */
+
+/** We do not hold the appellate authority's address, and the model must not guess it. */
+export const FAA_ADDRESS_LINE =
+  "Address: see the First Appellate Authority details on your RTI acknowledgement";
+
+/** Verbatim applicant data for the model, plus the rules for what to do when it is absent. */
+export function applicantPromptBlock(a: Applicant): string {
+  const known = [
+    a.name?.trim() ? `Applicant name: ${a.name.trim()}` : "",
+    a.address?.trim() ? `Applicant postal address: ${a.address.trim()}` : "",
+    a.phone?.trim() ? `Applicant mobile number: ${a.phone.trim()}` : "",
+    a.email?.trim() ? `Applicant email: ${a.email.trim()}` : "",
+  ].filter(Boolean);
+  return [
+    known.length ? known.join("\n") : "No applicant contact details are on file.",
+    "Use these values verbatim in the signature block. Any of these details that is not listed above is unknown: omit that line entirely from the letter. Never write a blank, a bracket, an underscore run or a dotted line for a citizen to fill in.",
+    `You do not know the appellate authority's office address or PIN code. Do not guess them. Write exactly this single line in place of the addressee's street address: "${FAA_ADDRESS_LINE}".`,
+  ].join("\n");
+}
+
+const SINGLE_BRACKET = /(?<!\[)\[([^[\]\n]{2,90})\](?!\])/g;
+
+/**
+ * Post-generation repair: fills applicant placeholders from the profile, drops the
+ * line where we genuinely hold nothing, and substitutes the acknowledgement line for
+ * an office address. Only the applicant's name survives as a bracket, because the
+ * missing-details panel must ask for it.
+ */
+export function resolveApplicantPlaceholders(text: string, a: Applicant): string {
+  const out: string[] = [];
+  let faaDone = false;
+
+  for (const raw of text.split("\n")) {
+    let dropLine = false;
+    let faaLine = false;
+
+    const line = raw.replace(SINGLE_BRACKET, (m, label: string) => {
+      const lab = String(label).trim();
+      if (/^(sic|\d+)$/i.test(lab)) return m;
+      const field = applicantFieldFor(lab);
+      if (field) {
+        const value =
+          field === "full_name" ? a.name : field === "address" ? a.address : field === "phone" ? a.phone : a.email;
+        const v = (value ?? "").trim();
+        if (v) return v;
+        if (field === "full_name") return m; // deliberate: prompts in missing-details
+        dropLine = true;
+        return "";
+      }
+      if (/address|pin/i.test(lab)) {
+        faaLine = true;
+        return "";
+      }
+      dropLine = true;
+      return "";
+    });
+
+    if (faaLine) {
+      if (!faaDone) {
+        out.push(FAA_ADDRESS_LINE);
+        faaDone = true;
+      }
+      continue;
+    }
+    if (dropLine) {
+      const residual = line.replace(/^[^:]{0,40}:/, "").trim();
+      if (!residual) continue;
+      out.push(line.trimEnd());
+      continue;
+    }
+    out.push(line.trimEnd());
+  }
+
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
 
 
 
