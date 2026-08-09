@@ -1072,8 +1072,8 @@ function Detail() {
 function TimelineRow({ label, value }: { label: string; value: string }) {
   return (
     <li className="flex items-baseline justify-between gap-3 border-b border-border/70 pb-1.5 last:border-0">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="font-mono text-xs">{value}</span>
+      <span className="min-w-0 text-xs leading-[1.65] text-muted-foreground">{label}</span>
+      <span className="shrink-0 font-mono text-xs">{value}</span>
     </li>
   );
 }
