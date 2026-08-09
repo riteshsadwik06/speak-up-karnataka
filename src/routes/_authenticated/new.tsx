@@ -177,19 +177,12 @@ function NewApplication() {
       const result = await routeFn({ data: { grievance } });
       if (result) {
         let match = AUTHORITIES.find((a) => a.id === result.authority_id);
-        (window as unknown as Record<string, unknown>)["__route"] = result;
         let wardName = "";
-        (window as unknown as Record<string, unknown>)["__dbg"] = [];
-        const dbg = (window as unknown as Record<string, unknown>)["__dbg"] as unknown[];
         if (result.locality) {
-          dbg.push("locality:" + result.locality);
-          let hit = null as Awaited<ReturnType<typeof wardForLocality>>;
-          try { hit = await wardForLocality(result.locality); } catch (e) { dbg.push("err:" + String(e)); }
-          dbg.push("hit:" + JSON.stringify(hit));
+          const hit = await wardForLocality(result.locality);
           if (hit) {
             setWardId(hit.ward_id);
             wardName = hit.ward_name;
-            (window as unknown as Record<string, unknown>)["__hit"] = hit;
             // The ward list is authoritative: it decides which corporation owns the ward.
             if (match && CORP_IDS.includes(match.id)) {
               match = AUTHORITIES.find((a) => a.name === hit.corporation) ?? match;
