@@ -39,6 +39,7 @@ import {
 } from "@/components/officials";
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
+import { KN_TEXT, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
@@ -72,7 +73,9 @@ function Detail() {
   const qc = useQueryClient();
   const makeAppeal = useServerFn(generateAppealDraft);
   const makeDraft = useServerFn(generateDraft);
+  const { lang, t } = useLang();
   const [busy, setBusy] = useState(false);
+  const [bodyTab, setBodyTab] = useState<"kn" | "en">("kn");
   const [filedDate, setFiledDate] = useState(today());
   const [regNumber, setRegNumber] = useState("");
   const [replyDate, setReplyDate] = useState(today());
@@ -119,6 +122,7 @@ function Detail() {
     escalation_count: number;
     generated_requests: { text: string; rationale: string }[];
     application_body: string;
+    application_body_kn: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -147,6 +151,9 @@ function Detail() {
   const faaSilentDays = firstAppeal?.filed_date ? daysBetween(firstAppeal.filed_date) : 0;
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
   const portalSafeBody = toPortalSafe(app.application_body);
+  const bodyKn = (app as { application_body_kn?: string | null }).application_body_kn ?? "";
+  const hasKn = !!bodyKn.trim();
+  const showKn = hasKn && bodyTab === "kn";
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
   const wardZone = WARDS.find((w) => w.ward_id === app.ward_id)?.zone_name ?? null;
   const kind = portalAuthorityKind(app.public_authority);
