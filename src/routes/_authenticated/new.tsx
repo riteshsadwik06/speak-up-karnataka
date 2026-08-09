@@ -740,19 +740,29 @@ function NewApplication() {
 
           {routeNote && (
             <div className="rounded-md border border-accent/40 bg-accent/8 p-3">
-              <p className={`text-sm ${knClass}`}>
-                {(routeNote.ward ? t("routingSuggestionWard") : t("routingSuggestionNoWard"))
-                  .replace("{authority}", authorityLabel(routeNote.authority))
-                  .replace("{ward}", routeNote.ward)
-                  .replace("{category}", routeNote.category || t("stepGrievance"))}
-              </p>
-              {routeNote.low && (
+              {routeNote.unknownAuthority ? (
+                <p className={`text-sm ${knClass}`}>{t("routingUnknownAuthority")}</p>
+              ) : (
+                <p className={`text-sm ${knClass}`}>
+                  {(routeNote.ward ? t("routingSuggestionWard") : t("routingSuggestionNoWard"))
+                    .replace("{authority}", authorityLabel(routeNote.authority))
+                    .replace("{ward}", routeNote.ward)
+                    .replace("{category}", routeNote.category || t("stepGrievance"))}
+                </p>
+              )}
+              {routeNote.unknownLocality && (
+                <p className={`mt-1 text-xs text-muted-foreground ${knClass}`}>
+                  {t("routingUnknownWard").replace("{locality}", routeNote.unknownLocality)}
+                </p>
+              )}
+              {routeNote.low && !routeNote.unknownAuthority && (
                 <p className={`mt-1 text-xs text-muted-foreground ${knClass}`}>
                   {t("routingLowConfidence")}
                 </p>
               )}
             </div>
           )}
+
 
           <div className="grid gap-2 sm:grid-cols-2">
             {AUTHORITIES.map((a) => (
