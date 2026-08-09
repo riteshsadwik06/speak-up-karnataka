@@ -26,14 +26,19 @@ export type RtiDraft = {
 export type WardIdentity = {
   name: string;
   nameKn?: string | null;
+  /** Plain ward number, e.g. "17". Never a synthesised code such as "C-017". */
   number?: string | null;
   corporation?: string | null;
   zone?: string | null;
+  assembly?: string | null;
   oldBbmpWard?: string | null;
 };
 
 /** Shared anti-fabrication rule. Appended to every prompt that produces filed text. */
-export const NO_FABRICATION_RULE = `Never invent or construct an identifier of any kind - ward numbers, file numbers, reference numbers, application numbers, zone codes. Use only identifiers supplied to you verbatim. If an identifier has not been supplied, omit it entirely rather than guessing or inferring a format.`;
+export const NO_FABRICATION_RULE = `Never invent or construct an identifier of any kind - ward numbers, file numbers, reference numbers, zone codes. Use only identifiers supplied to you verbatim. If one has not been supplied, omit it rather than inferring a format.`;
+
+/** Shared anti-placeholder rule. A short complete letter beats one full of blanks. */
+export const NO_PLACEHOLDER_RULE = `Never write placeholder text in square brackets or any other form. If a detail is missing, write the letter without it. A shorter, complete letter is always better than one containing blanks for the citizen to fill in.`;
 
 const WARD_TOKENS = {
   name: "[[WARD_NAME]]",
@@ -41,8 +46,17 @@ const WARD_TOKENS = {
   number: "[[WARD_NUMBER]]",
   corporation: "[[CORPORATION]]",
   zone: "[[ZONE]]",
+  assembly: "[[ASSEMBLY]]",
   oldBbmpWard: "[[OLD_BBMP_WARD]]",
+  line: "[[WARD_LINE]]",
 } as const;
+
+/** The only correct written form of ward identity: plain number + full corporation name. */
+export function wardLine(ward: WardIdentity | null | undefined): string {
+  if (!ward?.name) return "";
+  const parts = [ward.number ? `Ward ${ward.number}` : "", ward.corporation ?? ""].filter(Boolean);
+  return parts.length ? parts.join(", ") : ward.name;
+}
 
 /** Structured ward data plus opaque tokens: the model places tokens, never identity values. */
 export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
@@ -54,10 +68,12 @@ export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
       ward_number: ward.number ?? null,
       corporation: ward.corporation ?? null,
       zone: ward.zone ?? null,
+      assembly_constituency: ward.assembly ?? null,
       old_bbmp_ward_name: ward.oldBbmpWard ?? null,
     })}`,
     `WARD_PLACEHOLDERS_JSON: ${JSON.stringify(WARD_TOKENS)}`,
     "When ward identity is relevant, put only the matching placeholder in the generated document. Do not copy, rewrite, translate, abbreviate or compose the identity value yourself. Omit placeholders whose structured value is null.",
+    "There is no such thing as a lettered ward code. Never write forms like \"C-017\" or \"Ward N-012\". Where a full identification is wanted, use the [[WARD_LINE]] placeholder, which the application renders as \"Ward 17, Bengaluru Central City Corporation\".",
   ].join("\n");
 }
 
@@ -69,7 +85,9 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
     [WARD_TOKENS.number]: ward?.number ?? "",
     [WARD_TOKENS.corporation]: ward?.corporation ?? "",
     [WARD_TOKENS.zone]: ward?.zone ?? "",
+    [WARD_TOKENS.assembly]: ward?.assembly ?? "",
     [WARD_TOKENS.oldBbmpWard]: ward?.oldBbmpWard ?? "",
+    [WARD_TOKENS.line]: wardLine(ward),
   };
   let output = text;
   for (const [token, value] of Object.entries(values)) output = output.split(token).join(value);
@@ -83,7 +101,8 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
 const IDENTIFIER_PATTERNS: RegExp[] = [
   /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?[A-Z]-?\d{1,4}\b/gi,
   /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?\d{1,4}\b/gi,
-  /\b[A-Z]-\d{3}\b/gi,
+  // Any "letter-hyphen-digits" construction: no department issues these.
+  /\(?\b[A-Z]-\d{1,4}\b\)?/g,
 ];
 
 export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
@@ -102,6 +121,7 @@ export function stripUnsuppliedIdentifiers(text: string, supplied: (string | nul
   // Tidy the punctuation the removal leaves behind.
   return out.replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",").replace(/,\s*,/g, ",").replace(/\(\s*\)/g, "");
 }
+
 
 
 export const DRAFT_SYSTEM_PROMPT = `You help Indian citizens draft Right to Information (RTI) applications under the RTI Act 2005.
@@ -123,6 +143,8 @@ Karnataka's Rule 14 requires that a single RTI application relate to ONE subject
 Rule 14 also states an application shall not ordinarily exceed 150 words. Keep the combined text of the numbered requests under 150 words. Be terse and specific; drop filler. Do not sacrifice the time period, the location or the document type to save words - those are what make a request answerable.
 
 ${NO_FABRICATION_RULE}
+
+${NO_PLACEHOLDER_RULE}
 - Ward identity is supplied as structured JSON with placeholders. In document text, use only those placeholders; application code replaces them with authoritative values after generation.
 
 
@@ -134,7 +156,7 @@ export const APPEAL_SYSTEM_PROMPT = `You draft appeals under the Right to Inform
 A FIRST APPEAL is under Section 19(1), filed with the First Appellate Authority of the same public authority, within 30 days of the reply or of the date the reply was due. Where no reply was received within 30 days, cite deemed refusal under Section 7(2).
 A SECOND APPEAL is under Section 19(3), filed with the Karnataka State Information Commission (${LEGAL.ksicAddress}) within 90 days, and may be filed once 45 days have elapsed with no decision from the First Appellate Authority.
 
-Write a complete, formal, ready-to-send appeal letter in plain text. Include: addressee block, subject line citing the correct section, a short numbered chronology of dates, the grounds of appeal with the correct statutory citations, the relief sought, and a signature block with placeholders in square brackets. Never ask for explanations or reasons — only records. Never state a reason for wanting the information (Section 6(2)).
+Write a complete, formal, ready-to-send appeal letter in plain text. Include: addressee block, subject line citing the correct section, a short numbered chronology of dates, the grounds of appeal with the correct statutory citations, the relief sought, and a signature block. ${NO_FABRICATION_RULE} ${NO_PLACEHOLDER_RULE} Never ask for explanations or reasons — only records. Never state a reason for wanting the information (Section 6(2)).
 
 Return ONLY the letter text. No markdown, no commentary, no code fences.`;
 
@@ -245,6 +267,8 @@ export function assembleApplication(input: {
   pioName?: string | null;
   pioAddress?: string | null;
   wardName?: string | null;
+  /** "Ward 17, Bengaluru Central City Corporation" — never a synthesised code. */
+  wardLine?: string | null;
   requests: RtiRequest[];
   applicantName?: string | null;
   applicantAddress?: string | null;
@@ -257,15 +281,16 @@ export function assembleApplication(input: {
 
   return `To,
 The Public Information Officer${input.pioName ? `, ${input.pioName}` : ""}
-${input.authority}
-${input.pioAddress ?? "[PIO office address]"}
+${input.authority}${input.pioAddress ? `\n${input.pioAddress}` : ""}
 
 Subject: Application for information under Section 6(1) of the Right to Information Act, 2005
 
 Sir/Madam,
 
 Under Section 6(1) of the Right to Information Act, 2005, I request the following information${
-    input.wardName ? ` pertaining to ${input.wardName} ward` : ""
+    input.wardName
+      ? ` pertaining to ${input.wardName} ward${input.wardLine ? ` (${input.wardLine})` : ""}`
+      : ""
   }:
 
 ${numbered}
@@ -284,9 +309,7 @@ If any part is refused, please state the specific exemption under Section 8 or 9
 
 Yours faithfully,
 
-${input.applicantName ?? "[Your full name]"}
-${input.applicantAddress ?? "[Your postal address]"}
-${input.applicantPhone ? `Phone: ${input.applicantPhone}` : "Phone: [Your phone number]"}
+${[input.applicantName, input.applicantAddress, input.applicantPhone ? `Phone: ${input.applicantPhone}` : ""].filter(Boolean).join("\n")}
 Date: ${new Date().toISOString().slice(0, 10)}`;
 }
 
@@ -338,6 +361,8 @@ All the original rules still apply: ask for records and never explanations, neve
 If the citizen has supplied new specifics - dates, a street name, a complaint number, a ward - work them into the relevant requests to make them harder to refuse as vague.
 
 ${NO_FABRICATION_RULE}
+
+${NO_PLACEHOLDER_RULE}
 
 
 Return ONLY valid JSON, no markdown fences:
@@ -416,6 +441,8 @@ Rules:
 When asked to write in Kannada, write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority.
 
 ${NO_FABRICATION_RULE}
+
+${NO_PLACEHOLDER_RULE}
 - Ward identity is supplied as structured JSON with placeholders. In complaint text, use only those placeholders; application code replaces them with authoritative values after generation. If a value is not supplied, omit its placeholder.
 
 

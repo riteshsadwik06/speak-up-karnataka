@@ -89,4 +89,16 @@ export const DICT_COMMON = {
   langToggleLabelKn: { en: "View in Kannada", kn: "ಕನ್ನಡದಲ್ಲಿ ವೀಕ್ಷಿಸಿ" },
   langToggleLabelEn: { en: "View in English", kn: "ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ವೀಕ್ಷಿಸಿ" },
   bengaluruWord: { en: "Bengaluru", kn: "ಬೆಂಗಳೂರು" },
+  // --- Missing details in a generated draft ---
+  missingDetailsTitle: { en: "This draft is missing details", kn: "ಈ ಕರಡಿನಲ್ಲಿ ಕೆಲವು ವಿವರಗಳು ಇಲ್ಲ" },
+  missingDetailsHelp: {
+    en: "Fill these in and we will rewrite the letter. Nothing is copied until the blanks are gone.",
+    kn: "ಇವುಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ, ನಾವು ಪತ್ರವನ್ನು ಮತ್ತೆ ಬರೆಯುತ್ತೇವೆ. ಖಾಲಿ ಜಾಗಗಳು ಇರುವವರೆಗೆ ನಕಲಿಸಲಾಗುವುದಿಲ್ಲ.",
+  },
+  missingDetailsSubmit: { en: "Rewrite with these details", kn: "ಈ ವಿವರಗಳೊಂದಿಗೆ ಮತ್ತೆ ಬರೆಯಿರಿ" },
+  missingDetailsWorking: { en: "Rewriting…", kn: "ಮತ್ತೆ ಬರೆಯಲಾಗುತ್ತಿದೆ…" },
+  placeholderBlockNote: {
+    en: "This draft is missing details. Fill them in above before copying.",
+    kn: "ಈ ಕರಡಿನಲ್ಲಿ ವಿವರಗಳು ಇಲ್ಲ. ನಕಲಿಸುವ ಮೊದಲು ಮೇಲೆ ಅವುಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.",
+  },
 } as const;
