@@ -1114,6 +1114,7 @@ function NewApplication() {
 }
 
 function ResponsibleOfficials({ wardName, category }: { wardName: string; category: string }) {
+  const { t } = useLang();
   const { data, loading } = useWardOfficials(wardName);
   const list = useMemo(
     () => relevantOfficials(data?.officials ?? [], category),
@@ -1122,17 +1123,17 @@ function ResponsibleOfficials({ wardName, category }: { wardName: string; catego
 
   return (
     <div className="paper-card p-5">
-      <SectionLabel>Who is responsible</SectionLabel>
-      <p className="text-sm text-muted-foreground">
-        This is who is responsible. Call them, and quote your complaint number.
-      </p>
+      <SectionLabel>{t("whoIsResponsible")}</SectionLabel>
+      <T id="whoIsResponsibleHelp" as="p" className="text-sm text-muted-foreground" />
       {loading ? (
         <OfficialsSkeleton />
       ) : (
         <>
           {data?.oldBbmpWard ? (
             <p className="mt-2 text-xs">
-              {wardName} was <strong>{data.oldBbmpWard}</strong> ward under BBMP (pre-2025).
+              {t("oldBbmpWardNote")
+                .replace("{ward}", wardName)
+                .replace("{oldWard}", data.oldBbmpWard)}
             </p>
           ) : null}
           <OfficialsList officials={list} />
