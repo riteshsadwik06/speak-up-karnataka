@@ -106,7 +106,12 @@ function NewApplication() {
   const [closureDate, setClosureDate] = useState("");
   const [stillWrong, setStillWrong] = useState("");
   const [grievance, setGrievance] = useState("");
-  const [language, setLanguage] = useState("en");
+  /**
+   * Language of the letter that actually gets filed. Defaults to the interface
+   * language (header toggle) until the user explicitly overrides it here.
+   */
+  const [languageOverride, setLanguageOverride] = useState<string | null>(null);
+  const language = languageOverride ?? lang;
   const [authorityId, setAuthorityId] = useState("");
   const [otherAuthority, setOtherAuthority] = useState("");
   const [pioName, setPioName] = useState("");
