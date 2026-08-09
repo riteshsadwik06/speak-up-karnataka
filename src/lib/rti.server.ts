@@ -301,6 +301,8 @@ Rules:
 - Explicitly request the action-taken report and a completion photograph on closure. This is the single most important line: it sets up the evidence trail if the complaint is later closed without work.
 - Keep it under 200 words. Plain, factual, unemotional. No threats, no legal citations - this is not the RTI stage.
 
+When asked to write in Kannada, write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority.
+
 Return ONLY valid JSON, no markdown fences:
 { "complaint": "the complaint text", "suggested_channel": "sahaaya|bwssb|bescom|other", "category": "short issue category", "checkable_action": "the one specific action requested" }`;
 
@@ -309,8 +311,13 @@ export async function draftComplaint(input: {
   authority: string;
   ward?: string | null;
   wardNumber?: string | null;
+  /** 'kn' writes the complaint in Kannada. Sahaaya and the helplines accept Kannada. */
+  lang?: "en" | "kn";
 }): Promise<ComplaintDraft> {
   const user = [
+    input.lang === "kn"
+      ? "Write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority. The JSON keys stay in English; only the value of \"complaint\" is in Kannada."
+      : "",
     `Public authority / department: ${input.authority}`,
     input.ward
       ? `Ward: ${input.ward}${input.wardNumber ? ` (ward number ${input.wardNumber})` : ""}, Bengaluru, Karnataka`
@@ -330,4 +337,31 @@ export async function draftComplaint(input: {
     category: typeof parsed.category === "string" ? parsed.category : "",
     checkable_action: typeof parsed.checkable_action === "string" ? parsed.checkable_action : "",
   };
+}
+
+
+/**
+ * The Karnataka RTI portal's text field accepts Latin characters only, so a Kannada
+ * application cannot be filed online — it is filed by post, and is equally valid in law
+ * (Section 6(1) permits English, Hindi or the official language of the area).
+ * This produces the Kannada counterpart of an already-assembled English letter. The
+ * drafting logic is untouched: the same requests, translated.
+ */
+export const KANNADA_LETTER_SYSTEM_PROMPT = `You translate formal Indian legal correspondence from English into Kannada for a citizen in Karnataka.
+
+You will be given a complete Right to Information application or appeal letter in English. Return the same letter in Kannada, ready to print and send by post.
+
+Rules:
+- Preserve the structure exactly: addressee block, subject line, numbered requests in the same order, closing, signature block.
+- Keep every placeholder in square brackets exactly as it appears, in English, unchanged.
+- Keep the name of the public authority, personal names, addresses, registration numbers, dates and numerals as they appear in the English letter. Do not transliterate the authority's name.
+- Statutory citations keep their numbering — write for example "ಮಾಹಿತಿ ಹಕ್ಕು ಅಧಿನಿಯಮ, 2005ರ ಕಲಂ 6(1)".
+- Use the formal register the Karnataka government's own Kannada correspondence uses: ಮಾಹಿತಿ ಹಕ್ಕು, ಸಾರ್ವಜನಿಕ ಮಾಹಿತಿ ಅಧಿಕಾರಿ, ಸಾರ್ವಜನಿಕ ಪ್ರಾಧಿಕಾರ, ಅರ್ಜಿದಾರ, ಶುಲ್ಕ, ದಾಖಲೆ, ಪ್ರಥಮ ಮೇಲ್ಮನವಿ.
+- Do not add, remove or soften any request.
+
+Return ONLY the Kannada letter text. No markdown, no commentary, no transliteration, no English translation alongside.`;
+
+export async function translateLetterToKannada(englishLetter: string): Promise<string> {
+  if (!englishLetter.trim()) return "";
+  return callGateway(KANNADA_LETTER_SYSTEM_PROMPT, englishLetter);
 }
