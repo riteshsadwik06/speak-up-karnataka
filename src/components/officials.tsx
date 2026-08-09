@@ -98,25 +98,30 @@ export function OfficialsCredit() {
 
 function OfficialRow({ o }: { o: Official }) {
   return (
-    <li className="border-b border-border py-1.5">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-        {o.designation || "Official"}
-      </p>
-      <p className="text-sm leading-tight">{o.name || "—"}</p>
-      {o.nameKn ? <p className="text-xs text-muted-foreground">{o.nameKn}</p> : null}
-      {o.phone ? (
-        <p className="mt-0.5 flex flex-wrap gap-x-3">
-          {o.phone
-            .split(/[,/]/)
-            .map((p) => p.trim())
-            .filter(Boolean)
-            .map((p) => (
-              <a key={p} href={`tel:${p.replace(/\s+/g, "")}`} className="font-mono text-xs underline">
-                {p}
-              </a>
-            ))}
+    <li className="flex items-start gap-2 border-b border-border py-1.5">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center border border-border text-muted-foreground">
+        <CivicIcon role={civicRoleFor(o.designation)} size={16} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          {o.designation || "Official"}
         </p>
-      ) : null}
+        <p className="text-sm leading-tight">{o.name || "—"}</p>
+        {o.nameKn ? <p className="text-xs text-muted-foreground">{o.nameKn}</p> : null}
+        {o.phone ? (
+          <p className="mt-0.5 flex flex-wrap gap-x-3">
+            {o.phone
+              .split(/[,/]/)
+              .map((p) => p.trim())
+              .filter(Boolean)
+              .map((p) => (
+                <a key={p} href={`tel:${p.replace(/\s+/g, "")}`} className="font-mono text-xs underline">
+                  {p}
+                </a>
+              ))}
+          </p>
+        ) : null}
+      </div>
     </li>
   );
 }
