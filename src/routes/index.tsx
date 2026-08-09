@@ -13,17 +13,19 @@ import { LangToggle, useLang, T } from "@/lib/i18n";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Vicharane — RTI drafting & deadline tracker for Bengaluru" },
+      { title: "Vicharane — civic complaints & RTI for Bengaluru" },
       {
         name: "description",
         content:
-          "Most RTI applications fail because they ask the wrong question. Vicharane rewrites your grievance as records a PIO must hand over, then runs the 30-day statutory clock.",
+          "Describe a Bengaluru civic problem in plain English or Kannada. Vicharane finds who is responsible, writes the complaint or RTI they must answer, and tracks every deadline.",
       },
-      { property: "og:title", content: "Vicharane — ask for records, not explanations" },
+      { property: "og:title", content: "Say it in your own words. We'll say it in theirs." },
       {
         property: "og:description",
-        content: "Draft a legally sound RTI application for Bengaluru and never miss an appeal deadline.",
+        content:
+          "Vicharane turns a plain-language Bengaluru grievance into a complaint or RTI the right authority is obliged to answer — and holds them to every statutory deadline.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
