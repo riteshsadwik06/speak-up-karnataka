@@ -8,6 +8,7 @@ import {
   reviseRequests,
   routeGrievance,
   translateLetterToKannada,
+  wardLine,
   type FalseClosure,
   type RtiRequest,
   type WardIdentity,
@@ -74,6 +75,7 @@ export const generateDraft = createServerFn({ method: "POST" })
     const body = assembleApplication({
       authority: data.authority,
       wardName: data.ward?.name ?? null,
+      wardLine: wardLine(data.ward ?? null) || null,
       requests: draft.requests,
       applicantName: profile?.full_name ?? null,
       applicantAddress: profile?.address ?? null,
@@ -120,6 +122,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
     const body = assembleApplication({
       authority: data.authority,
       wardName: data.ward?.name ?? null,
+      wardLine: wardLine(data.ward ?? null) || null,
       requests: draft.requests,
       applicantName: profile?.full_name ?? null,
       applicantAddress: profile?.address ?? null,
