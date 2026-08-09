@@ -19,7 +19,6 @@ function body(authority: string, ward: string, reqs: { text: string }[]) {
   return `To,
 The Public Information Officer
 ${authority}
-[PIO office address]
 
 Subject: Application for information under Section 6(1) of the Right to Information Act, 2005
 
