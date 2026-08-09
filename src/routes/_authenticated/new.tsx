@@ -77,6 +77,8 @@ type SubjectDraft = {
   subject: string;
   draft: RtiDraft;
   body: string;
+  /** Kannada counterpart, for postal filing. The portal accepts Latin characters only. */
+  bodyKn: string;
   saved: boolean;
   savedId?: string | undefined;
 };
@@ -145,6 +147,9 @@ function NewApplication() {
   const active = drafts.find((d) => d.subject === activeSubject) ?? drafts[0] ?? null;
   const draft = active?.draft ?? null;
   const body = active?.body ?? "";
+  const bodyKn = active?.bodyKn ?? "";
+  /** Which version of the letter is on screen. Kannada is postal-only. */
+  const [letterVersion, setLetterVersion] = useState<"en" | "kn">("en");
 
   function updateActive(patch: Partial<SubjectDraft>) {
     setDrafts((prev) =>
@@ -187,6 +192,7 @@ function NewApplication() {
           authority,
           ward: ward?.ward_name ?? null,
           wardNumber: ward?.ward_id ?? null,
+          lang,
         },
       });
       setComplaint(result);
@@ -219,6 +225,7 @@ function NewApplication() {
           generated_requests: [],
           application_body: "",
           complaint_text: complaintText,
+          complaint_language: lang,
           complaint_channel: channelId,
           complaint_ref: markSent ? sentRef.trim() || null : null,
           complaint_filed_date: markSent ? sentDate : null,
@@ -243,6 +250,7 @@ function NewApplication() {
           authority: overrideAuthority ?? authority,
           ward: ward?.ward_name ?? null,
           language,
+          lang,
           focusSubject: focusSubject ?? null,
           falseClosure,
         },
@@ -256,10 +264,12 @@ function NewApplication() {
         subject,
         draft: result.draft,
         body: result.body,
+        bodyKn: result.bodyKn ?? "",
         saved: false,
       };
       setDrafts((prev) => (focusSubject ? [...prev, entry] : [entry]));
       setActiveSubject(subject);
+      setLetterVersion(result.bodyKn ? "kn" : "en");
       setInstruction("");
       setStep(3);
     } catch (err) {
@@ -292,9 +302,10 @@ function NewApplication() {
           subject: active.subject,
           requests: active.draft.requests,
           instruction: text,
+          lang,
         },
       });
-      updateActive({ draft: result.draft, body: result.body });
+      updateActive({ draft: result.draft, body: result.body, bodyKn: result.bodyKn ?? "" });
       setInstruction("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not revise the draft");
@@ -331,6 +342,7 @@ function NewApplication() {
       corporation: ward?.corporation ?? null,
       generated_requests: entry.draft.requests,
       application_body: entry.body,
+      application_body_kn: entry.bodyKn || null,
       status: markFiled ? "filed" : "draft",
       filed_date: markFiled ? (filedDate ?? today()) : null,
       response_due_date: markFiled ? addDays(filedDate ?? today(), LEGAL.pioDays) : null,
@@ -1034,12 +1046,49 @@ function NewApplication() {
           <div className="paper-card p-5">
             <SectionLabel>The application — edit anything before you file</SectionLabel>
 
+            {bodyKn ? (
+              <>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {lang === "kn"
+                    ? "ಆನ್‌ಲೈನ್ ಪೋರ್ಟಲ್ ಲ್ಯಾಟಿನ್ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ ಸ್ವೀಕರಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ಕನ್ನಡ ಅರ್ಜಿಯನ್ನು ಅಂಚೆ ಮೂಲಕ ಕಳುಹಿಸಬೇಕು. ಎರಡೂ ಆವೃತ್ತಿಗಳೂ ಕಾನೂನುಬದ್ಧವಾಗಿ ಸಿಂಧು."
+                    : "The online portal accepts Latin characters only, so a Kannada application must be sent by post. Both versions are legally valid."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setLetterVersion("kn")}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "kn" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                  >
+                    ಕನ್ನಡ (ಅಂಚೆ ಮೂಲಕ ಮಾತ್ರ)
+                  </button>
+                  <button
+                    onClick={() => setLetterVersion("en")}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "en" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                  >
+                    English (portal)
+                  </button>
+                </div>
+              </>
+            ) : null}
+
             <textarea
-              value={body}
-              onChange={(e) => updateActive({ body: e.target.value })}
+              value={bodyKn && letterVersion === "kn" ? bodyKn : body}
+              onChange={(e) =>
+                updateActive(
+                  bodyKn && letterVersion === "kn"
+                    ? { bodyKn: e.target.value }
+                    : { body: e.target.value },
+                )
+              }
               rows={22}
-              className={`${inputClass} font-mono text-xs leading-relaxed`}
+              className={`${inputClass} mt-3 font-mono text-xs leading-relaxed`}
             />
+            {bodyKn ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {letterVersion === "kn"
+                  ? "Post this version: speed post with acknowledgement due, fee by Indian Postal Order or DD."
+                  : "File this version on the RTI portal."}
+              </p>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={() => setStep(2)}
