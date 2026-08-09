@@ -166,6 +166,12 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
 
     const firstAppeal = (existing ?? []).find((a) => a.tier === "first");
 
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("full_name, address, phone, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+
     const body = await draftAppeal({
       tier: data.tier,
       reason: data.reason,
@@ -178,7 +184,14 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
       replyDate: app.reply_received_date,
       replyNotes: app.reply_notes,
       firstAppealFiledDate: firstAppeal?.filed_date ?? null,
+      applicant: {
+        name: profile?.full_name ?? null,
+        address: profile?.address ?? null,
+        phone: profile?.phone ?? null,
+        email: profile?.email ?? null,
+      },
     });
+
 
     const bodyKn = data.lang === "kn" ? await translateLetterToKannada(body) : null;
 
