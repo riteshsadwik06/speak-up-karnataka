@@ -150,7 +150,9 @@ function Detail() {
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
   const portalSafeBody = toPortalSafe(app.application_body);
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
-  const wardZone = WARDS.find((w) => w.ward_id === app.ward_id)?.zone_name ?? null;
+  const wardRecord = WARDS.find((w) => w.ward_id === app.ward_id);
+  const wardZone = wardRecord?.zone_name ?? null;
+  const wardKn = lang === "kn" ? (wardRecord?.ward_name_kn ?? null) : null;
   const kind = portalAuthorityKind(app.public_authority);
   const autoZone = kind === "bbmp" ? portalZoneForGbaZone(wardZone) : null;
   const savedPortal = app.portal_authority as string | null;
@@ -251,8 +253,11 @@ function Detail() {
           <h1 className="text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {app.public_authority}
-            {app.ward_name ? ` · ${app.ward_name} ward` : ""}
+            {app.ward_name ? ` · ${wardKn ?? app.ward_name} ward` : ""}
           </p>
+          {wardKn ? (
+            <p className="text-xs text-muted-foreground/70">{app.ward_name}</p>
+          ) : null}
         </div>
         {app.ward_id && (
           <div className="hidden w-36 shrink-0 sm:block">
@@ -532,7 +537,10 @@ function Detail() {
           {data.appeals.map((ap) => (
             <div key={ap.id} className="paper-card border-accent/40 p-5">
               <SectionLabel>
-                {ap.tier === "first" ? "First appeal — Section 19(1)" : "Second appeal — Section 19(3)"}
+                <span lang={lang} className={lang === "kn" ? `${KN_TEXT} normal-case` : undefined}>
+                  {ap.tier === "first" ? t("firstAppeal") : t("secondAppeal")}
+                </span>{" "}
+                — {ap.tier === "first" ? "Section 19(1)" : "Section 19(3)"}
               </SectionLabel>
               <p className="text-xs text-muted-foreground">
                 Grounds: {ap.grounds}
@@ -550,7 +558,7 @@ function Detail() {
               )}
               {ap.registration_number && (
                 <p className="mt-1 font-mono text-xs text-muted-foreground">
-                  Registration number: {ap.registration_number}
+                  {t("registrationNumber")}: {ap.registration_number}
                 </p>
               )}
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
@@ -624,7 +632,7 @@ function Detail() {
               <TimelineRow label="Filed" value={app.filed_date ?? "—"} />
               {app.registration_number && (
                 <>
-                  <TimelineRow label="Registration number" value={app.registration_number} />
+                  <TimelineRow label={t("registrationNumber")} value={app.registration_number} />
                   <li className="text-xs">
                     <a
                       href={PORTAL_LINKS.onlineRequestStatus}
@@ -657,10 +665,10 @@ function Detail() {
               />
               <TimelineRow label="Reply received" value={app.reply_received_date ?? "—"} />
               {firstAppeal && (
-                <TimelineRow label="First appeal filed" value={firstAppeal.filed_date ?? "drafted"} />
+                <TimelineRow label={`${t("firstAppeal")} filed`} value={firstAppeal.filed_date ?? "drafted"} />
               )}
               {secondAppeal && (
-                <TimelineRow label="Second appeal filed" value={secondAppeal.filed_date ?? "drafted"} />
+                <TimelineRow label={`${t("secondAppeal")} filed`} value={secondAppeal.filed_date ?? "drafted"} />
               )}
             </ul>
 
