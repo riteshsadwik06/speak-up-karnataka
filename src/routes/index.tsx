@@ -40,12 +40,51 @@ const STEPS = [
   { tId: "step4Title", bId: "step4Body" },
 ] as const;
 
+/** Mix a hex colour toward the paper tone: 0 = original, 1 = paper. */
+function towardPaper(hex: string, amount: number) {
+  const p = [0xf3, 0xef, 0xe6];
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const mix = c.map((v, i) => Math.round(v + (p[i]! - v) * amount));
+  return `#${mix.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+const WATERMARK: Record<string, string> = Object.fromEntries(
+  Object.entries(CORP_COLOR).map(([k, v]) => [k, towardPaper(v, 0.62)]),
+);
+const WATERMARK_NEUTRAL = towardPaper(NEUTRAL, 0.62);
+
+/** Fixed, non-interactive city watermark behind the whole page. */
+function CityBackdrop() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0" aria-hidden="true">
+      <div className="absolute inset-0 bg-background" />
+      <WardCity3D
+        spin
+        intro={false}
+        orbitSeconds={180}
+        maxFps={30}
+        colorFor={(w) => WATERMARK[w.c] ?? WATERMARK_NEUTRAL}
+        className="absolute inset-0 h-full w-full opacity-30"
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, color-mix(in srgb, var(--background) 45%, transparent) 0%, color-mix(in srgb, var(--background) 70%, transparent) 40%, color-mix(in srgb, var(--background) 88%, transparent) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
 function Landing() {
   const { t } = useLang();
   return (
-    <div className="min-h-screen w-full bg-background p-4 md:p-8">
-      <div className="registry-frame mx-auto w-full max-w-5xl">
-        <header className="flex items-center justify-between gap-4 border-b border-border p-6">
+    <div className="relative min-h-screen w-full p-4 md:p-8">
+      <CityBackdrop />
+      <div className="registry-frame relative z-10 mx-auto w-full max-w-5xl bg-transparent">
+        <header className="flex items-center justify-between gap-4 border-b border-border bg-background/90 p-6 backdrop-blur-[2px]">
           <div>
             <h1>
               <Wordmark size="sm" />
@@ -58,25 +97,8 @@ function Landing() {
           </div>
         </header>
 
-        <section className="border-b border-border">
-
-          <div className="relative">
-            <WardCity3D
-              spin
-              colorFor={(w) => CORP_COLOR[w.c] ?? NEUTRAL}
-              className="h-[240px] w-full sm:h-[340px]"
-            />
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <Wordmark size="lg" variant="full" className="items-center text-center" />
-            </div>
-            <p className="mono-stamp absolute bottom-2 left-4">
-              <T id="wardCityCaption" />
-            </p>
-
-          </div>
-        </section>
-
-        <section className="border-b border-border p-6 md:p-10">
+        <section className="border-b border-border bg-background/70 p-6 md:p-10">
+          <Wordmark size="lg" variant="full" className="mb-6" />
           <p className="rule-heading"><T id="heroEyebrow" /></p>
           <h2 className="mt-3 max-w-3xl font-display text-3xl leading-[1.05] sm:text-5xl">
             <T id="heroHeadline" />
@@ -97,6 +119,7 @@ function Landing() {
             </Link>
           </div>
         </section>
+
 
 
         <section className="border-b border-border">
