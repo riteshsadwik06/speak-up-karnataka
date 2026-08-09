@@ -13,7 +13,6 @@ import {
 } from "@/components/officials";
 import { T, useAuthorityLabel, useCorporationShort, useLang } from "@/lib/i18n";
 
-
 type RawWard = {
   id: string;
   n: string;
@@ -39,19 +38,7 @@ export type WardInfo = {
 
 export { CORP_COLOR } from "@/lib/ward-3d";
 
-
-const PORTAL_ZONE_COLOR: Record<string, string> = {
-  Mahadevapura: "#2c5c4f",
-  Yelahanka: "#8a6220",
-  Bommanahalli: "#8c3626",
-  Rajarajeshwarinagar: "#3b4a6b",
-};
-
 const GREY = "#a9a396";
-
-const SAHAAYA = "#7a3f8f";
-
-export type MapMode = "gba" | "portal" | "complaints";
 
 function hasWebGL(): boolean {
   try {
@@ -66,26 +53,18 @@ function easeInOut(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
-export function WardMap3D({ mode }: { mode: MapMode }) {
-  const { t, lang } = useLang();
+export function WardMap3D() {
+  const { t } = useLang();
   const corpShort = useCorporationShort();
-  const legendAllWards = t("mapLegendAllWards");
   const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const modeRef = useRef(mode);
   const [webgl, setWebgl] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<{ w: WardInfo; x: number; y: number } | null>(null);
   const [selected, setSelected] = useState<WardInfo | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const setModeColorsRef = useRef<((m: MapMode) => void) | null>(null);
 
   useEffect(() => setWebgl(hasWebGL()), []);
-
-  useEffect(() => {
-    modeRef.current = mode;
-    setModeColorsRef.current?.(mode);
-  }, [mode]);
 
   useEffect(() => {
     if (webgl !== true) return;
@@ -170,10 +149,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           zone: string;
           corp: string;
           baseColor: InstanceType<typeof THREE.Color>;
-          fromColor: InstanceType<typeof THREE.Color>;
-          toColor: InstanceType<typeof THREE.Color>;
-          fromOpacity: number;
-          toOpacity: number;
           delay: number;
           targetY: number;
         };
@@ -214,7 +189,11 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
         const geo = new THREE.ExtrudeGeometry(shapes, { depth, bevelEnabled: false });
         geo.computeBoundingBox();
         const color = new THREE.Color(CORP_COLOR[w.c] ?? GREY);
-        const mat = new THREE.MeshLambertMaterial({ color: color.clone(), transparent: true, opacity: 1 });
+        const mat = new THREE.MeshLambertMaterial({
+          color: color.clone(),
+          transparent: true,
+          opacity: 1,
+        });
         const mesh = new THREE.Mesh(geo, mat) as unknown as WardMesh;
         mesh.rotation.x = -Math.PI / 2;
         mesh.scale.z = 0.001;
@@ -238,10 +217,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           zone: w.z,
           corp: w.c,
           baseColor: color,
-          fromColor: color.clone(),
-          toColor: color.clone(),
-          fromOpacity: 1,
-          toOpacity: 1,
           delay: Math.min(dist / 70, 1) * 0.45,
           targetY: 0,
         };
@@ -250,43 +225,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
         meshes.push(mesh);
       }
       setCounts(corpCounts);
-
-      // ---- colour + camera transition state
-      let colorT = 1;
-      let colorDur = 700;
-      let colorStart = 0;
-      const camFrom = new THREE.Vector3();
-      const camTo = new THREE.Vector3();
-      let camT = 1;
-
-      const CAM_A = new THREE.Vector3(60, 78, 92);
-      const CAM_B = new THREE.Vector3(48, 118, 74);
-
-      function targetFor(m: WardMesh, md: MapMode) {
-        if (md === "complaints") return { c: new THREE.Color(SAHAAYA), o: 1 };
-        if (md === "gba") return { c: new THREE.Color(CORP_COLOR[m.userData.corp] ?? GREY), o: 1 };
-        const pz = PORTAL_ZONE_COLOR[m.userData.zone];
-        return pz ? { c: new THREE.Color(pz), o: 1 } : { c: new THREE.Color(GREY), o: 0.45 };
-      }
-
-      function applyMode(md: MapMode, animate = true) {
-        for (const m of meshes) {
-          const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
-          const t = targetFor(m, md);
-          m.userData.fromColor = mat.color.clone();
-          m.userData.fromOpacity = mat.opacity;
-          m.userData.toColor = t.c;
-          m.userData.toOpacity = t.o;
-        }
-        colorStart = performance.now();
-        colorDur = animate ? 700 : 1;
-        colorT = 0;
-        camFrom.copy(camera.position);
-        camTo.copy(md === "portal" ? CAM_B : CAM_A);
-        camT = 0;
-      }
-      setModeColorsRef.current = (md) => applyMode(md);
-      applyMode(modeRef.current, false);
 
       // ---- interaction
       const raycaster = new THREE.Raycaster();
@@ -357,22 +295,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           if (m.scale.z < 1) m.scale.z = s;
         }
 
-        // colour transition
-        if (colorT < 1) {
-          colorT = Math.min(1, (now - colorStart) / colorDur);
-          const e = easeInOut(colorT);
-          for (const m of meshes) {
-            const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
-            mat.color.copy(m.userData.fromColor).lerp(m.userData.toColor, e);
-            mat.opacity = m.userData.fromOpacity + (m.userData.toOpacity - m.userData.fromOpacity) * e;
-          }
-        }
-        if (camT < 1) {
-          camT = Math.min(1, camT + 0.02);
-          const e = easeInOut(camT);
-          camera.position.lerpVectors(camFrom, camTo, e);
-        }
-
         // hover
         if (pointerActive) {
           const m = pick();
@@ -389,7 +311,8 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
           const target = m.userData.targetY + (m.userData.info.id === selectedId ? 0.35 : 0);
           m.position.y += (target - m.position.y) * 0.18;
           const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
-          const wantEmissive = m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
+          const wantEmissive =
+            m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
           mat.emissive.setScalar(wantEmissive ? 0.14 : 0);
         }
 
@@ -440,7 +363,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
         }
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
-        setModeColorsRef.current = null;
       });
     })();
 
@@ -450,32 +372,15 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
     };
   }, [webgl]);
 
-  const legend = useMemo(() => {
-    if (mode === "complaints") {
-      return [
-        {
-          color: SAHAAYA,
-          label: "Sahaaya 2.0",
-          note: legendAllWards.replace(
-            "{n}",
-            String(Object.values(counts).reduce((a, b) => a + b, 0)),
-          ),
-        },
-      ];
-    }
-    if (mode === "gba") {
-      return Object.keys(CORP_COLOR).map((c) => ({
+  const legend = useMemo(
+    () =>
+      Object.keys(CORP_COLOR).map((c) => ({
         color: CORP_COLOR[c]!,
         label: `${t("bengaluruWord")} ${corpShort(`Bengaluru ${c} City Corporation`)}`,
         note: legendWardCount.replace("{n}", String(counts[c] ?? 0)),
-      }));
-    }
-    return Object.keys(PORTAL_ZONE_COLOR).map((z) => ({
-      color: PORTAL_ZONE_COLOR[z]!,
-      label: z,
-      note: t("mapLegendVerifiedZone"),
-    }));
-  }, [mode, counts, t, corpShort, legendAllWards, legendWardCount]);
+      })),
+    [counts, t, corpShort, legendWardCount],
+  );
 
   if (webgl === false) {
     return (
@@ -510,8 +415,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
             >
               <p className="font-display text-xs font-bold">{hover.w.name}</p>
               <p className="mono-stamp">
-                {t("mapWardLabel")} {hover.w.number} ·{" "}
-                {corpShort(hover.w.corporation)}
+                {t("mapWardLabel")} {hover.w.number} · {corpShort(hover.w.corporation)}
               </p>
             </div>
           )}
@@ -524,19 +428,6 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
               <span className="mono-stamp">{l.note}</span>
             </span>
           ))}
-          {mode === "complaints" && (
-            <span className="text-[11px] text-muted-foreground" lang={lang}>
-              <T id="mapLegendComplaintsNote" />
-            </span>
-          )}
-          {mode === "portal" && (
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 opacity-50" style={{ backgroundColor: GREY }} />
-              <span className="text-[11px] text-muted-foreground" lang={lang}>
-                <T id="mapLegendNoPortalEquivalent" />
-              </span>
-            </span>
-          )}
         </div>
         <p className="border-t border-border p-3 text-[11px] text-muted-foreground sm:hidden">
           <T id="mapRotateHint" />
@@ -594,14 +485,24 @@ function WardPanel({ ward }: { ward: WardInfo }) {
           <T id="mapOnPortalHeading" />
         </p>
         {portal ? (
-          <p className="mt-1.5 text-xs">{portal}</p>
+          <>
+            <div className="mt-1.5 flex items-start gap-2">
+              <span className="mono-stamp min-w-0 flex-1 break-words leading-snug">{portal}</span>
+              <CopyZone value={portal} />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
+              <T id="mapMatchedFromZone" />
+            </p>
+          </>
         ) : (
           <>
             <p className="mt-1.5 text-xs" lang={lang}>
-              {t("mapNoVerifiedMapping").replace("{zone}", ward.zone)}
+              {t("mapNoVerifiedMapping").replace("{ward}", ward.name)}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
-              <T id="mapSection63Note" />
+            <p className="mt-2 text-xs" lang={lang}>
+              {t("mapGbaZoneLine")
+                .replace("{zone}", ward.zone)
+                .replace("{corp}", authorityLabel(ward.corporation))}
             </p>
             {oldWard ? (
               <p className="mt-2 text-xs" lang={lang}>
@@ -612,14 +513,10 @@ function WardPanel({ ward }: { ward: WardInfo }) {
                   )}
               </p>
             ) : null}
-            <ul className="mt-2 space-y-1">
-              {PORTAL_AUTHORITIES.bbmpZones.map((z) => (
-                <li key={z} className="flex items-start gap-2">
-                  <span className="mono-stamp min-w-0 flex-1 break-words leading-snug">{z}</span>
-                  <CopyZone value={z} />
-                </li>
-              ))}
-            </ul>
+            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
+              <T id="mapSection63Note" />
+            </p>
+            <ZonePicker />
           </>
         )}
       </div>
@@ -666,6 +563,35 @@ function WardPanel({ ward }: { ward: WardInfo }) {
   );
 }
 
+function ZonePicker() {
+  const { t, lang } = useLang();
+  const zones = PORTAL_AUTHORITIES.bbmpZones;
+  const [zone, setZone] = useState<string>(zones[0]!);
+  return (
+    <div className="mt-3">
+      <label className="rule-heading block text-foreground" htmlFor="bbmp-zone" lang={lang}>
+        <T id="mapChooseBbmpZone" />
+      </label>
+      <div className="mt-1.5 flex items-start gap-2">
+        <select
+          id="bbmp-zone"
+          value={zone}
+          onChange={(e) => setZone(e.target.value)}
+          aria-label={t("mapChooseBbmpZone")}
+          className="mono-stamp min-w-0 flex-1 border border-border bg-background px-1.5 py-1 leading-snug"
+        >
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {z}
+            </option>
+          ))}
+        </select>
+        <CopyZone value={zone} />
+      </div>
+    </div>
+  );
+}
+
 function CopyZone({ value }: { value: string }) {
   const { t } = useLang();
   const [done, setDone] = useState(false);
@@ -683,4 +609,3 @@ function CopyZone({ value }: { value: string }) {
     </button>
   );
 }
-
