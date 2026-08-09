@@ -143,6 +143,8 @@ Karnataka's Rule 14 requires that a single RTI application relate to ONE subject
 Rule 14 also states an application shall not ordinarily exceed 150 words. Keep the combined text of the numbered requests under 150 words. Be terse and specific; drop filler. Do not sacrifice the time period, the location or the document type to save words - those are what make a request answerable.
 
 ${NO_FABRICATION_RULE}
+
+${NO_PLACEHOLDER_RULE}
 - Ward identity is supplied as structured JSON with placeholders. In document text, use only those placeholders; application code replaces them with authoritative values after generation.
 
 
@@ -154,7 +156,7 @@ export const APPEAL_SYSTEM_PROMPT = `You draft appeals under the Right to Inform
 A FIRST APPEAL is under Section 19(1), filed with the First Appellate Authority of the same public authority, within 30 days of the reply or of the date the reply was due. Where no reply was received within 30 days, cite deemed refusal under Section 7(2).
 A SECOND APPEAL is under Section 19(3), filed with the Karnataka State Information Commission (${LEGAL.ksicAddress}) within 90 days, and may be filed once 45 days have elapsed with no decision from the First Appellate Authority.
 
-Write a complete, formal, ready-to-send appeal letter in plain text. Include: addressee block, subject line citing the correct section, a short numbered chronology of dates, the grounds of appeal with the correct statutory citations, the relief sought, and a signature block with placeholders in square brackets. Never ask for explanations or reasons — only records. Never state a reason for wanting the information (Section 6(2)).
+Write a complete, formal, ready-to-send appeal letter in plain text. Include: addressee block, subject line citing the correct section, a short numbered chronology of dates, the grounds of appeal with the correct statutory citations, the relief sought, and a signature block. ${NO_FABRICATION_RULE} ${NO_PLACEHOLDER_RULE} Never ask for explanations or reasons — only records. Never state a reason for wanting the information (Section 6(2)).
 
 Return ONLY the letter text. No markdown, no commentary, no code fences.`;
 
@@ -278,7 +280,7 @@ export function assembleApplication(input: {
   return `To,
 The Public Information Officer${input.pioName ? `, ${input.pioName}` : ""}
 ${input.authority}
-${input.pioAddress ?? "[PIO office address]"}
+${input.pioAddress ? `${input.pioAddress}\n` : ""}
 
 Subject: Application for information under Section 6(1) of the Right to Information Act, 2005
 
@@ -304,9 +306,7 @@ If any part is refused, please state the specific exemption under Section 8 or 9
 
 Yours faithfully,
 
-${input.applicantName ?? "[Your full name]"}
-${input.applicantAddress ?? "[Your postal address]"}
-${input.applicantPhone ? `Phone: ${input.applicantPhone}` : "Phone: [Your phone number]"}
+${[input.applicantName, input.applicantAddress, input.applicantPhone ? `Phone: ${input.applicantPhone}` : ""].filter(Boolean).join("\n")}
 Date: ${new Date().toISOString().slice(0, 10)}`;
 }
 
@@ -358,6 +358,8 @@ All the original rules still apply: ask for records and never explanations, neve
 If the citizen has supplied new specifics - dates, a street name, a complaint number, a ward - work them into the relevant requests to make them harder to refuse as vague.
 
 ${NO_FABRICATION_RULE}
+
+${NO_PLACEHOLDER_RULE}
 
 
 Return ONLY valid JSON, no markdown fences:
@@ -436,6 +438,8 @@ Rules:
 When asked to write in Kannada, write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority.
 
 ${NO_FABRICATION_RULE}
+
+${NO_PLACEHOLDER_RULE}
 - Ward identity is supplied as structured JSON with placeholders. In complaint text, use only those placeholders; application code replaces them with authoritative values after generation. If a value is not supplied, omit its placeholder.
 
 
