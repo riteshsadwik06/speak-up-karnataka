@@ -1017,7 +1017,7 @@ function NewApplication() {
                 {draft.flags.map((f, i) => (
                   <li key={i} className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
                     <span className="rule-heading block text-warning-foreground">
-                      {FLAG_LABEL[f.type] ?? f.type}
+                      {FLAG_LABEL_ID[f.type] ? t(FLAG_LABEL_ID[f.type]!) : f.type}
                     </span>
                     <span className="mt-1 block">{f.message}</span>
                     <span className="mt-1 block text-xs text-muted-foreground">
