@@ -28,6 +28,7 @@ import {
 import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
+import { KN_TEXT, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (
@@ -76,6 +77,8 @@ type SubjectDraft = {
   subject: string;
   draft: RtiDraft;
   body: string;
+  /** Kannada rendering for postal filing. The English body stays the portal artifact. */
+  bodyKn?: string | null;
   saved: boolean;
   savedId?: string | undefined;
 };
@@ -85,6 +88,7 @@ type PriorOutcome = "no_response" | "false_closure" | "refused";
 
 function NewApplication() {
   const router = useRouter();
+  const { lang, t } = useLang();
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
   const runComplaint = useServerFn(generateComplaint);
@@ -100,6 +104,7 @@ function NewApplication() {
   const [stillWrong, setStillWrong] = useState("");
   const [grievance, setGrievance] = useState("");
   const [language, setLanguage] = useState("en");
+  const [bodyTab, setBodyTab] = useState<"kn" | "en">("kn");
   const [authorityId, setAuthorityId] = useState("");
   const [otherAuthority, setOtherAuthority] = useState("");
   const [pioName, setPioName] = useState("");
@@ -143,6 +148,8 @@ function NewApplication() {
   const active = drafts.find((d) => d.subject === activeSubject) ?? drafts[0] ?? null;
   const draft = active?.draft ?? null;
   const body = active?.body ?? "";
+  const bodyKn = active?.bodyKn ?? "";
+  const showKannadaTabs = lang === "kn" && !!bodyKn;
 
   function updateActive(patch: Partial<SubjectDraft>) {
     setDrafts((prev) =>
@@ -185,6 +192,7 @@ function NewApplication() {
           authority,
           ward: ward?.ward_name ?? null,
           wardNumber: ward?.ward_id ?? null,
+          lang,
         },
       });
       setComplaint(result);
@@ -217,6 +225,7 @@ function NewApplication() {
           generated_requests: [],
           application_body: "",
           complaint_text: complaintText,
+          complaint_language: lang,
           complaint_channel: channelId,
           complaint_ref: markSent ? sentRef.trim() || null : null,
           complaint_filed_date: markSent ? sentDate : null,
@@ -241,6 +250,7 @@ function NewApplication() {
           authority: overrideAuthority ?? authority,
           ward: ward?.ward_name ?? null,
           language,
+          lang,
           focusSubject: focusSubject ?? null,
           falseClosure,
         },
@@ -254,6 +264,7 @@ function NewApplication() {
         subject,
         draft: result.draft,
         body: result.body,
+        bodyKn: result.bodyKn ?? null,
         saved: false,
       };
       setDrafts((prev) => (focusSubject ? [...prev, entry] : [entry]));
@@ -290,9 +301,10 @@ function NewApplication() {
           subject: active.subject,
           requests: active.draft.requests,
           instruction: text,
+          lang,
         },
       });
-      updateActive({ draft: result.draft, body: result.body });
+      updateActive({ draft: result.draft, body: result.body, bodyKn: result.bodyKn ?? null });
       setInstruction("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not revise the draft");
@@ -329,6 +341,7 @@ function NewApplication() {
       corporation: ward?.corporation ?? null,
       generated_requests: entry.draft.requests,
       application_body: entry.body,
+      application_body_kn: entry.bodyKn ?? null,
       status: markFiled ? "filed" : "draft",
       filed_date: markFiled ? (filedDate ?? today()) : null,
       response_due_date: markFiled ? addDays(filedDate ?? today(), LEGAL.pioDays) : null,
