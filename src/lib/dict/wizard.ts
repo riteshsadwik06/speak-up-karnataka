@@ -224,6 +224,15 @@ export const DICT_WIZARD = {
     en: "We are not certain of this one — please check it.",
     kn: "ಇದರ ಬಗ್ಗೆ ನಮಗೆ ಖಚಿತವಿಲ್ಲ — ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ.",
   },
+  routingUnknownAuthority: {
+    en: "We could not tell which authority owns this from what you wrote. Please pick it below — we have not guessed one for you.",
+    kn: "ನೀವು ಬರೆದಿರುವುದರಿಂದ ಇದು ಯಾವ ಪ್ರಾಧಿಕಾರದ ಜವಾಬ್ದಾರಿ ಎಂದು ನಮಗೆ ತಿಳಿಯಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಳಗೆ ಆಯ್ಕೆ ಮಾಡಿ — ನಾವು ಊಹಿಸಿಲ್ಲ.",
+  },
+  routingUnknownWard: {
+    en: "We could not match “{locality}” to a ward. Please choose the ward below.",
+    kn: "“{locality}” ಅನ್ನು ಯಾವುದೇ ವಾರ್ಡ್‌ಗೆ ಹೊಂದಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಳಗೆ ವಾರ್ಡ್ ಆಯ್ಕೆ ಮಾಡಿ.",
+  },
+
   corporationMismatch: {
     en: "{ward} is in {wardCorp}, but you have selected {selected}. Filing with the wrong corporation means a Section 6(3) transfer, which costs at least five days.",
     kn: "{ward} {wardCorp} ವ್ಯಾಪ್ತಿಯಲ್ಲಿದೆ, ಆದರೆ ನೀವು {selected} ಆಯ್ಕೆ ಮಾಡಿದ್ದೀರಿ. ತಪ್ಪು ಪಾಲಿಕೆಗೆ ಸಲ್ಲಿಸಿದರೆ ಕಲಂ 6(3) ವರ್ಗಾವಣೆ ಆಗುತ್ತದೆ, ಅದು ಕನಿಷ್ಠ ಐದು ದಿನ ತಿನ್ನುತ್ತದೆ.",
