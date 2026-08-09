@@ -22,9 +22,13 @@ import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/new")({
-  validateSearch: (search: Record<string, unknown>): { ward?: string | undefined } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { ward?: string | undefined; stage?: "complaint" | undefined } => ({
     ward: typeof search["ward"] === "string" ? search["ward"] : undefined,
+    stage: search["stage"] === "complaint" ? "complaint" : undefined,
   }),
+
   head: () => ({
 
     meta: [
