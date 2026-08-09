@@ -46,7 +46,9 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
 
         <main className={`min-w-0 flex-1 ${bare ? "" : "p-6"}`}>{children}</main>
       </div>
+      <DataCredit className="mx-auto mt-3 w-full max-w-6xl" />
     </div>
+
   );
 }
 
