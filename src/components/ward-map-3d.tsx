@@ -160,8 +160,10 @@ export function WardMap3D() {
           baseColor: InstanceType<typeof THREE.Color>;
           delay: number;
           targetY: number;
+          center: { x: number; z: number };
         };
       };
+
 
       const meshes: WardMesh[] = [];
       const corpCounts: Record<string, number> = {};
