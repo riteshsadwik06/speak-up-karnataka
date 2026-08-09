@@ -45,18 +45,7 @@ function Landing() {
             </h1>
             <p className="rule-heading mt-1.5">Public Records Tracker</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link to="/auth" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-              Log in
-            </Link>
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
-            >
-              GET STARTED
-            </Link>
-          </div>
+          <HeaderAuthAction />
         </header>
 
         <section className="border-b border-border">
