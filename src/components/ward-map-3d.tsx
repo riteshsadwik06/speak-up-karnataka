@@ -275,6 +275,44 @@ export function WardMap3D() {
       renderer.domElement.addEventListener("pointerleave", onPointerLeave);
       renderer.domElement.addEventListener("click", onClick);
 
+      // ---- imperative focus (used by the ward search)
+      type Focus = {
+        t0: number;
+        from: InstanceType<typeof THREE.Vector3>;
+        to: InstanceType<typeof THREE.Vector3>;
+        camFrom: InstanceType<typeof THREE.Vector3>;
+        camTo: InstanceType<typeof THREE.Vector3>;
+      };
+      let focus: Focus | null = null;
+      let flashId: string | null = null;
+      let flashUntil = 0;
+
+      focusRef.current = (id: string) => {
+        const m = meshes.find((mm) => mm.userData.info.id === id);
+        if (!m) return;
+        selectedId = id;
+        flashId = id;
+        flashUntil = performance.now() + 1400;
+        const c = m.userData.center;
+        const to = new THREE.Vector3(c.x, 0, c.z);
+        const delta = to.clone().sub(controls.target);
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reduce) {
+          controls.target.copy(to);
+          camera.position.add(delta);
+          focus = null;
+        } else {
+          focus = {
+            t0: performance.now(),
+            from: controls.target.clone(),
+            to,
+            camFrom: camera.position.clone(),
+            camTo: camera.position.clone().add(delta),
+          };
+        }
+      };
+
+
       // ---- sizing
       function resize() {
         const w = mount!.clientWidth;
