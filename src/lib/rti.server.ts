@@ -412,8 +412,17 @@ If any part is refused, please state the specific exemption under Section 8 or 9
 
 Yours faithfully,
 
-${[input.applicantName, input.applicantAddress, input.applicantPhone ? `Phone: ${input.applicantPhone}` : ""].filter(Boolean).join("\n")}
+${applicantSignature(
+  {
+    name: input.applicantName ?? null,
+    address: input.applicantAddress ?? null,
+    phone: input.applicantPhone ?? null,
+    email: input.applicantEmail ?? null,
+  },
+  { requireName: true },
+)}
 Date: ${new Date().toISOString().slice(0, 10)}`;
+
 }
 
 export async function draftAppeal(input: {
