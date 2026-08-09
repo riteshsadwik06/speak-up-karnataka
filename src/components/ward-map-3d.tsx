@@ -562,6 +562,35 @@ function WardPanel({ ward }: { ward: WardInfo }) {
   );
 }
 
+function ZonePicker() {
+  const { t, lang } = useLang();
+  const zones = PORTAL_AUTHORITIES.bbmpZones;
+  const [zone, setZone] = useState(zones[0]!);
+  return (
+    <div className="mt-3">
+      <label className="rule-heading block text-foreground" htmlFor="bbmp-zone" lang={lang}>
+        <T id="mapChooseBbmpZone" />
+      </label>
+      <div className="mt-1.5 flex items-start gap-2">
+        <select
+          id="bbmp-zone"
+          value={zone}
+          onChange={(e) => setZone(e.target.value)}
+          aria-label={t("mapChooseBbmpZone")}
+          className="mono-stamp min-w-0 flex-1 border border-border bg-background px-1.5 py-1 leading-snug"
+        >
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {z}
+            </option>
+          ))}
+        </select>
+        <CopyZone value={zone} />
+      </div>
+    </div>
+  );
+}
+
 function CopyZone({ value }: { value: string }) {
   const { t } = useLang();
   const [done, setDone] = useState(false);

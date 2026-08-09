@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { WardMap3D, type MapMode } from "@/components/ward-map-3d";
+import { WardMap3D } from "@/components/ward-map-3d";
 import { T, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/map")({
@@ -27,8 +26,7 @@ export const Route = createFileRoute("/_authenticated/map")({
 });
 
 function MapPage() {
-  const [mode, setMode] = useState<MapMode>("gba");
-  const { t, lang } = useLang();
+  const { lang } = useLang();
 
   return (
     <AppShell bare>
@@ -41,28 +39,9 @@ function MapPage() {
             <T id="mapPageIntro" />
           </p>
         </div>
-        <div className="flex border border-foreground">
-          {(
-            [
-              ["gba", "mapModeGba"],
-              ["portal", "mapModePortal"],
-              ["complaints", "mapModeComplaints"],
-            ] as const
-          ).map(([k, id]) => (
-            <button
-              key={k}
-              onClick={() => setMode(k)}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-tight transition-colors ${
-                mode === k ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary"
-              }`}
-            >
-              {t(id)}
-            </button>
-          ))}
-        </div>
       </header>
 
-      <WardMap3D mode={mode} />
+      <WardMap3D />
     </AppShell>
   );
 }
