@@ -67,6 +67,14 @@ export function WardMap3D() {
 
   useEffect(() => setWebgl(hasWebGL()), []);
 
+  // Stacked (mobile) layout: bring the panel into view when a ward is picked.
+  useEffect(() => {
+    if (!selected || !panelRef.current) return;
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    panelRef.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [selected]);
+
   useEffect(() => {
     if (webgl !== true) return;
     const release = acquireGlSlot();
