@@ -1,12 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
+import { WardCity3D } from "@/components/ward-city-3d";
+import { NEUTRAL } from "@/lib/ward-3d";
 import { toast } from "sonner";
+
+const TONE_COLOR: Record<string, string> = {
+  danger: "#8c3626",
+  warn: "#8a6220",
+  calm: "#2c5c4f",
+  neutral: "#6f6a5f",
+};
+const MUTED_WARD = "#cfc9bb";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
