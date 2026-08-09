@@ -73,6 +73,8 @@ export const DICT = {
   copy: { en: "Copy", kn: "ನಕಲಿಸಿ" },
   copyPortalSafe: { en: "Copy portal-safe", kn: "ಪೋರ್ಟಲ್‌ಗೆ ಸೂಕ್ತವಾದ ಪಠ್ಯ ನಕಲಿಸಿ" },
   download: { en: "Download", kn: "ಡೌನ್‌ಲೋಡ್" },
+  clearDemoData: { en: "Clear demo data", kn: "ಡೆಮೊ ಮಾಹಿತಿ ಅಳಿಸಿ" },
+  demoDataCleared: { en: "Demo data cleared", kn: "ಡೆಮೊ ಮಾಹಿತಿ ಅಳಿಸಲಾಗಿದೆ" },
   yourComplaint: { en: "Your complaint", kn: "ನಿಮ್ಮ ದೂರು" },
   whoIsResponsible: { en: "Who is responsible", kn: "ಯಾರು ಜವಾಬ್ದಾರರು" },
   official: { en: "Official", kn: "ಅಧಿಕಾರಿ" },

@@ -130,7 +130,11 @@ function Dashboard() {
             {t("registryTitle")}
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Monitoring {pending} statutory {pending === 1 ? "deadline" : "deadlines"}.
+            <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+              {lang === "kn"
+                ? `${pending} ಶಾಸನಬದ್ಧ ಕಾಲಮಿತಿಗಳನ್ನು ಗಮನಿಸಲಾಗುತ್ತಿದೆ.`
+                : `Monitoring ${pending} statutory ${pending === 1 ? "deadline" : "deadlines"}.`}
+            </span>
           </p>
         </div>
         <Link
@@ -158,9 +162,13 @@ function Dashboard() {
         />
         <p className="mono-stamp absolute bottom-2 left-4">
           {litCount === 0
-            ? "No applications yet."
-            : `${litCount} ${litCount === 1 ? "ward" : "wards"} with live filings`}
-          {wardFilter ? ` · filtered to ${wardFilter}` : ""}
+            ? lang === "kn"
+              ? "ಇನ್ನೂ ಯಾವುದೇ ಅರ್ಜಿ ಇಲ್ಲ."
+              : "No applications yet."
+            : lang === "kn"
+              ? `${litCount} ವಾರ್ಡ್‌ಗಳಲ್ಲಿ ಸಕ್ರಿಯ ಸಲ್ಲಿಕೆಗಳಿವೆ`
+              : `${litCount} ${litCount === 1 ? "ward" : "wards"} with live filings`}
+          {wardFilter ? (lang === "kn" ? ` · ${wardFilter} ಗೆ ಸೀಮಿತ` : ` · filtered to ${wardFilter}`) : ""}
         </p>
         {wardFilter && (
           <button
@@ -264,7 +272,7 @@ function Dashboard() {
                       <div
                         className={`mt-0.5 text-[10px] font-bold uppercase leading-tight ${clock.tone === "danger" ? "text-destructive" : "text-muted-foreground"}`}
                       >
-                        {clock.label}
+                        {lang === "kn" ? clock.labelKn : clock.label}
                       </div>
                     </td>
                   </tr>
@@ -282,11 +290,13 @@ function Dashboard() {
             onClick={async () => {
               await clear();
               await qc.invalidateQueries({ queryKey: ["applications"] });
-              toast.success("Demo data cleared");
+              toast.success(t("demoDataCleared"));
             }}
             className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground underline"
           >
-            Clear demo data
+            <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+              {t("clearDemoData")}
+            </span>
           </button>
         )}
       </footer>
