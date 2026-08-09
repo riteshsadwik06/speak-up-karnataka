@@ -29,7 +29,7 @@ export type TriageRow = {
   status: string;
   stage?: string | null;
   filed_date: string | null;
-  response_due_date?: string | null;
+  response_due_date: string | null;
   reply_received_date: string | null;
   complaint_filed_date?: string | null;
   closure_claimed_date?: string | null;
