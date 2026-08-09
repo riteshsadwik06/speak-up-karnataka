@@ -271,6 +271,8 @@ export type StageRailId = (typeof STAGE_RAIL)[number]["id"];
 
 export type Clock = {
   label: string;
+  /** Kannada rendering of the same label. UI picks one; the logic is identical. */
+  labelKn: string;
   tone: "calm" | "warn" | "danger" | "neutral";
   urgency: number;
 };
@@ -291,31 +293,43 @@ export function clockFor(
   appeals?: { tier: string; filed_date: string | null }[],
 ): Clock {
   if (app.stage === "complaint") {
-    if (app.status === "closed") return { label: "Complaint closed", tone: "neutral", urgency: 90 };
+    if (app.status === "closed") return { label: "Complaint closed", labelKn: "ದೂರು ಮುಚ್ಚಲಾಗಿದೆ", tone: "neutral", urgency: 90 };
     if (!app.complaint_filed_date)
-      return { label: "Complaint not sent yet", tone: "neutral", urgency: 10 };
+      return { label: "Complaint not sent yet", labelKn: "ದೂರು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ", tone: "neutral", urgency: 10 };
     const d = daysBetween(app.complaint_filed_date);
     const esc = app.escalation_count ?? 0;
     if (d > COMPLAINT_EXPECTATION_DAYS)
       return {
         label: `Day ${d} — past the ${COMPLAINT_EXPECTATION_DAYS}-day service expectation${esc ? ` · escalated ${esc}x` : ""}`,
+        labelKn: `${d}ನೇ ದಿನ — ${COMPLAINT_EXPECTATION_DAYS} ದಿನಗಳ ಸೇವಾ ನಿರೀಕ್ಷೆ ಮೀರಿದೆ${esc ? ` · ${esc} ಬಾರಿ ಉನ್ನತೀಕರಿಸಲಾಗಿದೆ` : ""}`,
         tone: "warn",
         urgency: 5,
       };
     return {
       label: `Complaint day ${d} of ${COMPLAINT_EXPECTATION_DAYS} (service expectation)`,
+      labelKn: `ದೂರಿನ ${COMPLAINT_EXPECTATION_DAYS} ದಿನಗಳಲ್ಲಿ ${d}ನೇ ದಿನ (ಸೇವಾ ನಿರೀಕ್ಷೆ)`,
       tone: "calm",
       urgency: 22 - d / 100,
     };
   }
-  if (app.status === "draft") return { label: "Not filed yet", tone: "neutral", urgency: 10 };
-  if (app.status === "closed") return { label: "Closed", tone: "neutral", urgency: 90 };
+  if (app.status === "draft") return { label: "Not filed yet", labelKn: "ಇನ್ನೂ ಸಲ್ಲಿಸಿಲ್ಲ", tone: "neutral", urgency: 10 };
+  if (app.status === "closed") return { label: "Closed", labelKn: "ಮುಚ್ಚಲಾಗಿದೆ", tone: "neutral", urgency: 90 };
   if (app.status === "replied") {
     const d = app.reply_received_date ? daysBetween(app.reply_received_date) : 0;
     const left = LEGAL.firstAppealWindowDays - d;
     return left > 0
-      ? { label: `Replied — ${left} days left to appeal`, tone: "warn", urgency: 3 }
-      : { label: "Replied — appeal window closed (Section 18 still open)", tone: "neutral", urgency: 40 };
+      ? {
+          label: `Replied — ${left} days left to appeal`,
+          labelKn: `ಉತ್ತರ ಬಂದಿದೆ — ಮೇಲ್ಮನವಿಗೆ ${left} ದಿನ ಬಾಕಿ`,
+          tone: "warn",
+          urgency: 3,
+        }
+      : {
+          label: "Replied — appeal window closed (Section 18 still open)",
+          labelKn: "ಉತ್ತರ ಬಂದಿದೆ — ಮೇಲ್ಮನವಿ ಅವಧಿ ಮುಗಿದಿದೆ (ಕಲಂ 18 ಇನ್ನೂ ಲಭ್ಯ)",
+          tone: "neutral",
+          urgency: 40,
+        };
   }
   if (app.status === "first_appeal_filed") {
     const first = (appeals ?? []).find((a) => a.tier === "first" && a.filed_date);
@@ -325,20 +339,32 @@ export function clockFor(
       if (faaSilentDays >= LEGAL.secondAppealAfterDays && !hasSecond) {
         return {
           label: `Second appeal available — FAA silent ${faaSilentDays} days`,
+          labelKn: `ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಲಭ್ಯ — ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಪ್ರಾಧಿಕಾರ ${faaSilentDays} ದಿನಗಳಿಂದ ಮೌನ`,
           tone: "danger",
           urgency: 0,
         };
       }
       return {
         label: `First appeal filed — FAA has ${LEGAL.faaMaxDays - faaSilentDays} days left`,
+        labelKn: `ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಲಾಗಿದೆ — ಪ್ರಾಧಿಕಾರಕ್ಕೆ ${LEGAL.faaMaxDays - faaSilentDays} ದಿನ ಬಾಕಿ`,
         tone: "warn",
         urgency: 2,
       };
     }
-    return { label: STATUS_LABEL[app.status] ?? app.status, tone: "warn", urgency: 4 };
+    return {
+      label: STATUS_LABEL[app.status] ?? app.status,
+      labelKn: STATUS_LABEL_KN[app.status] ?? STATUS_LABEL[app.status] ?? app.status,
+      tone: "warn",
+      urgency: 4,
+    };
   }
   if (app.status === "second_appeal_filed") {
-    return { label: STATUS_LABEL[app.status] ?? app.status, tone: "warn", urgency: 4 };
+    return {
+      label: STATUS_LABEL[app.status] ?? app.status,
+      labelKn: STATUS_LABEL_KN[app.status] ?? STATUS_LABEL[app.status] ?? app.status,
+      tone: "warn",
+      urgency: 4,
+    };
   }
   if (app.filed_date) {
     const transferred = !!app.transfer_date;
@@ -346,18 +372,20 @@ export function clockFor(
     if (day > LEGAL.pioDays) {
       return {
         label: `Overdue by ${day - LEGAL.pioDays} days — first appeal available`,
+        labelKn: `${day - LEGAL.pioDays} ದಿನ ವಿಳಂಬ — ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಲಭ್ಯ`,
         tone: "danger",
         urgency: 0,
       };
     }
     return {
       label: `Day ${day} of ${LEGAL.pioDays}${transferred ? " (from transfer)" : ""}`,
+      labelKn: `${LEGAL.pioDays} ದಿನಗಳಲ್ಲಿ ${day}ನೇ ದಿನ${transferred ? " (ವರ್ಗಾವಣೆಯಿಂದ)" : ""}`,
       tone: day >= 25 ? "warn" : "calm",
       urgency: day >= 25 ? 1 : 20 - day / 100,
     };
   }
 
-  return { label: "Filed", tone: "calm", urgency: 30 };
+  return { label: "Filed", labelKn: "ಸಲ್ಲಿಸಲಾಗಿದೆ", tone: "calm", urgency: 30 };
 }
 
 /**
