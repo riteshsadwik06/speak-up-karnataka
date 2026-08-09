@@ -236,6 +236,12 @@ function NewApplication() {
   const authorityMismatch =
     !!suggested && !dismissedAuthorityHint && !sameAuthority(authority, suggested);
 
+  const complaintBlanks = useMemo(() => findPlaceholders(complaintText), [complaintText]);
+  const letterBlanks = useMemo(
+    () => findPlaceholders(active?.body ?? ""),
+    [active?.body],
+  );
+
   const requestWords = draft ? countWords(draft.requests.map((r) => r.text).join(" ")) : 0;
   const overWordLimit = requestWords > RULE14_WORD_LIMIT;
   const otherSubjects = (draft?.subjects ?? []).filter(
