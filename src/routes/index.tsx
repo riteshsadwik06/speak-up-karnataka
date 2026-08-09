@@ -13,17 +13,19 @@ import { LangToggle, useLang, T } from "@/lib/i18n";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Vicharane — RTI drafting & deadline tracker for Bengaluru" },
+      { title: "Vicharane — civic complaints & RTI for Bengaluru" },
       {
         name: "description",
         content:
-          "Most RTI applications fail because they ask the wrong question. Vicharane rewrites your grievance as records a PIO must hand over, then runs the 30-day statutory clock.",
+          "Describe a Bengaluru civic problem in plain English or Kannada. Vicharane finds who is responsible, writes the complaint or RTI they must answer, and tracks every deadline.",
       },
-      { property: "og:title", content: "Vicharane — ask for records, not explanations" },
+      { property: "og:title", content: "Say it in your own words. We'll say it in theirs." },
       {
         property: "og:description",
-        content: "Draft a legally sound RTI application for Bengaluru and never miss an appeal deadline.",
+        content:
+          "Vicharane turns a plain-language Bengaluru grievance into a complaint or RTI the right authority is obliged to answer — and holds them to every statutory deadline.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -31,10 +33,11 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const CLOCKS = [
-  { day: "30", tId: "clockReplyDueTitle", dId: "clockReplyDueDesc" },
-  { day: "30", tId: "clockFirstAppealTitle", dId: "clockFirstAppealDesc" },
-  { day: "90", tId: "clockSecondAppealTitle", dId: "clockSecondAppealDesc" },
+const STEPS = [
+  { tId: "step1Title", bId: "step1Body" },
+  { tId: "step2Title", bId: "step2Body" },
+  { tId: "step3Title", bId: "step3Body" },
+  { tId: "step4Title", bId: "step4Body" },
 ] as const;
 
 function Landing() {
@@ -96,38 +99,34 @@ function Landing() {
         </section>
 
 
-        <section className="grid border-b border-border md:grid-cols-2">
-          <div className="border-b border-border p-6 md:border-b-0 md:border-r">
-            <p className="rule-heading"><T id="rejectedNotInfoLabel" /></p>
-            <p className="mt-3 font-display text-lg leading-snug text-muted-foreground">
-              <T id="rejectedExampleQuote" />
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              <T id="rejectedExplanation" />
-            </p>
-          </div>
-          <div className="p-6">
-            <p className="rule-heading text-foreground"><T id="mustBeAnsweredLabel" /></p>
-            <p className="mt-3 font-display text-lg leading-snug">
-              <T id="mustBeAnsweredExampleQuote" />
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              <T id="mustBeAnsweredExplanation" />
-            </p>
+        <section className="border-b border-border">
+          <p className="rule-heading border-b border-border px-6 py-3">
+            <T id="howItWorksLabel" />
+          </p>
+          <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x">
+            {STEPS.map((s, i) => (
+              <div key={s.tId} className="p-6">
+                <div className="mono-stamp">{String(i + 1).padStart(2, "0")}</div>
+                <h3 className="mt-2 font-display text-lg leading-snug font-bold">
+                  <T id={s.tId} />
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  <T id={s.bId} />
+                </p>
+              </div>
+            ))}
           </div>
         </section>
 
-        <section className="grid divide-y divide-border border-b border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {CLOCKS.map((c) => (
-            <div key={c.tId} className="p-6">
-              <div className="font-display text-3xl font-bold">
-                <T id="day" as="span" /> {c.day}
-              </div>
-              <p className="rule-heading mt-1"><T id={c.tId} /></p>
-              <p className="mt-2 text-sm text-muted-foreground"><T id={c.dId} /></p>
-            </div>
-          ))}
+        <section className="border-b border-border p-6 md:p-10">
+          <h3 className="max-w-2xl font-display text-2xl leading-tight sm:text-3xl">
+            <T id="falseClosureHeading" />
+          </h3>
+          <p className="mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
+            <T id="falseClosureBody" />
+          </p>
         </section>
+
 
         <footer className="p-6">
           <Wordmark size="sm" inline className="mb-3" />
