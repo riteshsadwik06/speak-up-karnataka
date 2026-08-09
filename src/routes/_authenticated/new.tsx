@@ -556,18 +556,26 @@ function NewApplication() {
             placeholder={t("grievancePlaceholder")}
             className={`${inputClass} mt-4 resize-y`}
           />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              {t("languageLabel")}
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-              >
-                <option value="en">English</option>
-                <option value="kn">ಕನ್ನಡ</option>
-              </select>
-            </label>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <div className="min-w-0">
+              <label className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className={knClass}>{t("applicationLanguageLabel")}</span>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguageOverride(e.target.value)}
+                  className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                >
+                  <option value="en">English</option>
+                  <option value="kn">ಕನ್ನಡ</option>
+                </select>
+              </label>
+              <T
+                id="applicationLanguageHelp"
+                as="p"
+                className="mt-1 max-w-xs text-[11px] leading-snug text-muted-foreground"
+              />
+            </div>
+
             <button
               disabled={
                 grievance.trim().length < 15 || !path || (path === "rti" && !prior)
