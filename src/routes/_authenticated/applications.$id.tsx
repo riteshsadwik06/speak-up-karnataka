@@ -37,7 +37,7 @@ import {
 } from "@/components/officials";
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
@@ -87,6 +87,7 @@ function Detail() {
   const makeAppeal = useServerFn(generateAppealDraft);
   const makeDraft = useServerFn(generateDraft);
   const { lang, t } = useLang();
+  const authorityLabel = useAuthorityLabel();
   const [busy, setBusy] = useState(false);
   const [filedDate, setFiledDate] = useState(today());
   const [regNumber, setRegNumber] = useState("");

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 import { WARDS } from "@/lib/wards";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
@@ -57,6 +57,7 @@ function stamp(date: string | null) {
 
 function Dashboard() {
   const { lang, t } = useLang();
+  const authorityLabel = useAuthorityLabel();
   const knCell = lang === "kn" ? `${KN_TEXT} normal-case` : "";
   /** Authoritative Kannada ward name from the ward asset — never machine-translated. */
   const wardKnFor = (name: string) =>

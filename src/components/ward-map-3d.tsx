@@ -11,7 +11,7 @@ import {
   OfficialsSkeleton,
   useWardOfficials,
 } from "@/components/officials";
-import { T, useLang } from "@/lib/i18n";
+import { T, useAuthorityLabel, useCorporationShort, useLang } from "@/lib/i18n";
 
 
 type RawWard = {
@@ -68,6 +68,7 @@ function easeInOut(t: number) {
 
 export function WardMap3D({ mode }: { mode: MapMode }) {
   const { t, lang } = useLang();
+  const corpShort = useCorporationShort();
   const legendAllWards = t("mapLegendAllWards");
   const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -561,6 +562,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
 
 function WardPanel({ ward }: { ward: WardInfo }) {
   const { t, lang } = useLang();
+  const authorityLabel = useAuthorityLabel();
   const portal = portalZoneForGbaZone(ward.zone);
   const { data, loading } = useWardOfficials(ward.name);
   const oldWard = data?.oldBbmpWard;

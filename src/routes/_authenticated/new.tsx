@@ -28,7 +28,7 @@ import {
 import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
-import { KN_TEXT, T, useLang } from "@/lib/i18n";
+import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (
@@ -89,6 +89,9 @@ type PriorOutcome = "no_response" | "false_closure" | "refused";
 function NewApplication() {
   const router = useRouter();
   const { lang, t } = useLang();
+  const authorityLabel = useAuthorityLabel();
+  const authorityNote = useAuthorityNote();
+  const knClass = lang === "kn" ? KN_TEXT : "";
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
   const runComplaint = useServerFn(generateComplaint);
