@@ -37,7 +37,7 @@ import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-detai
 import { identityWithHistory, wardForLocality, wardKey } from "@/lib/ward-identity";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
-import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useLang } from "@/lib/i18n";
+import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useChannelLabel, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (
@@ -100,6 +100,7 @@ function NewApplication() {
   const { lang, t } = useLang();
   const authorityLabel = useAuthorityLabel();
   const authorityNote = useAuthorityNote();
+  const channelLabel = useChannelLabel();
   const knClass = lang === "kn" ? KN_TEXT : "";
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
@@ -1015,8 +1016,12 @@ function NewApplication() {
                     channelId === c.id ? "border-accent bg-accent/8" : "border-border hover:bg-secondary"
                   }`}
                 >
-                  <span className="block text-sm font-medium">{c.name}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">{c.note}</span>
+                  <span className={`block text-sm font-medium ${knClass}`}>
+                    {channelLabel(c.id, c.name, c.note).name}
+                  </span>
+                  <span className={`mt-0.5 block text-xs text-muted-foreground ${knClass}`}>
+                    {channelLabel(c.id, c.name, c.note).note}
+                  </span>
                   {"phone" in c && c.phone ? (
                     <span className="mt-1 block font-mono text-[11px]">{c.phone}</span>
                   ) : null}
