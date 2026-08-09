@@ -98,29 +98,48 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
  * Post-generation guard: strips ward/zone-code-like tokens the caller never supplied.
  * A fabricated official identifier in a document a citizen files is worse than none.
  */
-const IDENTIFIER_PATTERNS: RegExp[] = [
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?[A-Z]-?\d{1,4}\b/gi,
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?\d{1,4}\b/gi,
-  // Any "letter-hyphen-digits" construction: no department issues these.
-  /\(?\b[A-Z]-\d{1,4}\b\)?/g,
-];
+/** "Letter-hyphen-digits" constructions. No Karnataka department issues these. */
+const CODE_SHAPE = /\(?\b[A-Za-z]-?\s?\d{1,4}\b\)?/g;
+/** "Ward 17" / "ವಾರ್ಡ್ ಸಂಖ್ಯೆ 17" — legitimate only when 17 is the supplied number. */
+const WARD_NUMBER_SHAPE =
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#|ಸಂಖ್ಯೆ)\s*[:.-]?\s*)?(\d{1,4})\b/gi;
+/** "Ward C-017", including the "Thindlu Ward (N-012)" trailing form. */
+const WARD_CODE_SHAPE =
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#|ಸಂಖ್ಯೆ)\s*[:.-]?\s*)?\(?[A-Za-z]-?\s?\d{1,4}\b\)?/gi;
 
 export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
-  const allow = supplied
-    .filter((s): s is string => Boolean(s && s.trim()))
-    .map((s) => s.trim().toLowerCase());
+  const allow = new Set(
+    supplied
+      .filter((s): s is string => Boolean(s && s.trim()))
+      .map((s) => s.trim().toLowerCase()),
+  );
+  const suppliedNumbers = new Set(
+    [...allow].filter((a) => /^\d{1,4}$/.test(a)).map((a) => String(Number(a))),
+  );
+  const drop = (match: string) => {
+    console.warn(`[rti] stripped unsupplied identifier from generated text: "${match}"`);
+    return "";
+  };
+  const keptVerbatim = (match: string) => allow.has(match.trim().toLowerCase());
+
   let out = text;
-  for (const re of IDENTIFIER_PATTERNS) {
-    out = out.replace(re, (match) => {
-      const norm = match.trim().toLowerCase();
-      if (allow.some((a) => norm.includes(a))) return match;
-      console.warn(`[rti] stripped unsupplied identifier from generated text: "${match}"`);
-      return "";
-    });
-  }
+  // Order matters: the ward-prefixed forms first, so the bare code shape does not
+  // leave a dangling "Ward" behind.
+  out = out.replace(WARD_CODE_SHAPE, (m) => (keptVerbatim(m) ? m : drop(m)));
+  out = out.replace(WARD_NUMBER_SHAPE, (m, digits: string) =>
+    suppliedNumbers.has(String(Number(digits))) ? m : drop(m),
+  );
+  out = out.replace(CODE_SHAPE, (m) => (keptVerbatim(m) ? m : drop(m)));
+
   // Tidy the punctuation the removal leaves behind.
-  return out.replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",").replace(/,\s*,/g, ",").replace(/\(\s*\)/g, "");
+  return out
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ ,/g, ",")
+    .replace(/,\s*,/g, ",")
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]+([.,;:])/g, "$1");
 }
+
 
 
 
