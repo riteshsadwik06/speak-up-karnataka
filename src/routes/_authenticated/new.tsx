@@ -432,7 +432,7 @@ function NewApplication() {
 
       {step === 1 && (
         <div className="paper-card mt-6 p-5">
-          <SectionLabel>Step 1 · Have you reported this already?</SectionLabel>
+          <SectionLabel>{t("step1HaveYouReported")}</SectionLabel>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <button
               onClick={() => {
