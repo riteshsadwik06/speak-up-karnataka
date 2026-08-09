@@ -19,6 +19,67 @@ export type RtiDraft = {
   confidence: "high" | "medium" | "low";
 };
 
+/**
+ * Ward identity is passed to the model as structured, verbatim data — never as prose
+ * for it to recompose. Anything not present here must not appear in a filed document.
+ */
+export type WardIdentity = {
+  name: string;
+  nameKn?: string | null;
+  number?: string | null;
+  corporation?: string | null;
+  zone?: string | null;
+  oldBbmpWard?: string | null;
+};
+
+/** Shared anti-fabrication rule. Appended to every prompt that produces filed text. */
+export const NO_FABRICATION_RULE = `Never invent or construct an identifier of any kind - ward numbers, file numbers, reference numbers, application numbers, zone codes. Use only identifiers supplied to you verbatim. If an identifier has not been supplied, omit it entirely rather than guessing or inferring a format.`;
+
+/** Structured ward block for the prompt. Values are quoted so they are copied, not composed. */
+export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
+  if (!ward?.name) return "Location: Bengaluru, Karnataka. No ward has been supplied - do not name or infer one.";
+  const rows = [
+    `- Ward name: ${ward.name}`,
+    ward.nameKn ? `- Ward name (Kannada): ${ward.nameKn}` : "",
+    ward.number ? `- Ward number: ${ward.number}` : "- Ward number: NOT SUPPLIED - omit any ward number",
+    ward.corporation ? `- City corporation: ${ward.corporation}` : "",
+    ward.zone ? `- Zone: ${ward.zone}` : "",
+    ward.oldBbmpWard ? `- Former BBMP ward name: ${ward.oldBbmpWard}` : "",
+  ].filter(Boolean);
+  return [
+    "Ward identity (use these values verbatim; do not alter, abbreviate or extend them):",
+    ...rows,
+    "City: Bengaluru, Karnataka.",
+  ].join("\n");
+}
+
+/**
+ * Post-generation guard: strips ward/zone-code-like tokens the caller never supplied.
+ * A fabricated official identifier in a document a citizen files is worse than none.
+ */
+const IDENTIFIER_PATTERNS: RegExp[] = [
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:No\.?|Number|number|#)?\s*[A-Z]-?\d{1,4}\b/g,
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:No\.?|Number|number|#)\s*\d{1,4}\b/g,
+  /\b[A-Z]-\d{3}\b/g,
+];
+
+export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
+  const allow = supplied
+    .filter((s): s is string => Boolean(s && s.trim()))
+    .map((s) => s.trim().toLowerCase());
+  let out = text;
+  for (const re of IDENTIFIER_PATTERNS) {
+    out = out.replace(re, (match) => {
+      const norm = match.trim().toLowerCase();
+      if (allow.some((a) => norm.includes(a))) return match;
+      console.warn(`[rti] stripped unsupplied identifier from generated text: "${match}"`);
+      return "";
+    });
+  }
+  // Tidy the punctuation the removal leaves behind.
+  return out.replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",").replace(/,\s*,/g, ",").replace(/\(\s*\)/g, "");
+}
+
 
 export const DRAFT_SYSTEM_PROMPT = `You help Indian citizens draft Right to Information (RTI) applications under the RTI Act 2005.
 
@@ -37,6 +98,10 @@ Rules:
 
 Karnataka's Rule 14 requires that a single RTI application relate to ONE subject matter. If a request covers more than one, the Public Information Officer may lawfully answer only the first subject and discard the rest. First, identify every distinct civic subject in the grievance - treat things as distinct subjects when they would be held by different departments or in different record sets (road works, street lighting, solid waste, water supply, sewerage, building permissions, property records are all distinct subjects). List them in "subjects". Then draft requests for the SINGLE most substantial subject only, and name it in "primary_subject". Never mix subjects across the numbered requests.
 Rule 14 also states an application shall not ordinarily exceed 150 words. Keep the combined text of the numbered requests under 150 words. Be terse and specific; drop filler. Do not sacrifice the time period, the location or the document type to save words - those are what make a request answerable.
+
+${NO_FABRICATION_RULE}
+- The ward name, ward number, corporation and zone are supplied to you as structured data. Copy them exactly; never construct one.
+
 
 Return ONLY valid JSON, no markdown fences:
 { "requests": [{"text": "...", "rationale": "why this record matters"}], "flags": [{"type": "opinion_seeking|exemption_risk|too_broad|wrong_authority", "message": "...", "suggestion": "..."}], "subjects": [{"label": "short name of the subject, e.g. Road resurfacing", "summary": "one line"}], "primary_subject": "label of the subject the returned requests cover", "suggested_authority": "...", "confidence": "high|medium|low" }`;
@@ -107,14 +172,14 @@ export type FalseClosure = {
 export async function draftRequests(input: {
   grievance: string;
   authority: string;
-  ward?: string | null;
+  ward?: WardIdentity | null;
   focusSubject?: string | null;
   falseClosure?: FalseClosure | null;
 }): Promise<RtiDraft> {
   const fc = input.falseClosure;
   const user = [
     `Public authority selected by the citizen: ${input.authority}`,
-    input.ward ? `Ward: ${input.ward}, Bengaluru, Karnataka` : "Location: Bengaluru, Karnataka",
+    wardPromptBlock(input.ward),
     "",
     "Grievance in the citizen's own words:",
     input.grievance,
@@ -126,12 +191,18 @@ export async function draftRequests(input: {
     .filter(Boolean)
     .join("\n");
 
+
   const parsed = parseJson(await callGateway(DRAFT_SYSTEM_PROMPT, user)) as Partial<RtiDraft>;
   const subjects = Array.isArray(parsed.subjects)
     ? parsed.subjects.filter((s) => s && typeof s.label === "string" && s.label.trim())
     : [];
+  const supplied = [input.ward?.number, input.ward?.name, input.ward?.zone, input.ward?.oldBbmpWard];
   return {
-    requests: Array.isArray(parsed.requests) ? parsed.requests.slice(0, 6) : [],
+    requests: Array.isArray(parsed.requests)
+      ? parsed.requests
+          .slice(0, 6)
+          .map((r) => ({ ...r, text: stripUnsuppliedIdentifiers(String(r.text ?? ""), supplied) }))
+      : [],
     flags: Array.isArray(parsed.flags) ? parsed.flags : [],
     subjects,
     primary_subject: typeof parsed.primary_subject === "string" ? parsed.primary_subject : "",
@@ -237,6 +308,9 @@ All the original rules still apply: ask for records and never explanations, neve
 
 If the citizen has supplied new specifics - dates, a street name, a complaint number, a ward - work them into the relevant requests to make them harder to refuse as vague.
 
+${NO_FABRICATION_RULE}
+
+
 Return ONLY valid JSON, no markdown fences:
 { "requests": [{"text": "...", "rationale": "..."}], "flags": [{"type": "opinion_seeking|exemption_risk|too_broad|wrong_authority", "message": "...", "suggestion": "..."}], "subjects": [{"label": "...", "summary": "..."}], "primary_subject": "...", "suggested_authority": "...", "confidence": "high|medium|low" }`;
 
@@ -303,14 +377,17 @@ Rules:
 
 When asked to write in Kannada, write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority.
 
+${NO_FABRICATION_RULE}
+- The ward name, ward number, corporation and zone are supplied to you as structured data. Copy them exactly. If a ward number is not supplied, write the location without one.
+
+
 Return ONLY valid JSON, no markdown fences:
 { "complaint": "the complaint text", "suggested_channel": "sahaaya|bwssb|bescom|other", "category": "short issue category", "checkable_action": "the one specific action requested" }`;
 
 export async function draftComplaint(input: {
   grievance: string;
   authority: string;
-  ward?: string | null;
-  wardNumber?: string | null;
+  ward?: WardIdentity | null;
   /** 'kn' writes the complaint in Kannada. Sahaaya and the helplines accept Kannada. */
   lang?: "en" | "kn";
 }): Promise<ComplaintDraft> {
@@ -319,9 +396,7 @@ export async function draftComplaint(input: {
       ? "Write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority. The JSON keys stay in English; only the value of \"complaint\" is in Kannada."
       : "",
     `Public authority / department: ${input.authority}`,
-    input.ward
-      ? `Ward: ${input.ward}${input.wardNumber ? ` (ward number ${input.wardNumber})` : ""}, Bengaluru, Karnataka`
-      : "Location: Bengaluru, Karnataka",
+    wardPromptBlock(input.ward),
     "",
     "The resident's account of the problem:",
     input.grievance,
@@ -330,13 +405,72 @@ export async function draftComplaint(input: {
     .join("\n");
 
   const parsed = parseJson(await callGateway(COMPLAINT_SYSTEM_PROMPT, user)) as Partial<ComplaintDraft>;
+  const supplied = [input.ward?.number, input.ward?.name, input.ward?.zone, input.ward?.oldBbmpWard];
   return {
-    complaint: typeof parsed.complaint === "string" ? parsed.complaint.trim() : "",
+    complaint:
+      typeof parsed.complaint === "string"
+        ? stripUnsuppliedIdentifiers(parsed.complaint.trim(), supplied)
+        : "",
     suggested_channel:
       typeof parsed.suggested_channel === "string" ? parsed.suggested_channel : "sahaaya",
     category: typeof parsed.category === "string" ? parsed.category : "",
     checkable_action: typeof parsed.checkable_action === "string" ? parsed.checkable_action : "",
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Routing pass — "we find who owns it"
+ * ------------------------------------------------------------------ */
+
+export type RouteSuggestion = {
+  authority_id: string;
+  locality: string;
+  category: string;
+  confidence: "high" | "medium" | "low";
+};
+
+export const ROUTE_SYSTEM_PROMPT = `You route a Bengaluru resident's civic grievance to the public authority that owns the problem.
+
+Authority ids you may return, and what each owns:
+- bcc / bec / bwc / bnc / bsc: the five Bengaluru city corporations (Central, East, West, North, South). Ward-level roads, footpaths, storm water drains, garbage and solid waste, street lights, parks, stray animals, property tax and khata.
+- gba: Greater Bengaluru Authority. Arterial roads, planning, projects spanning corporations.
+- bwssb: piped water supply, sewage and underground drainage (NOT storm water drains, which belong to the corporation).
+- bescom: electricity supply, transformers, power cuts, billing.
+- bmrcl: Namma Metro construction and operations.
+- bda: BDA layouts, sites, development schemes.
+- other: anything else.
+
+Choose the corporation only when you can tell which one from the locality named. If the resident names a locality but you are not certain of the corporation, still return the locality and set confidence to "low".
+
+Return the locality exactly as the resident wrote it (a neighbourhood, ward or area name). Return an empty string if no locality is named. Never invent an identifier of any kind - no ward numbers, no zone codes. ${NO_FABRICATION_RULE}
+
+Return ONLY valid JSON, no markdown fences:
+{ "authority_id": "one of the ids above", "locality": "locality as written, or empty string", "category": "short issue category in English, e.g. Storm water drainage", "confidence": "high|medium|low" }`;
+
+const ROUTE_IDS = new Set([
+  "bcc", "bec", "bwc", "bnc", "bsc", "gba", "bwssb", "bescom", "bmrcl", "bda", "other",
+]);
+
+/** Best-effort. Never throws — a failed routing pass simply means no suggestion. */
+export async function routeGrievance(grievance: string): Promise<RouteSuggestion | null> {
+  try {
+    const parsed = parseJson(
+      await callGateway(ROUTE_SYSTEM_PROMPT, `Resident's grievance:\n${grievance}`),
+    ) as Partial<RouteSuggestion>;
+    const id = typeof parsed.authority_id === "string" ? parsed.authority_id.trim() : "";
+    if (!ROUTE_IDS.has(id)) return null;
+    const confidence =
+      parsed.confidence === "high" || parsed.confidence === "low" ? parsed.confidence : "medium";
+    return {
+      authority_id: id,
+      locality: typeof parsed.locality === "string" ? parsed.locality.trim() : "",
+      category: typeof parsed.category === "string" ? parsed.category.trim() : "",
+      confidence,
+    };
+  } catch (err) {
+    console.warn("[rti] routing pass failed", err);
+    return null;
+  }
 }
 
 

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { identityFor, wardById, wardByName } from "@/lib/ward-identity";
 import { AppShell, SectionLabel, StatusPill } from "@/components/app-shell";
 import {
   addDays,
@@ -217,7 +218,7 @@ function Detail() {
         data: {
           grievance: app.grievance_text,
           authority: app.public_authority,
-          ward: app.ward_name,
+          ward: identityFor(wardById(app.ward_id) ?? wardByName(app.ward_name)),
           language: app.language,
           lang,
           falseClosure: {

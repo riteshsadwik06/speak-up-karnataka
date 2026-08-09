@@ -207,4 +207,27 @@ export const DICT_WIZARD = {
   wardMapLoading: { en: "Loading ward map…", kn: "ವಾರ್ಡ್ ನಕ್ಷೆ ಲೋಡ್ ಆಗುತ್ತಿದೆ…" },
   wardMapAriaLabel: { en: "Map of Greater Bengaluru Authority wards", kn: "ಗ್ರೇಟರ್ ಬೆಂಗಳೂರು ಪ್ರಾಧಿಕಾರದ ವಾರ್ಡ್‌ಗಳ ನಕ್ಷೆ" },
   tapWardToSelect: { en: "Tap a ward to select it", kn: "ಆಯ್ಕೆ ಮಾಡಲು ವಾರ್ಡ್ ಟ್ಯಾಪ್ ಮಾಡಿ" },
+
+  routingChecking: {
+    en: "Working out who owns this…",
+    kn: "ಇದು ಯಾರ ಜವಾಬ್ದಾರಿ ಎಂದು ಕಂಡುಹಿಡಿಯಲಾಗುತ್ತಿದೆ…",
+  },
+  routingSuggestionWard: {
+    en: "From what you wrote, this looks like {authority}, ward {ward} — a {category} issue. Change it below if that is not right.",
+    kn: "ನೀವು ಬರೆದಿರುವುದರಿಂದ, ಇದು {authority}, {ward} ವಾರ್ಡ್‌ಗೆ ಸಂಬಂಧಿಸಿದ {category} ಸಮಸ್ಯೆ ಎಂದು ಕಾಣುತ್ತದೆ. ಸರಿಯಿಲ್ಲದಿದ್ದರೆ ಕೆಳಗೆ ಬದಲಾಯಿಸಿ.",
+  },
+  routingSuggestionNoWard: {
+    en: "From what you wrote, this looks like {authority} — a {category} issue. Change it below if that is not right.",
+    kn: "ನೀವು ಬರೆದಿರುವುದರಿಂದ, ಇದು {authority} — {category} ಸಮಸ್ಯೆ ಎಂದು ಕಾಣುತ್ತದೆ. ಸರಿಯಿಲ್ಲದಿದ್ದರೆ ಕೆಳಗೆ ಬದಲಾಯಿಸಿ.",
+  },
+  routingLowConfidence: {
+    en: "We are not certain of this one — please check it.",
+    kn: "ಇದರ ಬಗ್ಗೆ ನಮಗೆ ಖಚಿತವಿಲ್ಲ — ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ.",
+  },
+  corporationMismatch: {
+    en: "{ward} is in {wardCorp}, but you have selected {selected}. Filing with the wrong corporation means a Section 6(3) transfer, which costs at least five days.",
+    kn: "{ward} {wardCorp} ವ್ಯಾಪ್ತಿಯಲ್ಲಿದೆ, ಆದರೆ ನೀವು {selected} ಆಯ್ಕೆ ಮಾಡಿದ್ದೀರಿ. ತಪ್ಪು ಪಾಲಿಕೆಗೆ ಸಲ್ಲಿಸಿದರೆ ಕಲಂ 6(3) ವರ್ಗಾವಣೆ ಆಗುತ್ತದೆ, ಅದು ಕನಿಷ್ಠ ಐದು ದಿನ ತಿನ್ನುತ್ತದೆ.",
+  },
+  switchToCorporation: { en: "Switch to {corp}", kn: "{corp}ಗೆ ಬದಲಾಯಿಸಿ" },
+  keepMyChoice: { en: "Keep my choice", kn: "ನನ್ನ ಆಯ್ಕೆಯನ್ನೇ ಇಟ್ಟುಕೊಳ್ಳಿ" },
 } as const;
