@@ -600,11 +600,39 @@ function NewApplication() {
       ? [t("stepWhatWentWrong"), t("stepWhereToSend"), t("stepYourComplaint")]
       : [t("stepGrievance"), t("stepAuthority"), t("stepRequests"), t("stepFileIt")];
 
+  if (!ready) {
+    return (
+      <AppShell>
+        <h1 className="text-3xl sm:text-4xl">
+          <T id={path === "complaint" ? "wizardTitleComplaint" : "wizardTitleRti"} />
+        </h1>
+        <div
+          className="paper-card mt-6 space-y-4 p-5"
+          aria-busy="true"
+          aria-live="polite"
+          data-testid="wizard-skeleton"
+        >
+          <p className={`text-sm font-medium ${knClass}`}>{t("formPreparing")}</p>
+          <p className={`text-xs text-muted-foreground ${knClass}`}>{t("formPreparingHelp")}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="h-24 animate-pulse rounded-md bg-secondary" />
+            <div className="h-24 animate-pulse rounded-md bg-secondary" />
+          </div>
+          <div className="h-40 animate-pulse rounded-md bg-secondary" />
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
-      <h1 className="text-3xl sm:text-4xl">
+      <h1 ref={headingRef} tabIndex={-1} className="text-3xl outline-none sm:text-4xl">
         <T id={path === "complaint" ? "wizardTitleComplaint" : "wizardTitleRti"} />
       </h1>
+      {restored && (
+        <p className={`mt-2 text-xs text-muted-foreground ${knClass}`}>{t("restoredFromSession")}</p>
+      )}
+
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         {stepLabels.map((label, i) => (
           <span
