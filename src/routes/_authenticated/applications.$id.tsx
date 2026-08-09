@@ -642,13 +642,15 @@ function Detail() {
         id="where-to-send"
         label={t("sectionWhereToSend")}
         summary={
-          isComplaint ? (channel?.name ?? t("channelNotRecorded")) : t("summaryOnlineOrPost")
+          isComplaint
+            ? (channel ? channelLabel(channel.id, channel.name, channel.note).name : t("channelNotRecorded"))
+            : t("summaryOnlineOrPost")
         }
       >
         {isComplaint ? (
           channel ? (
             <div className="px-1">
-              <p className="text-sm font-medium">{channel.name}</p>
+              <p className="text-sm font-medium">{channelLabel(channel.id, channel.name, channel.note).name}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {channelLabel(channel.id, channel.name, channel.note).note}
               </p>
