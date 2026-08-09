@@ -733,6 +733,10 @@ function NewApplication() {
             </div>
           </div>
 
+          {ward && <ResponsibleOfficials wardName={ward.ward_name} category={complaint.category} />}
+
+
+
           <div className="paper-card p-5">
             <SectionLabel>Where to send it</SectionLabel>
             <p className="text-xs text-muted-foreground">
