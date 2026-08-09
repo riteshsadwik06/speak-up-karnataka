@@ -1129,6 +1129,12 @@ function NewApplication() {
             </div>
           </div>
 
+          <MissingDetails
+            placeholders={letterBlanks}
+            busy={revising}
+            onFill={(fill) => void runRevision(fill)}
+          />
+
           <div className="paper-card p-5">
             <SectionLabel>{t("improveThisDraft")}</SectionLabel>
             <textarea
@@ -1186,6 +1192,7 @@ function NewApplication() {
           <div className="paper-card p-5">
             <SectionLabel>{t("editBeforeFiling")}</SectionLabel>
 
+            {letterBlanks.length > 0 ? <PlaceholderBlockNote /> : null}
             {bodyKn ? (
               <>
                 <p className="mt-1 text-xs text-muted-foreground">
