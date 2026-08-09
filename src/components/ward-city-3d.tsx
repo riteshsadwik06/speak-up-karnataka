@@ -173,16 +173,23 @@ export function WardCity3D({
         if (still) {
           renderer.render(scene, camera);
         } else {
-          const start = performance.now() + 120;
+          const start = performance.now() + (intro ? 120 : 0);
+          const minDelta = 1000 / Math.max(1, maxFps);
+          let last = 0;
           stopLoop = gateLoop(mount, (now) => {
+            if (now - last < minDelta) return;
+            last = now;
             const t = (now - start) / 1000;
-            for (const m of meshes) {
-              if (m.scale.z < 1) m.scale.z = Math.max(0.001, easeInOut(Math.max(0, Math.min(1, t / 1.4))));
+            if (intro) {
+              for (const m of meshes) {
+                if (m.scale.z < 1) m.scale.z = Math.max(0.001, easeInOut(Math.max(0, Math.min(1, t / 1.4))));
+              }
             }
-            if (spin) pivot.rotation.y = ((t % ORBIT_SECONDS) / ORBIT_SECONDS) * Math.PI * 2;
+            if (spin) pivot.rotation.y = ((t % orbitSeconds) / orbitSeconds) * Math.PI * 2;
             renderer.render(scene, camera);
           });
         }
+
 
         cleanup = () => {
           stopLoop?.();
