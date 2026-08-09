@@ -55,6 +55,20 @@ function Landing() {
         </header>
 
         <section className="border-b border-border p-6 md:p-10">
+        <section className="border-b border-border">
+          <div className="relative">
+            <WardCity3D
+              spin
+              colorFor={(w) => CORP_COLOR[w.c] ?? NEUTRAL}
+              className="h-[240px] w-full sm:h-[340px]"
+            />
+            <p className="mono-stamp absolute bottom-2 left-4">
+              369 wards · five city corporations · extruded by population
+            </p>
+          </div>
+        </section>
+
+        <section className="border-b border-border p-6 md:p-10">
           <p className="rule-heading">Right to Information Act, 2005 · Karnataka</p>
           <h2 className="mt-3 max-w-3xl font-display text-3xl leading-[1.05] sm:text-5xl">
             Ask for records, not explanations — then watch the clock.
@@ -76,6 +90,7 @@ function Landing() {
             </Link>
           </div>
         </section>
+
 
         <section className="grid border-b border-border md:grid-cols-2">
           <div className="border-b border-border p-6 md:border-b-0 md:border-r">
