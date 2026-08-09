@@ -58,7 +58,7 @@ for (const r of records) {
   if (dept === "gba_ward") {
     const m = area.match(/^\s*(\d+)\s*:\s*(.+?)\s*$/);
     const wardNo = m ? m[1] : "";
-    const rawName = (m ? m[2] : area).replace(/\s+Ward$/i, "").trim();
+    const rawName = (m ? m[2] : area).trim();
     if (!rawName) continue;
     const block = (out.wards[rawName] ??= { wardNo, officials: [] });
     if (!block.wardNo && wardNo) block.wardNo = wardNo;
