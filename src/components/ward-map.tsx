@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import shapesAsset from "@/assets/ward-shapes.json.asset.json";
 import { WARDS } from "@/lib/wards";
+import { T, useLang } from "@/lib/i18n";
 
 type Shapes = { width: number; height: number; shapes: { ward_id: string; d: string }[] };
 
@@ -19,6 +20,7 @@ export function WardMap({
 }) {
   const [data, setData] = useState<Shapes | null>(null);
   const [hover, setHover] = useState<string>("");
+  const { t } = useLang();
 
   useEffect(() => {
     let alive = true;
@@ -40,7 +42,7 @@ export function WardMap({
   if (!data) {
     return (
       <div className="flex h-64 items-center justify-center rounded-md border border-border bg-secondary/40 text-xs text-muted-foreground">
-        Loading ward map…
+        <T id="wardMapLoading" />
       </div>
     );
   }
@@ -54,7 +56,7 @@ export function WardMap({
         viewBox={`0 0 ${data.width} ${data.height}`}
         className="mx-auto h-auto max-h-[460px] w-full"
         role="img"
-        aria-label="Map of Greater Bengaluru Authority wards"
+        aria-label={t("wardMapAriaLabel")}
       >
         {data.shapes.map((s) => {
           const isSelected = s.ward_id === selectedId;
@@ -92,7 +94,9 @@ export function WardMap({
             </span>
           </>
         ) : (
-          <span className="text-muted-foreground">Tap a ward to select it</span>
+          <span className="text-muted-foreground">
+            <T id="tapWardToSelect" />
+          </span>
         )}
       </div>
     </div>

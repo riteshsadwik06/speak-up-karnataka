@@ -560,22 +560,25 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
 }
 
 function WardPanel({ ward }: { ward: WardInfo }) {
+  const { t, lang } = useLang();
   const portal = portalZoneForGbaZone(ward.zone);
   const { data, loading } = useWardOfficials(ward.name);
   const oldWard = data?.oldBbmpWard;
 
   return (
     <div>
-      <p className="rule-heading">Ward {ward.number}</p>
+      <p className="rule-heading">
+        {t("mapWardLabel")} {ward.number}
+      </p>
       <h3 className="mt-1 font-display text-lg leading-tight">{ward.name}</h3>
       <p className="text-sm text-muted-foreground">{ward.nameKn}</p>
 
       <dl className="mt-4 space-y-2 text-xs">
         {[
-          ["Corporation", ward.corporation],
-          ["Assembly", ward.assembly],
-          ["GBA zone", ward.zone],
-          ["Population", ward.population ? ward.population.toLocaleString("en-IN") : "—"],
+          [t("mapDlCorporation"), ward.corporation],
+          [t("mapDlAssembly"), ward.assembly],
+          [t("mapDlGbaZone"), ward.zone],
+          [t("mapDlPopulation"), ward.population ? ward.population.toLocaleString("en-IN") : "—"],
         ].map(([k, v]) => (
           <div key={k} className="flex justify-between gap-3 border-b border-border pb-1.5">
             <dt className="rule-heading">{k}</dt>
@@ -585,22 +588,26 @@ function WardPanel({ ward }: { ward: WardInfo }) {
       </dl>
 
       <div className="mt-4 border border-foreground p-3">
-        <p className="rule-heading text-foreground">On the RTI portal</p>
+        <p className="rule-heading text-foreground">
+          <T id="mapOnPortalHeading" />
+        </p>
         {portal ? (
           <p className="mt-1.5 text-xs">{portal}</p>
         ) : (
           <>
-            <p className="mt-1.5 text-xs">
-              No verified mapping. The portal has no entry for {ward.zone}; pick the closest BBMP zone
-              yourself:
+            <p className="mt-1.5 text-xs" lang={lang}>
+              {t("mapNoVerifiedMapping").replace("{zone}", ward.zone)}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Picking the wrong zone is not fatal. Under Section 6(3) the authority must transfer your
-              application to the correct one within 5 days — you lose about five days, not your application.
+            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
+              <T id="mapSection63Note" />
             </p>
             {oldWard ? (
-              <p className="mt-2 text-xs">
-                This ward was <strong>{oldWard}</strong> under BBMP, which may help you choose.
+              <p className="mt-2 text-xs" lang={lang}>
+                {t("mapOldWardHint")
+                  .split("{ward}")
+                  .flatMap((part, i, arr) =>
+                    i < arr.length - 1 ? [part, <strong key={i}>{oldWard}</strong>] : [part],
+                  )}
               </p>
             ) : null}
             <ul className="mt-2 space-y-1">
@@ -616,14 +623,20 @@ function WardPanel({ ward }: { ward: WardInfo }) {
       </div>
 
       <div className="mt-4 border border-border p-3">
-        <p className="rule-heading text-foreground">Officials for this ward</p>
+        <p className="rule-heading text-foreground">
+          <T id="mapOfficialsHeading" />
+        </p>
         {loading ? (
           <OfficialsSkeleton />
         ) : (
           <>
             {oldWard ? (
-              <p className="mt-1.5 text-xs">
-                Was <strong>{oldWard}</strong> ward under BBMP (pre-2025).
+              <p className="mt-1.5 text-xs" lang={lang}>
+                {t("mapOldWardUnderBbmp")
+                  .split("{ward}")
+                  .flatMap((part, i, arr) =>
+                    i < arr.length - 1 ? [part, <strong key={i}>{oldWard}</strong>] : [part],
+                  )}
               </p>
             ) : null}
             <OfficialsList officials={data?.officials ?? []} />
@@ -636,22 +649,23 @@ function WardPanel({ ward }: { ward: WardInfo }) {
       <Link
         to="/new"
         search={{ ward: ward.id, stage: "complaint" }}
-        className="mt-4 block bg-foreground px-4 py-2 text-center font-display text-sm font-bold text-background"
+        className="mt-4 block bg-foreground px-4 py-2 text-center font-display text-sm font-bold uppercase text-background"
       >
-        REPORT A PROBLEM HERE
+        <T id="mapReportProblemCta" />
       </Link>
       <Link
         to="/new"
         search={{ ward: ward.id }}
-        className="mt-2 block border border-foreground px-4 py-2 text-center font-display text-sm font-bold"
+        className="mt-2 block border border-foreground px-4 py-2 text-center font-display text-sm font-bold uppercase"
       >
-        DRAFT AN RTI
+        <T id="mapDraftRtiCta" />
       </Link>
     </div>
   );
 }
 
 function CopyZone({ value }: { value: string }) {
+  const { t } = useLang();
   const [done, setDone] = useState(false);
   return (
     <button
@@ -663,7 +677,7 @@ function CopyZone({ value }: { value: string }) {
       }}
       className="shrink-0 border border-border px-1.5 py-0.5 text-[10px] uppercase hover:bg-secondary"
     >
-      {done ? "Copied" : "Copy"}
+      {done ? t("copied") : t("copy")}
     </button>
   );
 }

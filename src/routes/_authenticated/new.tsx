@@ -28,7 +28,7 @@ import {
 import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, T, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (
@@ -56,11 +56,11 @@ export const Route = createFileRoute("/_authenticated/new")({
 const inputClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25";
 
-const FLAG_LABEL: Record<string, string> = {
-  opinion_seeking: "Asks for an opinion, not a record",
-  exemption_risk: "May be refused under Section 8",
-  too_broad: "Too broad — invites a fee demand",
-  wrong_authority: "Possibly the wrong public authority",
+const FLAG_LABEL_ID: Record<string, "flagOpinionSeeking" | "flagExemptionRisk" | "flagTooBroad" | "flagWrongAuthority"> = {
+  opinion_seeking: "flagOpinionSeeking",
+  exemption_risk: "flagExemptionRisk",
+  too_broad: "flagTooBroad",
+  wrong_authority: "flagWrongAuthority",
 };
 
 /** Loose authority equality: case-insensitive, trimmed, either containing the other. */
@@ -201,7 +201,7 @@ function NewApplication() {
         setChannelId(result.suggested_channel);
       setStep(3);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not draft the complaint");
+      toast.error(err instanceof Error ? err.message : t("couldNotDraftComplaint"));
     } finally {
       setBusy(false);
     }
@@ -236,7 +236,7 @@ function NewApplication() {
       if (error) throw error;
       router.navigate({ to: "/applications/$id", params: { id: data.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(err instanceof Error ? err.message : t("couldNotSave"));
       setSaving(false);
     }
   }
@@ -273,7 +273,7 @@ function NewApplication() {
       setInstruction("");
       setStep(3);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not draft the application");
+      toast.error(err instanceof Error ? err.message : t("couldNotDraftApplication"));
     } finally {
       setBusy(false);
     }
@@ -308,7 +308,7 @@ function NewApplication() {
       updateActive({ draft: result.draft, body: result.body, bodyKn: result.bodyKn ?? "" });
       setInstruction("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not revise the draft");
+      toast.error(err instanceof Error ? err.message : t("couldNotRevise"));
     } finally {
       setRevising(false);
     }
@@ -366,13 +366,13 @@ function NewApplication() {
       if (error) throw error;
       if (drafts.length > 1) {
         updateActive({ saved: true, savedId: data.id });
-        toast.success(`Saved "${active.subject}"`);
+        toast.success(t("savedSubject").replace("{subject}", active.subject));
         setSaving(false);
       } else {
         router.navigate({ to: "/applications/$id", params: { id: data.id } });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(err instanceof Error ? err.message : t("couldNotSave"));
       setSaving(false);
     }
   }
@@ -399,7 +399,7 @@ function NewApplication() {
       );
       router.navigate({ to: "/dashboard" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(err instanceof Error ? err.message : t("couldNotSave"));
       setSaving(false);
     }
   }
@@ -407,13 +407,13 @@ function NewApplication() {
 
   const stepLabels =
     path === "complaint"
-      ? ["What went wrong", "Where to send it", "Your complaint"]
-      : ["Grievance", "Authority", "Requests", "File it"];
+      ? [t("stepWhatWentWrong"), t("stepWhereToSend"), t("stepYourComplaint")]
+      : [t("stepGrievance"), t("stepAuthority"), t("stepRequests"), t("stepFileIt")];
 
   return (
     <AppShell>
       <h1 className="text-3xl sm:text-4xl">
-        {path === "complaint" ? "New civic complaint" : "New RTI application"}
+        <T id={path === "complaint" ? "wizardTitleComplaint" : "wizardTitleRti"} />
       </h1>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         {stepLabels.map((label, i) => (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "@/lib/i18n";
 import {
   acquireGlSlot,
   addLights,
@@ -25,6 +26,7 @@ export function WardInset3D({
   corporation?: string;
   height?: number;
 }) {
+  const { t } = useLang();
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [show, setShow] = useState(false);
 
@@ -122,5 +124,13 @@ export function WardInset3D({
   }, [show, wardId, corporation, height]);
 
   if (!show || !wardId) return null;
-  return <div ref={mountRef} className="w-full border border-border" style={{ height }} />;
+  return (
+    <div
+      ref={mountRef}
+      role="img"
+      aria-label={t("mapWardInsetAriaLabel")}
+      className="w-full border border-border"
+      style={{ height }}
+    />
+  );
 }

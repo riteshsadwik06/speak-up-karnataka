@@ -75,4 +75,8 @@ export const DICT_MAP = {
     en: "Interactive 3D map of Bengaluru's wards",
     kn: "ಬೆಂಗಳೂರಿನ ವಾರ್ಡ್‌ಗಳ ಇಂಟರಾಕ್ಟಿವ್ 3D ನಕ್ಷೆ",
   },
+  mapWardInsetAriaLabel: {
+    en: "3D preview of the ward's shape",
+    kn: "ವಾರ್ಡ್‌ನ ಆಕಾರದ 3D ಪೂರ್ವವೀಕ್ಷಣೆ",
+  },
 } as const;
