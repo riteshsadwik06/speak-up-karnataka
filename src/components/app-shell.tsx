@@ -76,15 +76,8 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
               {t("navWardMap")}
             </Link>
 
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.navigate({ to: "/auth" });
-              }}
-              className={`${navIdle} w-full text-left`}
-            >
-              {t("navSignOut")}
-            </button>
+            <SignOutButton />
+
           </nav>
         </aside>
 
