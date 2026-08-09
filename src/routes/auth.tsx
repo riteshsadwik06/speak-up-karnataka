@@ -64,9 +64,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6">
-        <Link to="/" className="inline-block">
-          <Wordmark size="lg" />
-        </Link>
+        <Wordmark size="lg" link withSeal />
       </header>
       <div className="flex flex-1 items-start justify-center px-4 pb-16 pt-4 sm:items-center sm:pt-0">
         <div className="paper-card w-full max-w-md p-6 sm:p-8">

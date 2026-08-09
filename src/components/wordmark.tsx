@@ -1,11 +1,9 @@
 /**
- * Kannada-first wordmark: ವಿಚಾರಣೆ stacked over VICHARANE.
- * No punctuation between the two lines — the pattern used on Namma Metro
- * and GBA signage. Latin stays in <title> tags; branding lives here.
+ * Kannada-first wordmark: ವಿಚಾರಣೆ stacked over VICHARANE, preceded by the
+ * Seal — a stamp impression whose ring is a 30-day dial (one tick per day a
+ * PIO has to reply; the twelve o'clock tick is the deadline).
  */
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 type Size = "lg" | "sm";
 
@@ -19,41 +17,92 @@ const LATIN_SIZE: Record<Size, string> = {
   sm: "text-[0.5rem]",
 };
 
-/** Signed-in users go to their registry; everyone else to the landing page. */
-function useHomeTarget() {
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (alive) setSignedIn(!!data.session);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSignedIn(!!session);
-    });
-    return () => {
-      alive = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-  return signedIn ? "/dashboard" : "/";
+const SEAL_PX: Record<Size, number> = { lg: 56, sm: 30 };
+
+/** Same red as the overdue status. */
+const DEADLINE_RED = "oklch(0.47 0.17 27)";
+
+const CX = 64;
+const CY = 64;
+const RING_R = 47;
+const TICK_INNER = 37.5;
+const TICK_OUTER = 44.6;
+const DEADLINE_OUTER = 51.2;
+const TICK_COUNT = 30;
+const STEP = 12;
+
+function point(angleDeg: number, r: number) {
+  const a = (angleDeg * Math.PI) / 180;
+  // Round: float noise differs between server and client and trips hydration.
+  const round = (n: number) => Math.round(n * 1000) / 1000;
+  return [round(CX + r * Math.cos(a)), round(CY + r * Math.sin(a))] as const;
 }
 
+export function Seal({ size = 28, className = "" }: { size?: number; className?: string }) {
+  const ticks = Array.from({ length: TICK_COUNT }, (_, i) => {
+    const angle = -90 - (TICK_COUNT - 1) * STEP + i * STEP;
+    const isDeadline = i === TICK_COUNT - 1;
+    const [x1, y1] = point(angle, TICK_INNER);
+    const [x2, y2] = point(angle, isDeadline ? DEADLINE_OUTER : TICK_OUTER);
+    return { angle, isDeadline, x1, y1, x2, y2 };
+  });
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 128 128"
+      aria-hidden="true"
+      focusable="false"
+      className={`shrink-0 ${className}`}
+    >
+      <g transform={`rotate(-7 ${CX} ${CY})`}>
+        <circle cx={CX} cy={CY} r={RING_R} fill="none" stroke="currentColor" strokeWidth={3} />
+        {ticks.map((t, i) => (
+          <line
+            key={i}
+            x1={t.x1}
+            y1={t.y1}
+            x2={t.x2}
+            y2={t.y2}
+            stroke={t.isDeadline ? DEADLINE_RED : "currentColor"}
+            strokeWidth={t.isDeadline ? 3.4 : 1.5}
+            strokeLinecap="butt"
+          />
+        ))}
+        <text
+          x={CX}
+          y={CY}
+          lang="kn"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="currentColor"
+          fontSize={46}
+          style={{ fontFamily: "var(--font-kannada)" }}
+        >
+          ವಿ
+        </text>
+      </g>
+    </svg>
+  );
+}
 
 export function Wordmark({
   size = "sm",
   inline = false,
   link = false,
+  withSeal = true,
   className = "",
 }: {
   size?: Size;
   /** Kannada beside Latin on one line, for tight vertical space. */
   inline?: boolean;
-  /** Wrap in a link home (registry when signed in, landing otherwise). */
+  /** Wrap in a link to the landing page. */
   link?: boolean;
+  /** Show the seal mark to the left of the lockup. */
+  withSeal?: boolean;
   className?: string;
 }) {
-  const to = useHomeTarget();
-
   const kannada = (
     <span
       lang="kn"
@@ -73,24 +122,36 @@ export function Wordmark({
     </span>
   );
 
-  const mark = inline ? (
-    <span className={`flex items-baseline gap-2.5 ${className}`}>
+  const stack = inline ? (
+    <span className="flex items-baseline gap-2.5">
       {kannada}
       {latin}
     </span>
   ) : (
-    <span className={`flex flex-col ${size === "lg" ? "gap-1" : "gap-0.5"} ${className}`}>
+    <span className={`flex flex-col ${size === "lg" ? "gap-1" : "gap-0.5"}`}>
       {kannada}
       {latin}
     </span>
+  );
+
+  const mark = withSeal ? (
+    <span className={`flex items-center ${size === "lg" ? "gap-4" : "gap-2.5"} ${className}`}>
+      <Seal size={SEAL_PX[size]} />
+      {stack}
+    </span>
+  ) : (
+    <span className={`flex ${inline ? "items-baseline" : "flex-col"} ${className}`}>{stack}</span>
   );
 
   if (!link) return mark;
 
   return (
-    <Link to={to} aria-label="Vicharane home" className="pointer-events-auto inline-block">
+    <Link
+      to="/"
+      aria-label="Vicharane, home"
+      className="pointer-events-auto inline-block rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       {mark}
     </Link>
   );
 }
-
