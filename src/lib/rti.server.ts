@@ -267,6 +267,8 @@ export function assembleApplication(input: {
   pioName?: string | null;
   pioAddress?: string | null;
   wardName?: string | null;
+  /** "Ward 17, Bengaluru Central City Corporation" — never a synthesised code. */
+  wardLine?: string | null;
   requests: RtiRequest[];
   applicantName?: string | null;
   applicantAddress?: string | null;
@@ -279,15 +281,16 @@ export function assembleApplication(input: {
 
   return `To,
 The Public Information Officer${input.pioName ? `, ${input.pioName}` : ""}
-${input.authority}
-${input.pioAddress ? `${input.pioAddress}\n` : ""}
+${input.authority}${input.pioAddress ? `\n${input.pioAddress}` : ""}
 
 Subject: Application for information under Section 6(1) of the Right to Information Act, 2005
 
 Sir/Madam,
 
 Under Section 6(1) of the Right to Information Act, 2005, I request the following information${
-    input.wardName ? ` pertaining to ${input.wardName} ward` : ""
+    input.wardName
+      ? ` pertaining to ${input.wardName} ward${input.wardLine ? ` (${input.wardLine})` : ""}`
+      : ""
   }:
 
 ${numbered}
