@@ -58,6 +58,15 @@ export const DICT_DETAIL = {
   couldNotDraftAppeal: { en: "Could not draft the appeal", kn: "ಮೇಲ್ಮನವಿ ರಚಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ" },
   draftedSuffix: { en: "drafted", kn: "ರಚಿಸಲಾಗಿದೆ" },
 
+  complaintEscalationNote: {
+    en: "Sahaaya 2.0 allows two escalations before the complaint reaches a higher officer. Work through both, then an RTI is the next real lever.",
+    kn: "ದೂರು ಉನ್ನತ ಅಧಿಕಾರಿಯನ್ನು ತಲುಪುವ ಮೊದಲು Sahaaya 2.0 ಎರಡು ಉನ್ನತೀಕರಣಗಳಿಗೆ ಅವಕಾಶ ನೀಡುತ್ತದೆ. ಎರಡನ್ನೂ ಪೂರೈಸಿ, ನಂತರ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿಯೇ ಮುಂದಿನ ನಿಜವಾದ ಅಸ್ತ್ರ.",
+  },
+  complaintNotStatutory: {
+    en: "This is a service expectation, not a statutory deadline. The RTI Act's 30-day limit applies to RTI applications, not to civic complaints.",
+    kn: "ಇದು ಸೇವಾ ನಿರೀಕ್ಷೆಯೇ ಹೊರತು ಕಾನೂನುಬದ್ಧ ಕಾಲಮಿತಿ ಅಲ್ಲ. ಮಾಹಿತಿ ಹಕ್ಕು ಕಾಯ್ದೆಯ 30 ದಿನಗಳ ಮಿತಿ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿಗಳಿಗೆ ಅನ್ವಯಿಸುತ್ತದೆ, ಸಾರ್ವಜನಿಕ ದೂರುಗಳಿಗೆ ಅಲ್ಲ.",
+  },
+
   sectionWhereItWent: { en: "Where it went", kn: "ಎಲ್ಲಿಗೆ ಹೋಯಿತು" },
   channelNotRecorded: { en: "Channel not recorded.", kn: "ಮಾರ್ಗ ದಾಖಲಾಗಿಲ್ಲ." },
   sectionTimeline: { en: "Timeline", kn: "ಕಾಲಾನುಕ್ರಮ" },

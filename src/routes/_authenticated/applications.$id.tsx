@@ -9,9 +9,7 @@ import {
   appealGroundLabel,
   clockFor,
   complaintChannel,
-  COMPLAINT_ESCALATION_NOTE,
   COMPLAINT_EXPECTATION_DAYS,
-  COMPLAINT_NOT_STATUTORY,
 
   daysBetween,
   LEGAL,
@@ -20,7 +18,6 @@ import {
   PORTAL_LINKS,
   portalZoneForGbaZone,
   PORTAL_MAX_CHARS,
-  SPLIT_ADVISORY,
   STATUS_LABEL,
   STATUS_LABEL_KN,
   today,
@@ -371,7 +368,7 @@ function Detail() {
                   {t("btnFixed")}
                 </button>
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">{COMPLAINT_ESCALATION_NOTE}</p>
+              <p className="mt-3 text-xs text-muted-foreground">{t("complaintEscalationNote")}</p>
               {(app.escalation_count ?? 0) > 0 && (
                 <p className="mt-1 text-xs">
                   {t("escalatedPrefix")} {app.escalation_count}{" "}
@@ -452,7 +449,7 @@ function Detail() {
                 />
                 <TimelineRow label={t("markedResolvedLabel")} value={app.closure_claimed_date ?? "—"} />
               </dl>
-              <p className="mt-3 text-xs text-muted-foreground">{COMPLAINT_NOT_STATUTORY}</p>
+              <p className="mt-3 text-xs text-muted-foreground">{t("complaintNotStatutory")}</p>
 
             </div>
 
