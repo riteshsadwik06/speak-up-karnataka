@@ -122,7 +122,7 @@ function Landing() {
 
 
 
-        <section className="border-b border-border">
+        <section className="border-b border-border bg-background/92 backdrop-blur-[2px]">
           <p className="rule-heading border-b border-border px-6 py-3">
             <T id="howItWorksLabel" />
           </p>
@@ -141,7 +141,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-b border-border p-6 md:p-10">
+        <section className="border-b border-border bg-background/92 p-6 backdrop-blur-[2px] md:p-10">
           <h3 className="max-w-2xl font-display text-2xl leading-tight sm:text-3xl">
             <T id="falseClosureHeading" />
           </h3>
@@ -151,13 +151,17 @@ function Landing() {
         </section>
 
 
-        <footer className="p-6">
+        <footer className="bg-background/92 p-6 backdrop-blur-[2px]">
           <Wordmark size="sm" inline className="mb-3" />
           <p className="mono-stamp">
             <T id="footerSection6Note" />
           </p>
+          <p className="mono-stamp mt-1">
+            <T id="wardCityCaption" />
+          </p>
           <DataCredit className="mt-3" />
         </footer>
+
 
       </div>
     </div>
