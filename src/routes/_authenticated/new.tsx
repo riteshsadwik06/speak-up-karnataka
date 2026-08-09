@@ -643,7 +643,13 @@ function NewApplication() {
                         : "border-border text-muted-foreground hover:bg-secondary"
                     }`}
                   >
-                    {w.ward_name}
+                    {lang === "kn" && w.ward_name_kn ? (
+                      <span lang="kn" className={KN_TEXT}>
+                        {w.ward_name_kn}
+                      </span>
+                    ) : (
+                      w.ward_name
+                    )}
                   </button>
                 ))}
               </div>
@@ -671,8 +677,21 @@ function NewApplication() {
             {ward && (
               <div className="mt-3 flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-sm font-semibold">{ward.ward_name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{ward.ward_name_kn}</p>
+                  {lang === "kn" && ward.ward_name_kn ? (
+                    <>
+                      <p lang="kn" className={`font-display text-sm font-semibold ${KN_TEXT}`}>
+                        {ward.ward_name_kn}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{ward.ward_name}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-display text-sm font-semibold">{ward.ward_name}</p>
+                      <p lang="kn" className={`mt-0.5 text-xs text-muted-foreground ${KN_TEXT}`}>
+                        {ward.ward_name_kn}
+                      </p>
+                    </>
+                  )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {ward.corporation} · {ward.zone_name} zone · {ward.assembly}
                   </p>
