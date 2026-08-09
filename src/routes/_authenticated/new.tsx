@@ -95,6 +95,9 @@ function NewApplication() {
   const [wardId, setWardId] = useState(
     preselectedWard && WARDS.some((w) => w.ward_id === preselectedWard) ? preselectedWard : "",
   );
+  const [mapOpen, setMapOpen] = useState(false);
+
+
 
   const [busy, setBusy] = useState(false);
   const [complaint, setComplaint] = useState<ComplaintDraft | null>(null);
