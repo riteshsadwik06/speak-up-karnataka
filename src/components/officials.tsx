@@ -3,6 +3,7 @@
  * Data: https://github.com/Vonter/city-officials (non-code data: CC BY 4.0).
  */
 import { useEffect, useState } from "react";
+import { CivicIcon, civicRoleFor } from "@/components/civic-icons";
 import {
   officialsForWard,
   OFFICIALS_CAVEAT,
