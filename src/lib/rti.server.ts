@@ -35,22 +35,45 @@ export type WardIdentity = {
 /** Shared anti-fabrication rule. Appended to every prompt that produces filed text. */
 export const NO_FABRICATION_RULE = `Never invent or construct an identifier of any kind - ward numbers, file numbers, reference numbers, application numbers, zone codes. Use only identifiers supplied to you verbatim. If an identifier has not been supplied, omit it entirely rather than guessing or inferring a format.`;
 
-/** Structured ward block for the prompt. Values are quoted so they are copied, not composed. */
+const WARD_TOKENS = {
+  name: "[[WARD_NAME]]",
+  nameKn: "[[WARD_NAME_KN]]",
+  number: "[[WARD_NUMBER]]",
+  corporation: "[[CORPORATION]]",
+  zone: "[[ZONE]]",
+  oldBbmpWard: "[[OLD_BBMP_WARD]]",
+} as const;
+
+/** Structured ward data plus opaque tokens: the model places tokens, never identity values. */
 export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
-  if (!ward?.name) return "Location: Bengaluru, Karnataka. No ward has been supplied - do not name or infer one.";
-  const rows = [
-    `- Ward name: ${ward.name}`,
-    ward.nameKn ? `- Ward name (Kannada): ${ward.nameKn}` : "",
-    ward.number ? `- Ward number: ${ward.number}` : "- Ward number: NOT SUPPLIED - omit any ward number",
-    ward.corporation ? `- City corporation: ${ward.corporation}` : "",
-    ward.zone ? `- Zone: ${ward.zone}` : "",
-    ward.oldBbmpWard ? `- Former BBMP ward name: ${ward.oldBbmpWard}` : "",
-  ].filter(Boolean);
+  if (!ward?.name) return "WARD_IDENTITY_JSON: null\nNo ward has been supplied. Do not name or infer one.";
   return [
-    "Ward identity (use these values verbatim; do not alter, abbreviate or extend them):",
-    ...rows,
-    "City: Bengaluru, Karnataka.",
+    `WARD_IDENTITY_JSON: ${JSON.stringify({
+      ward_name: ward.name,
+      ward_name_kannada: ward.nameKn ?? null,
+      ward_number: ward.number ?? null,
+      corporation: ward.corporation ?? null,
+      zone: ward.zone ?? null,
+      old_bbmp_ward_name: ward.oldBbmpWard ?? null,
+    })}`,
+    `WARD_PLACEHOLDERS_JSON: ${JSON.stringify(WARD_TOKENS)}`,
+    "When ward identity is relevant, put only the matching placeholder in the generated document. Do not copy, rewrite, translate, abbreviate or compose the identity value yourself. Omit placeholders whose structured value is null.",
   ].join("\n");
+}
+
+/** Replaces only known placeholders with authoritative values after model generation. */
+export function interpolateWardIdentity(text: string, ward: WardIdentity | null | undefined): string {
+  const values: Record<string, string> = {
+    [WARD_TOKENS.name]: ward?.name ?? "",
+    [WARD_TOKENS.nameKn]: ward?.nameKn ?? "",
+    [WARD_TOKENS.number]: ward?.number ?? "",
+    [WARD_TOKENS.corporation]: ward?.corporation ?? "",
+    [WARD_TOKENS.zone]: ward?.zone ?? "",
+    [WARD_TOKENS.oldBbmpWard]: ward?.oldBbmpWard ?? "",
+  };
+  let output = text;
+  for (const [token, value] of Object.entries(values)) output = output.split(token).join(value);
+  return output.replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",").replace(/,\s*,/g, ",").replace(/\(\s*\)/g, "");
 }
 
 /**
@@ -58,9 +81,9 @@ export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
  * A fabricated official identifier in a document a citizen files is worse than none.
  */
 const IDENTIFIER_PATTERNS: RegExp[] = [
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:No\.?|Number|number|#)?\s*[A-Z]-?\d{1,4}\b/g,
-  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:No\.?|Number|number|#)\s*\d{1,4}\b/g,
-  /\b[A-Z]-\d{3}\b/g,
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?[A-Z]-?\d{1,4}\b/gi,
+  /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?\d{1,4}\b/gi,
+  /\b[A-Z]-\d{3}\b/gi,
 ];
 
 export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
@@ -100,7 +123,7 @@ Karnataka's Rule 14 requires that a single RTI application relate to ONE subject
 Rule 14 also states an application shall not ordinarily exceed 150 words. Keep the combined text of the numbered requests under 150 words. Be terse and specific; drop filler. Do not sacrifice the time period, the location or the document type to save words - those are what make a request answerable.
 
 ${NO_FABRICATION_RULE}
-- The ward name, ward number, corporation and zone are supplied to you as structured data. Copy them exactly; never construct one.
+- Ward identity is supplied as structured JSON with placeholders. In document text, use only those placeholders; application code replaces them with authoritative values after generation.
 
 
 Return ONLY valid JSON, no markdown fences:
@@ -196,12 +219,18 @@ export async function draftRequests(input: {
   const subjects = Array.isArray(parsed.subjects)
     ? parsed.subjects.filter((s) => s && typeof s.label === "string" && s.label.trim())
     : [];
-  const supplied = [input.ward?.number, input.ward?.name, input.ward?.zone, input.ward?.oldBbmpWard];
+  const supplied = [input.ward?.number, input.ward?.name, input.ward?.corporation, input.ward?.zone, input.ward?.oldBbmpWard];
   return {
     requests: Array.isArray(parsed.requests)
       ? parsed.requests
           .slice(0, 6)
-          .map((r) => ({ ...r, text: stripUnsuppliedIdentifiers(String(r.text ?? ""), supplied) }))
+          .map((r) => ({
+            ...r,
+            text: interpolateWardIdentity(
+              stripUnsuppliedIdentifiers(String(r.text ?? ""), supplied),
+              input.ward,
+            ),
+          }))
       : [],
     flags: Array.isArray(parsed.flags) ? parsed.flags : [],
     subjects,
@@ -317,14 +346,14 @@ Return ONLY valid JSON, no markdown fences:
 export async function reviseRequests(input: {
   grievance: string;
   authority: string;
-  ward?: string | null;
+  ward?: WardIdentity | null;
   subject: string;
   requests: RtiRequest[];
   instruction: string;
 }): Promise<RtiDraft> {
   const user = [
     `Public authority: ${input.authority}`,
-    input.ward ? `Ward: ${input.ward}, Bengaluru, Karnataka` : "Location: Bengaluru, Karnataka",
+    wardPromptBlock(input.ward),
     input.subject ? `Subject matter of this application: ${input.subject}` : "",
     "",
     "Original grievance in the citizen's own words:",
@@ -343,8 +372,17 @@ export async function reviseRequests(input: {
   const subjects = Array.isArray(parsed.subjects)
     ? parsed.subjects.filter((s) => s && typeof s.label === "string" && s.label.trim())
     : [];
+  const supplied = [input.ward?.number, input.ward?.name, input.ward?.corporation, input.ward?.zone, input.ward?.oldBbmpWard];
   return {
-    requests: Array.isArray(parsed.requests) ? parsed.requests.slice(0, 6) : [],
+    requests: Array.isArray(parsed.requests)
+      ? parsed.requests.slice(0, 6).map((r) => ({
+          ...r,
+          text: interpolateWardIdentity(
+            stripUnsuppliedIdentifiers(String(r.text ?? ""), supplied),
+            input.ward,
+          ),
+        }))
+      : [],
     flags: Array.isArray(parsed.flags) ? parsed.flags : [],
     subjects,
     primary_subject:
@@ -378,7 +416,7 @@ Rules:
 When asked to write in Kannada, write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority.
 
 ${NO_FABRICATION_RULE}
-- The ward name, ward number, corporation and zone are supplied to you as structured data. Copy them exactly. If a ward number is not supplied, write the location without one.
+- Ward identity is supplied as structured JSON with placeholders. In complaint text, use only those placeholders; application code replaces them with authoritative values after generation. If a value is not supplied, omit its placeholder.
 
 
 Return ONLY valid JSON, no markdown fences:
@@ -405,11 +443,14 @@ export async function draftComplaint(input: {
     .join("\n");
 
   const parsed = parseJson(await callGateway(COMPLAINT_SYSTEM_PROMPT, user)) as Partial<ComplaintDraft>;
-  const supplied = [input.ward?.number, input.ward?.name, input.ward?.zone, input.ward?.oldBbmpWard];
+  const supplied = [input.ward?.number, input.ward?.name, input.ward?.corporation, input.ward?.zone, input.ward?.oldBbmpWard];
   return {
     complaint:
       typeof parsed.complaint === "string"
-        ? stripUnsuppliedIdentifiers(parsed.complaint.trim(), supplied)
+        ? interpolateWardIdentity(
+            stripUnsuppliedIdentifiers(parsed.complaint.trim(), supplied),
+            input.ward,
+          )
         : "",
     suggested_channel:
       typeof parsed.suggested_channel === "string" ? parsed.suggested_channel : "sahaaya",

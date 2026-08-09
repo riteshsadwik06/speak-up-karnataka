@@ -94,7 +94,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
     (input: {
       grievance: string;
       authority: string;
-      ward?: string | null;
+      ward?: WardIdentity | null;
       subject: string;
       requests: RtiRequest[];
       instruction: string;
@@ -119,7 +119,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
 
     const body = assembleApplication({
       authority: data.authority,
-      wardName: data.ward ?? null,
+      wardName: data.ward?.name ?? null,
       requests: draft.requests,
       applicantName: profile?.full_name ?? null,
       applicantAddress: profile?.address ?? null,
