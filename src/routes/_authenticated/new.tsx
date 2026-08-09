@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, SectionLabel } from "@/components/app-shell";
@@ -25,7 +25,8 @@ import {
   relevantOfficials,
   useWardOfficials,
 } from "@/components/officials";
-import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
+import { generateComplaint, generateDraft, reviseDraft, suggestRouting } from "@/lib/rti.functions";
+import { identityWithHistory, wardForLocality } from "@/lib/ward-identity";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
 import { KN_TEXT, T, useAuthorityLabel, useAuthorityNote, useLang } from "@/lib/i18n";
@@ -123,6 +124,13 @@ function NewApplication() {
   );
   const [mapOpen, setMapOpen] = useState(false);
 
+  /** Routing pass — the app proposes the owning authority instead of asking the user cold. */
+  const routeFn = useServerFn(suggestRouting);
+  const [routing, setRouting] = useState(false);
+  const [routeNote, setRouteNote] = useState<{ authority: string; ward: string; category: string; low: boolean } | null>(null);
+  const [keepCorpChoice, setKeepCorpChoice] = useState(false);
+
+
 
 
   const [busy, setBusy] = useState(false);
@@ -143,6 +151,70 @@ function NewApplication() {
       ? otherAuthority
       : (AUTHORITIES.find((a) => a.id === authorityId)?.name ?? "");
   const ward = WARDS.find((w) => w.ward_id === wardId);
+
+  // A new ward or authority is a new contradiction — surface it again.
+  useEffect(() => setKeepCorpChoice(false), [wardId, authorityId]);
+
+
+  /**
+   * BUG 2 guard: the selected corporation and the selected ward's corporation must agree.
+   * We never block — the resident may have a reason — but the contradiction is always named.
+   */
+  const CORP_IDS = ["bcc", "bec", "bwc", "bnc", "bsc"];
+  const wardCorpAuthority =
+    ward && CORP_IDS.includes(authorityId)
+      ? AUTHORITIES.find((a) => a.name === ward.corporation)
+      : undefined;
+  const corpMismatch =
+    !!ward && CORP_IDS.includes(authorityId) && wardCorpAuthority?.id !== authorityId
+      ? wardCorpAuthority ?? null
+      : null;
+
+  /** Routing pass on leaving step 1, then apply the suggestion to step 2. */
+  async function continueToStep2() {
+    setRouting(true);
+    try {
+      const result = await routeFn({ data: { grievance } });
+      if (result) {
+        let match = AUTHORITIES.find((a) => a.id === result.authority_id);
+        (window as unknown as Record<string, unknown>)["__route"] = result;
+        let wardName = "";
+        (window as unknown as Record<string, unknown>)["__dbg"] = [];
+        const dbg = (window as unknown as Record<string, unknown>)["__dbg"] as unknown[];
+        if (result.locality) {
+          dbg.push("locality:" + result.locality);
+          let hit = null as Awaited<ReturnType<typeof wardForLocality>>;
+          try { hit = await wardForLocality(result.locality); } catch (e) { dbg.push("err:" + String(e)); }
+          dbg.push("hit:" + JSON.stringify(hit));
+          if (hit) {
+            setWardId(hit.ward_id);
+            wardName = hit.ward_name;
+            (window as unknown as Record<string, unknown>)["__hit"] = hit;
+            // The ward list is authoritative: it decides which corporation owns the ward.
+            if (match && CORP_IDS.includes(match.id)) {
+              match = AUTHORITIES.find((a) => a.name === hit.corporation) ?? match;
+            }
+          }
+        }
+        if (match) {
+          setAuthorityId(match.id);
+          setRouteNote({
+            authority: match.name,
+            ward: wardName,
+            category: result.category,
+            low: result.confidence === "low",
+          });
+        }
+      }
+    } catch {
+      // Routing is best-effort: fall back to the blank selection.
+    } finally {
+      setRouting(false);
+      setKeepCorpChoice(false);
+      setStep(2);
+    }
+  }
+
 
   const wardOptions = useMemo(() => {
     const q = wardQuery.trim().toLowerCase();
@@ -198,11 +270,11 @@ function NewApplication() {
         data: {
           grievance,
           authority,
-          ward: ward?.ward_name ?? null,
-          wardNumber: ward?.ward_id ?? null,
+          ward: await identityWithHistory(ward),
           lang,
         },
       });
+
       setComplaint(result);
       setComplaintText(result.complaint);
       if (COMPLAINT_CHANNELS.some((c) => c.id === result.suggested_channel))
@@ -256,7 +328,8 @@ function NewApplication() {
         data: {
           grievance,
           authority: overrideAuthority ?? authority,
-          ward: ward?.ward_name ?? null,
+          ward: await identityWithHistory(ward),
+
           language,
           lang,
           focusSubject: focusSubject ?? null,
@@ -578,12 +651,12 @@ function NewApplication() {
 
             <button
               disabled={
-                grievance.trim().length < 15 || !path || (path === "rti" && !prior)
+                routing || grievance.trim().length < 15 || !path || (path === "rti" && !prior)
               }
-              onClick={() => setStep(2)}
+              onClick={() => void continueToStep2()}
               className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
-              {t("continueButton")}
+              {routing ? t("routingChecking") : t("continueButton")}
             </button>
           </div>
           <p className="mt-4 rounded-md bg-secondary/70 p-3 text-xs text-muted-foreground">
@@ -597,6 +670,23 @@ function NewApplication() {
           <SectionLabel>
             {path === "complaint" ? t("step2WhoseProblem") : t("step2WhoHoldsRecords")}
           </SectionLabel>
+
+          {routeNote && (
+            <div className="rounded-md border border-accent/40 bg-accent/8 p-3">
+              <p className={`text-sm ${knClass}`}>
+                {(routeNote.ward ? t("routingSuggestionWard") : t("routingSuggestionNoWard"))
+                  .replace("{authority}", authorityLabel(routeNote.authority))
+                  .replace("{ward}", routeNote.ward)
+                  .replace("{category}", routeNote.category || t("stepGrievance"))}
+              </p>
+              {routeNote.low && (
+                <p className={`mt-1 text-xs text-muted-foreground ${knClass}`}>
+                  {t("routingLowConfidence")}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-2 sm:grid-cols-2">
             {AUTHORITIES.map((a) => (
               <button
@@ -719,7 +809,37 @@ function NewApplication() {
                 </div>
               </div>
             )}
+
+            {corpMismatch && !keepCorpChoice && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                <p className={`text-sm ${knClass}`}>
+                  {t("corporationMismatch")
+                    .replace("{ward}", lang === "kn" && ward?.ward_name_kn ? ward.ward_name_kn : ward?.ward_name ?? "")
+                    .replace("{wardCorp}", authorityLabel(corpMismatch.name))
+                    .replace("{selected}", authorityLabel(authority))}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setAuthorityId(corpMismatch.id);
+                      setOtherAuthority("");
+                      setRouteNote(null);
+                    }}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                  >
+                    {t("switchToCorporation").replace("{corp}", authorityLabel(corpMismatch.name))}
+                  </button>
+                  <button
+                    onClick={() => setKeepCorpChoice(true)}
+                    className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+                  >
+                    {t("keepMyChoice")}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
 
 
 

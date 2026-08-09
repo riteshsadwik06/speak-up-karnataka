@@ -6,12 +6,23 @@ import {
   draftComplaint,
   draftRequests,
   reviseRequests,
+  routeGrievance,
   translateLetterToKannada,
   type FalseClosure,
   type RtiRequest,
+  type WardIdentity,
 } from "./rti.server";
 import { buildSeedRows } from "./seed.server";
 import { addDays } from "./rti-data";
+
+/** Routing pass: proposes the owning authority before the user is asked to choose. */
+export const suggestRouting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { grievance: string }) => input)
+  .handler(async ({ data }) => {
+    if (!data.grievance || data.grievance.trim().length < 15) return null;
+    return routeGrievance(data.grievance);
+  });
 
 export const generateComplaint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -19,8 +30,7 @@ export const generateComplaint = createServerFn({ method: "POST" })
     (input: {
       grievance: string;
       authority: string;
-      ward?: string | null;
-      wardNumber?: string | null;
+      ward?: WardIdentity | null;
       lang?: "en" | "kn";
     }) => input,
   )
@@ -29,7 +39,6 @@ export const generateComplaint = createServerFn({ method: "POST" })
       grievance: data.grievance,
       authority: data.authority,
       ward: data.ward ?? null,
-      wardNumber: data.wardNumber ?? null,
       lang: data.lang === "kn" ? "kn" : "en",
     }),
   );
@@ -40,7 +49,7 @@ export const generateDraft = createServerFn({ method: "POST" })
     (input: {
       grievance: string;
       authority: string;
-      ward?: string | null;
+      ward?: WardIdentity | null;
       language?: string;
       lang?: "en" | "kn";
       focusSubject?: string | null;
@@ -64,7 +73,7 @@ export const generateDraft = createServerFn({ method: "POST" })
 
     const body = assembleApplication({
       authority: data.authority,
-      wardName: data.ward ?? null,
+      wardName: data.ward?.name ?? null,
       requests: draft.requests,
       applicantName: profile?.full_name ?? null,
       applicantAddress: profile?.address ?? null,
@@ -77,6 +86,7 @@ export const generateDraft = createServerFn({ method: "POST" })
 
     return { draft, body, bodyKn };
   });
+
 
 export const reviseDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
