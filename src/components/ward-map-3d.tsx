@@ -414,6 +414,7 @@ export function WardMap3D() {
 
       cleanups.push(() => {
         running = false;
+        focusRef.current = null;
         cancelAnimationFrame(rafId);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
