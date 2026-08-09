@@ -6,16 +6,57 @@ export const DICT_LANDING = {
     en: "369 wards · five city corporations · extruded by population",
     kn: "369 ವಾರ್ಡ್‌ಗಳು · ಐದು ನಗರ ನಿಗಮಗಳು · ಜನಸಂಖ್ಯೆಗೆ ಅನುಗುಣವಾಗಿ ಎತ್ತರಿಸಲಾಗಿದೆ",
   },
-  heroEyebrow: { en: "Right to Information Act, 2005 · Karnataka", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ಅಧಿನಿಯಮ, 2005 · ಕರ್ನಾಟಕ" },
+  heroEyebrow: {
+    en: "Bengaluru · Civic complaints & Right to Information",
+    kn: "ಬೆಂಗಳೂರು · ನಾಗರಿಕ ದೂರುಗಳು ಮತ್ತು ಮಾಹಿತಿ ಹಕ್ಕು",
+  },
   heroHeadline: {
-    en: "Ask for records, not explanations — then watch the clock.",
-    kn: "ವಿವರಣೆಗಳಿಗಾಗಿ ಅಲ್ಲ, ದಾಖಲೆಗಳಿಗಾಗಿ ಕೇಳಿ — ನಂತರ ಕಾಲಮಿತಿಯನ್ನು ಗಮನಿಸಿ.",
+    en: "Say it in your own words. We'll say it in theirs.",
+    kn: "ನಿಮ್ಮದೇ ಮಾತಿನಲ್ಲಿ ಹೇಳಿ. ನಾವು ಅದನ್ನು ಅವರ ಭಾಷೆಯಲ್ಲಿ ಹೇಳುತ್ತೇವೆ.",
   },
   heroSubhead: {
-    en: "Vicharane turns a Bengaluru civic grievance into an application a Public Information Officer is legally obliged to answer, and tracks every statutory deadline through to the second appeal.",
-    kn: "ವಿಚಾರಣೆ ಬೆಂಗಳೂರಿನ ನಾಗರಿಕ ದೂರನ್ನು ಸಾರ್ವಜನಿಕ ಮಾಹಿತಿ ಅಧಿಕಾರಿ ಕಾನೂನುಬದ್ಧವಾಗಿ ಉತ್ತರಿಸಬೇಕಾದ ಅರ್ಜಿಯಾಗಿ ಪರಿವರ್ತಿಸುತ್ತದೆ, ಮತ್ತು ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿಯವರೆಗಿನ ಪ್ರತಿ ಶಾಸನಬದ್ಧ ಕಾಲಮಿತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡುತ್ತದೆ.",
+    en: "Describe a civic problem the way you'd describe it to a neighbour, in English or Kannada. Vicharane works out who is responsible, writes it the way they are obliged to answer, and holds them to every deadline the law gives them.",
+    kn: "ನಾಗರಿಕ ಸಮಸ್ಯೆಯನ್ನು ನೆರೆಹೊರೆಯವರಿಗೆ ಹೇಳುವಂತೆಯೇ ಕನ್ನಡ ಅಥವಾ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ವಿವರಿಸಿ. ಯಾರು ಜವಾಬ್ದಾರರು ಎಂಬುದನ್ನು ವಿಚಾರಣೆ ಪತ್ತೆ ಮಾಡುತ್ತದೆ, ಅವರು ಉತ್ತರಿಸಲೇಬೇಕಾದ ರೀತಿಯಲ್ಲಿ ಬರೆಯುತ್ತದೆ, ಮತ್ತು ಕಾನೂನು ನೀಡಿರುವ ಪ್ರತಿ ಕಾಲಮಿತಿಗೂ ಅವರನ್ನು ಹೊಣೆಗಾರರನ್ನಾಗಿಸುತ್ತದೆ.",
   },
-  ctaDraftFirst: { en: "DRAFT MY FIRST RTI", kn: "ನನ್ನ ಮೊದಲ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿ ರಚಿಸಿ" },
+
+  // --- How it works: four steps ---
+  step1Title: { en: "Describe what went wrong", kn: "ಏನು ತಪ್ಪಾಗಿದೆ ಎಂದು ವಿವರಿಸಿ" },
+  step1Body: {
+    en: "In your own words, English or Kannada. No forms, no legal phrasing, no need to know which department it belongs to.",
+    kn: "ನಿಮ್ಮದೇ ಮಾತಿನಲ್ಲಿ, ಕನ್ನಡ ಅಥವಾ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ. ನಮೂನೆಗಳಿಲ್ಲ, ಕಾನೂನಿನ ಪದಗಳಿಲ್ಲ, ಯಾವ ಇಲಾಖೆಗೆ ಸೇರಿದ್ದು ಎಂದು ತಿಳಿಯುವ ಅಗತ್ಯವಿಲ್ಲ.",
+  },
+  step2Title: { en: "We find who owns it", kn: "ಅದು ಯಾರ ಜವಾಬ್ದಾರಿ ಎಂದು ನಾವು ಕಂಡುಹಿಡಿಯುತ್ತೇವೆ" },
+  step2Body: {
+    en: "Bengaluru has five city corporations and 369 wards since the GBA reorganisation, plus BWSSB, BESCOM and others. We identify the right body, the right ward, and the officer actually responsible — with their phone number.",
+    kn: "ಜಿಬಿಎ ಪುನರ್‌ರಚನೆಯ ನಂತರ ಬೆಂಗಳೂರಿನಲ್ಲಿ ಐದು ನಗರ ನಿಗಮಗಳು ಮತ್ತು 369 ವಾರ್ಡ್‌ಗಳಿವೆ, ಜೊತೆಗೆ BWSSB, BESCOM ಮತ್ತು ಇತರವು. ಸರಿಯಾದ ಸಂಸ್ಥೆ, ಸರಿಯಾದ ವಾರ್ಡ್ ಮತ್ತು ನಿಜವಾಗಿ ಜವಾಬ್ದಾರರಾದ ಅಧಿಕಾರಿಯನ್ನು — ಅವರ ದೂರವಾಣಿ ಸಂಖ್ಯೆಯ ಸಹಿತ — ನಾವು ಗುರುತಿಸುತ್ತೇವೆ.",
+  },
+  step3Title: {
+    en: "We write it so it has to be answered",
+    kn: "ಉತ್ತರಿಸಲೇಬೇಕಾದ ರೀತಿಯಲ್ಲಿ ನಾವು ಅದನ್ನು ಬರೆಯುತ್ತೇವೆ",
+  },
+  step3Body: {
+    en: "A civic complaint first, phrased so it cannot be dismissed as vague and so it commits the department to producing proof of the work. If that fails, the same grievance becomes a Right to Information application asking for the records — because the law obliges an authority to hand over records, not to explain itself.",
+    kn: "ಮೊದಲು ನಾಗರಿಕ ದೂರು — ಅಸ್ಪಷ್ಟ ಎಂದು ತಳ್ಳಿಹಾಕಲಾಗದಂತೆ ಮತ್ತು ಕೆಲಸದ ಸಾಕ್ಷ್ಯವನ್ನು ಒದಗಿಸುವಂತೆ ಇಲಾಖೆಯನ್ನು ಬದ್ಧಗೊಳಿಸುವಂತೆ ಬರೆಯಲಾಗುತ್ತದೆ. ಅದು ವಿಫಲವಾದರೆ, ಅದೇ ದೂರು ದಾಖಲೆಗಳನ್ನು ಕೇಳುವ ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿಯಾಗುತ್ತದೆ — ಏಕೆಂದರೆ ಕಾನೂನು ಪ್ರಾಧಿಕಾರವನ್ನು ದಾಖಲೆಗಳನ್ನು ನೀಡುವಂತೆ ಬದ್ಧಗೊಳಿಸುತ್ತದೆಯೇ ಹೊರತು ವಿವರಣೆ ನೀಡುವಂತೆ ಅಲ್ಲ.",
+  },
+  step4Title: { en: "We watch the clock", kn: "ನಾವು ಕಾಲಮಿತಿಯನ್ನು ಗಮನಿಸುತ್ತೇವೆ" },
+  step4Body: {
+    en: "Thirty days for a reply, thirty to appeal, forty-five for that appeal to be decided, ninety for the next. Miss one and you lose the right. We track all of them and draft the next step when it comes due.",
+    kn: "ಉತ್ತರಕ್ಕೆ ಮೂವತ್ತು ದಿನ, ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಲು ಮೂವತ್ತು, ಆ ಮೇಲ್ಮನವಿ ಇತ್ಯರ್ಥವಾಗಲು ನಲವತ್ತೈದು, ಮುಂದಿನದಕ್ಕೆ ತೊಂಬತ್ತು. ಒಂದನ್ನು ತಪ್ಪಿಸಿಕೊಂಡರೆ ಆ ಹಕ್ಕು ಕಳೆದುಹೋಗುತ್ತದೆ. ನಾವು ಎಲ್ಲವನ್ನೂ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ, ಸಮಯ ಬಂದಾಗ ಮುಂದಿನ ಹೆಜ್ಜೆಯನ್ನು ಸಿದ್ಧಪಡಿಸುತ್ತೇವೆ.",
+  },
+  howItWorksLabel: { en: "How it works", kn: "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ" },
+
+  // --- False closure ---
+  falseClosureHeading: {
+    en: "The system assumes you'll give up",
+    kn: "ನೀವು ಬಿಟ್ಟುಬಿಡುತ್ತೀರಿ ಎಂದು ವ್ಯವಸ್ಥೆ ಭಾವಿಸುತ್ತದೆ",
+  },
+  falseClosureBody: {
+    en: "Most complaints are not ignored. They are marked resolved. When a department closes your complaint without doing the work, Vicharane turns it into a legal demand for the action-taken report, the work order, the completion certificate and the site photograph — the records that cannot exist if nothing was done.",
+    kn: "ಬಹುತೇಕ ದೂರುಗಳನ್ನು ನಿರ್ಲಕ್ಷಿಸುವುದಿಲ್ಲ. ಅವುಗಳನ್ನು ಪರಿಹರಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗುತ್ತದೆ. ಕೆಲಸ ಮಾಡದೆಯೇ ಇಲಾಖೆ ನಿಮ್ಮ ದೂರನ್ನು ಮುಚ್ಚಿದಾಗ, ವಿಚಾರಣೆ ಅದನ್ನು ಕೈಗೊಂಡ ಕ್ರಮದ ವರದಿ, ಕಾರ್ಯಾದೇಶ, ಪೂರ್ಣಗೊಂಡ ಪ್ರಮಾಣಪತ್ರ ಮತ್ತು ಸ್ಥಳದ ಛಾಯಾಚಿತ್ರಕ್ಕಾಗಿ ಕಾನೂನುಬದ್ಧ ಬೇಡಿಕೆಯಾಗಿ ಪರಿವರ್ತಿಸುತ್ತದೆ — ಕೆಲಸವಾಗದಿದ್ದರೆ ಈ ದಾಖಲೆಗಳು ಇರಲು ಸಾಧ್ಯವೇ ಇಲ್ಲ.",
+  },
+
+  ctaDraftFirst: { en: "Describe my problem", kn: "ನನ್ನ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ" },
+
   ctaAlreadyHaveAccount: { en: "I already have an account", kn: "ನನ್ನ ಬಳಿ ಈಗಾಗಲೇ ಖಾತೆ ಇದೆ" },
   rejectedNotInfoLabel: { en: "Rejected — not information", kn: "ತಿರಸ್ಕರಿಸಲಾಗಿದೆ — ಮಾಹಿತಿಯಲ್ಲ" },
   rejectedExampleQuote: {
