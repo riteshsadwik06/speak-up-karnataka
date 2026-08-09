@@ -374,7 +374,9 @@ export function assembleApplication(input: {
   applicantName?: string | null;
   applicantAddress?: string | null;
   applicantPhone?: string | null;
+  applicantEmail?: string | null;
   isBpl?: boolean;
+
 }): string {
   const numbered = input.requests
     .map((r, i) => `${i + 1}. ${r.text}`)
