@@ -6,6 +6,7 @@ import { DataCredit } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 
 import { CORP_COLOR, NEUTRAL } from "@/lib/ward-3d";
+import { LangToggle, useLang } from "@/lib/i18n";
 
 
 
@@ -37,6 +38,7 @@ const CLOCKS = [
 ];
 
 function Landing() {
+  const { t } = useLang();
   return (
     <div className="min-h-screen w-full bg-background p-4 md:p-8">
       <div className="registry-frame mx-auto w-full max-w-5xl">
@@ -45,9 +47,12 @@ function Landing() {
             <h1>
               <Wordmark size="sm" />
             </h1>
-            <p className="rule-heading mt-1.5">Public Records Tracker</p>
+            <p className="rule-heading mt-1.5">{t("tagline")}</p>
           </div>
-          <HeaderAuthAction />
+          <div className="flex items-center gap-2">
+            <LangToggle />
+            <HeaderAuthAction />
+          </div>
         </header>
 
         <section className="border-b border-border">
@@ -141,6 +146,7 @@ function Landing() {
 
 /** Auth-aware header slot; renders nothing until the session resolves. */
 function HeaderAuthAction() {
+  const { t } = useLang();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -165,7 +171,7 @@ function HeaderAuthAction() {
         to="/dashboard"
         className="bg-foreground px-4 py-2 font-display text-sm font-bold whitespace-nowrap text-background transition-transform hover:-translate-y-0.5"
       >
-        DASHBOARD
+        {t("dashboard")}
       </Link>
     );
   }
@@ -176,14 +182,14 @@ function HeaderAuthAction() {
         to="/auth"
         className="hidden px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground sm:block"
       >
-        Log in
+        {t("logIn")}
       </Link>
       <Link
         to="/auth"
         search={{ mode: "signup" }}
         className="bg-foreground px-4 py-2 font-display text-sm font-bold whitespace-nowrap text-background transition-transform hover:-translate-y-0.5"
       >
-        SIGN UP
+        {t("signUp")}
       </Link>
     </div>
   );
