@@ -10,11 +10,24 @@ import { loadOfficials } from "./officials";
 export type WardIdentity = {
   name: string;
   nameKn?: string | null;
+  /** Plain ward number, e.g. "17". Never a synthesised code like "C-017". */
   number?: string | null;
   corporation?: string | null;
   zone?: string | null;
+  assembly?: string | null;
   oldBbmpWard?: string | null;
 };
+
+/**
+ * The dataset's ward_id ("C-017") is an internal key, not an identifier any
+ * department uses. Only the plain number inside it is real.
+ */
+export function wardNumberOf(wardId: string | null | undefined): string | null {
+  const digits = (wardId ?? "").match(/\d+/)?.[0];
+  if (!digits) return null;
+  return String(Number(digits));
+}
+
 
 /** Same normalisation as the ward search: case, punctuation and spacing insensitive. */
 export function normalizeWardText(s: string): string {
