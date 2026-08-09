@@ -17,6 +17,14 @@ import {
 import { WardMap } from "@/components/ward-map";
 import { WardInset3D } from "@/components/ward-inset-3d";
 import { StageRail } from "@/components/stage-rail";
+import {
+  OfficialsCaveat,
+  OfficialsCredit,
+  OfficialsList,
+  OfficialsSkeleton,
+  relevantOfficials,
+  useWardOfficials,
+} from "@/components/officials";
 import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
@@ -1045,5 +1053,36 @@ function NewApplication() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function ResponsibleOfficials({ wardName, category }: { wardName: string; category: string }) {
+  const { data, loading } = useWardOfficials(wardName);
+  const list = useMemo(
+    () => relevantOfficials(data?.officials ?? [], category),
+    [data, category],
+  );
+
+  return (
+    <div className="paper-card p-5">
+      <SectionLabel>Who is responsible</SectionLabel>
+      <p className="text-sm text-muted-foreground">
+        This is who is responsible. Call them, and quote your complaint number.
+      </p>
+      {loading ? (
+        <OfficialsSkeleton />
+      ) : (
+        <>
+          {data?.oldBbmpWard ? (
+            <p className="mt-2 text-xs">
+              {wardName} was <strong>{data.oldBbmpWard}</strong> ward under BBMP (pre-2025).
+            </p>
+          ) : null}
+          <OfficialsList officials={list} />
+          <OfficialsCaveat />
+          <OfficialsCredit />
+        </>
+      )}
+    </div>
   );
 }
