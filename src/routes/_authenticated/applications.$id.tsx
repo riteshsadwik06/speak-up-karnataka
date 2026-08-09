@@ -328,14 +328,16 @@ function Detail() {
                 {app.complaint_text}
               </pre>
               <button
+                disabled={hasPlaceholders(app.complaint_text)}
                 onClick={() => {
                   navigator.clipboard.writeText(app.complaint_text ?? "");
                   toast.success(t("copied"));
                 }}
-                className="mt-3 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                className="mt-3 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
               >
                 {t("copy")}
               </button>
+              {hasPlaceholders(app.complaint_text) ? <PlaceholderBlockNote /> : null}
             </div>
 
             {app.ward_name ? (
@@ -519,35 +521,39 @@ function Detail() {
               <SectionLabel>{t("theApplication")}</SectionLabel>
               <div className="mb-2 ml-auto flex flex-wrap gap-2">
                 <button
+                  disabled={bodyHasBlanks}
                   onClick={() => {
                     navigator.clipboard.writeText(app.application_body);
                     toast.success(t("copied"));
                   }}
-                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
                 >
                   {t("copy")}
                 </button>
                 <button
+                  disabled={bodyHasBlanks}
                   onClick={() => {
                     navigator.clipboard.writeText(portalSafeBody);
                     toast.success(t("toastPortalSafeCopied"));
                   }}
-                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
                 >
                   {t("copyPortalSafe")}
                 </button>
                 {bodyKn ? (
                   <button
+                    disabled={bodyHasBlanks}
                     onClick={() => {
                       navigator.clipboard.writeText(bodyKn);
                       toast.success(t("toastKannadaCopied"));
                     }}
-                    className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                    className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
                   >
                     {t("copyKannadaButton")}
                   </button>
                 ) : null}
                 <button
+                  disabled={bodyHasBlanks}
                   onClick={() => {
                     const blob = new Blob([app.application_body], { type: "text/plain;charset=utf-8" });
                     const url = URL.createObjectURL(blob);
@@ -557,11 +563,12 @@ function Detail() {
                     a.click();
                     URL.revokeObjectURL(url);
                   }}
-                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
                 >
                   {t("download")}
                 </button>
               </div>
+              {bodyHasBlanks ? <PlaceholderBlockNote /> : null}
             </div>
 
             {bodyKn ? (
@@ -686,6 +693,7 @@ function Detail() {
               )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
+                  disabled={hasPlaceholders(ap.body)}
                   onClick={() => {
                     navigator.clipboard.writeText(ap.body);
                     toast.success(t("copied"));
@@ -695,6 +703,7 @@ function Detail() {
                   {t("copy")}
                 </button>
                 <button
+                  disabled={hasPlaceholders(ap.body)}
                   onClick={() => {
                     navigator.clipboard.writeText(toPortalSafe(ap.body));
                     toast.success(t("toastPortalSafeCopied"));
@@ -705,6 +714,7 @@ function Detail() {
                 </button>
                 {ap.body_kn ? (
                   <button
+                    disabled={hasPlaceholders(ap.body_kn)}
                     onClick={() => {
                       navigator.clipboard.writeText(ap.body_kn!);
                       toast.success(t("toastKannadaCopied"));
