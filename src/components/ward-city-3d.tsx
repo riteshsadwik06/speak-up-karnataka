@@ -29,6 +29,8 @@ type Props = {
   className?: string;
   /** Rendered when WebGL is unavailable or another 3D surface owns the context. */
   fallback?: React.ReactNode;
+  /** Accessible label describing the (decorative but data-bearing) surface. */
+  ariaLabel?: string;
 };
 
 const ORBIT_SECONDS = 90;
@@ -38,7 +40,7 @@ const ORBIT_SECONDS = 90;
  * Shared by the landing hero (ambient, no interaction) and the dashboard
  * (muted city with lit wards). Only one WebGL context is ever mounted.
  */
-export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick, className, fallback }: Props) {
+export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick, className, fallback, ariaLabel }: Props) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const colorForRef = useRef(colorFor);
   const clickRef = useRef(onWardClick);
@@ -190,5 +192,13 @@ export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick,
   }, [spin]);
 
   if (state === "off") return <>{fallback ?? null}</>;
-  return <div ref={mountRef} className={className} aria-hidden="true" />;
+  return (
+    <div
+      ref={mountRef}
+      className={className}
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel ? undefined : "true"}
+    />
+  );
 }
