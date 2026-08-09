@@ -124,6 +124,7 @@ function Detail() {
     escalation_count: number;
     generated_requests: { text: string; rationale: string }[];
     application_body: string;
+    application_body_kn: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -199,6 +200,7 @@ function Detail() {
           authority: app.public_authority,
           ward: app.ward_name,
           language: app.language,
+          lang,
           falseClosure: {
             ref: app.complaint_ref ?? "",
             complaintText: app.complaint_text ?? app.grievance_text,
@@ -214,6 +216,7 @@ function Detail() {
         closure_claimed_date: closureDate || null,
         generated_requests: result.draft.requests,
         application_body: result.body,
+        application_body_kn: result.bodyKn ?? null,
       });
       toast.success("RTI drafted against the closure");
     } catch (err) {
