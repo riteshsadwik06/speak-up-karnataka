@@ -421,7 +421,7 @@ export function WardMap3D() {
             </div>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border p-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border p-3 lg:shrink-0">
           {legend.map((l) => (
             <span key={l.label} className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3" style={{ backgroundColor: l.color }} />
@@ -435,7 +435,7 @@ export function WardMap3D() {
         </p>
       </div>
 
-      <aside className="w-full shrink-0 p-5 lg:w-80">
+      <aside ref={panelRef} className="w-full shrink-0 self-start p-5 lg:w-80">
         {!selected && (
           <>
             <p className="rule-heading">
