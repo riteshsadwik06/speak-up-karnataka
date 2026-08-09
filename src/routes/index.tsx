@@ -130,7 +130,9 @@ function Landing() {
             Section 6(2): a public authority cannot require you to give a reason for wanting the information.
             Vicharane never asks you for one.
           </p>
+          <DataCredit className="mt-3" />
         </footer>
+
       </div>
     </div>
   );
