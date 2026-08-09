@@ -1,7 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { OFFICIALS_SOURCE } from "@/lib/officials";
 import { LangToggle, useLang, T } from "@/lib/i18n";
 
@@ -9,10 +9,46 @@ const navBase = "block px-3 py-2 text-sm font-medium leading-[1.6] transition-co
 const navIdle = `${navBase} text-muted-foreground hover:bg-secondary hover:text-foreground`;
 const navActive = `${navBase} bg-foreground text-background`;
 
-
-export function AppShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
+/**
+ * Sign out is destructive and sits in the sidebar, so it must never be reached
+ * by a stray Enter: it takes two deliberate activations, and it is last in the
+ * sidebar tab order.
+ */
+function SignOutButton() {
   const router = useRouter();
   const { t } = useLang();
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => {
+    if (!armed) return;
+    const timer = window.setTimeout(() => setArmed(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [armed]);
+
+  return (
+    <button
+      type="button"
+      autoFocus={false}
+      onBlur={() => setArmed(false)}
+      onClick={async () => {
+        if (!armed) {
+          setArmed(true);
+          return;
+        }
+        await supabase.auth.signOut();
+        router.navigate({ to: "/auth" });
+      }}
+      className={`${navIdle} w-full text-left ${armed ? "border border-foreground text-foreground" : ""}`}
+    >
+      {armed ? t("navSignOutConfirm") : t("navSignOut")}
+    </button>
+  );
+}
+
+export function AppShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
+  const { t } = useLang();
+
+
 
 
   return (
@@ -40,15 +76,8 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
               {t("navWardMap")}
             </Link>
 
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.navigate({ to: "/auth" });
-              }}
-              className={`${navIdle} w-full text-left`}
-            >
-              {t("navSignOut")}
-            </button>
+            <SignOutButton />
+
           </nav>
         </aside>
 
