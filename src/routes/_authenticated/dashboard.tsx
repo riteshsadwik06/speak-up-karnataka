@@ -290,7 +290,17 @@ function Dashboard() {
                               ) : null}
                             </>
                           ) : null}
-                          {row.is_seeded ? ` • ${t("dashboardDemoTag")}` : ""}
+                          {row.is_seeded ? (
+                            <>
+                              {" "}
+                              <span
+                                lang={lang}
+                                className={`ml-0.5 inline-block border border-border bg-secondary px-1 py-px align-middle text-[9px] font-bold uppercase tracking-wide text-muted-foreground ${lang === "kn" ? KN_TEXT : ""}`}
+                              >
+                                {t("dashboardDemoTag")}
+                              </span>
+                            </>
+                          ) : null}
                           {row.stage === "complaint" ? ` • ${t("dashboardComplaintTag")}` : ""}
                         </p>
                       </Link>
