@@ -43,7 +43,7 @@ function Landing() {
         <header className="flex items-center justify-between gap-4 border-b border-border p-6">
           <div>
             <h1>
-              <Wordmark size="sm" link />
+              <Wordmark size="sm" />
             </h1>
             <p className="rule-heading mt-1.5">Public Records Tracker</p>
           </div>
@@ -59,7 +59,7 @@ function Landing() {
               className="h-[240px] w-full sm:h-[340px]"
             />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <Wordmark size="lg" link className="items-center text-center" />
+              <Wordmark size="lg" variant="full" className="items-center text-center" />
             </div>
             <p className="mono-stamp absolute bottom-2 left-4">
               369 wards · five city corporations · extruded by population
@@ -126,7 +126,7 @@ function Landing() {
         </section>
 
         <footer className="p-6">
-          <Wordmark size="sm" inline link className="mb-3" />
+          <Wordmark size="sm" inline className="mb-3" />
           <p className="mono-stamp">
             Section 6(2): a public authority cannot require you to give a reason for wanting the information.
             Vicharane never asks you for one.
@@ -157,28 +157,31 @@ function HeaderAuthAction() {
     };
   }, []);
 
-  if (signedIn === null) return <div className="h-9" aria-hidden="true" />;
+  if (signedIn === null) return <div className="h-9 w-[7.5rem]" aria-hidden="true" />;
 
   if (signedIn) {
     return (
       <Link
         to="/dashboard"
-        className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
+        className="bg-foreground px-4 py-2 font-display text-sm font-bold whitespace-nowrap text-background transition-transform hover:-translate-y-0.5"
       >
-        GO TO DASHBOARD
+        DASHBOARD
       </Link>
     );
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Link to="/auth" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <Link
+        to="/auth"
+        className="hidden px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground sm:block"
+      >
         Log in
       </Link>
       <Link
         to="/auth"
         search={{ mode: "signup" }}
-        className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
+        className="bg-foreground px-4 py-2 font-display text-sm font-bold whitespace-nowrap text-background transition-transform hover:-translate-y-0.5"
       >
         SIGN UP
       </Link>

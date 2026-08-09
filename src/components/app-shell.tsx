@@ -18,13 +18,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
       <div className="registry-frame mx-auto flex w-full max-w-6xl flex-col md:flex-row">
         <aside className="w-full shrink-0 border-b border-border bg-background p-6 md:w-60 md:border-b-0 md:border-r">
           <h1>
-            <Link
-              to="/"
-              aria-label="Vicharane, home"
-              className="block rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Wordmark size="sm" />
-            </Link>
+            <Wordmark size="sm" />
           </h1>
           <p className="rule-heading mt-1.5">Public Records Tracker</p>
 
