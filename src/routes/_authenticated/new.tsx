@@ -81,8 +81,10 @@ function NewApplication() {
   const revise = useServerFn(reviseDraft);
   const runComplaint = useServerFn(generateComplaint);
 
-  const [step, setStep] = useState(1);
-  const [path, setPath] = useState<Path | null>(null);
+  const search = Route.useSearch();
+  const [step, setStep] = useState(search.stage === "complaint" ? 2 : 1);
+  const [path, setPath] = useState<Path | null>(search.stage === "complaint" ? "complaint" : null);
+
   const [prior, setPrior] = useState<PriorOutcome | null>(null);
   const [complaintRef, setComplaintRef] = useState("");
   const [priorFiledDate, setPriorFiledDate] = useState("");
