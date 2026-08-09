@@ -50,9 +50,9 @@ function towardPaper(hex: string, amount: number) {
 }
 
 const WATERMARK: Record<string, string> = Object.fromEntries(
-  Object.entries(CORP_COLOR).map(([k, v]) => [k, towardPaper(v, 0.62)]),
+  Object.entries(CORP_COLOR).map(([k, v]) => [k, towardPaper(v, 0.18)]),
 );
-const WATERMARK_NEUTRAL = towardPaper(NEUTRAL, 0.62);
+const WATERMARK_NEUTRAL = towardPaper(NEUTRAL, 0.18);
 
 /** Fixed, non-interactive city watermark behind the whole page. */
 function CityBackdrop() {
@@ -65,13 +65,13 @@ function CityBackdrop() {
         orbitSeconds={180}
         maxFps={30}
         colorFor={(w) => WATERMARK[w.c] ?? WATERMARK_NEUTRAL}
-        className="absolute inset-0 h-full w-full opacity-30"
+        className="absolute inset-0 h-full w-full opacity-45"
       />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, color-mix(in srgb, var(--background) 45%, transparent) 0%, color-mix(in srgb, var(--background) 70%, transparent) 40%, color-mix(in srgb, var(--background) 88%, transparent) 100%)",
+            "linear-gradient(to bottom, color-mix(in srgb, var(--background) 25%, transparent) 0%, color-mix(in srgb, var(--background) 40%, transparent) 45%, color-mix(in srgb, var(--background) 55%, transparent) 100%)",
         }}
       />
     </div>
@@ -83,8 +83,8 @@ function Landing() {
   return (
     <div className="relative min-h-screen w-full p-4 md:p-8">
       <CityBackdrop />
-      <div className="registry-frame relative z-10 mx-auto w-full max-w-5xl bg-transparent">
-        <header className="flex items-center justify-between gap-4 border-b border-border bg-background/90 p-6 backdrop-blur-[2px]">
+      <div className="registry-frame relative z-10 mx-auto w-full max-w-5xl !bg-transparent">
+        <header className="flex items-center justify-between gap-4 border-b border-border bg-background/72 p-6">
           <div>
             <h1>
               <Wordmark size="sm" />
@@ -97,7 +97,7 @@ function Landing() {
           </div>
         </header>
 
-        <section className="border-b border-border bg-background/70 p-6 md:p-10">
+        <section className="border-b border-border bg-background/58 p-6 md:p-10">
           <Wordmark size="lg" variant="full" className="mb-6" />
           <p className="rule-heading"><T id="heroEyebrow" /></p>
           <h2 className="mt-3 max-w-3xl font-display text-3xl leading-[1.05] sm:text-5xl">
@@ -122,7 +122,7 @@ function Landing() {
 
 
 
-        <section className="border-b border-border bg-background/92 backdrop-blur-[2px]">
+        <section className="border-b border-border bg-background/68">
           <p className="rule-heading border-b border-border px-6 py-3">
             <T id="howItWorksLabel" />
           </p>
@@ -141,7 +141,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-b border-border bg-background/92 p-6 backdrop-blur-[2px] md:p-10">
+        <section className="border-b border-border bg-background/68 p-6 md:p-10">
           <h3 className="max-w-2xl font-display text-2xl leading-tight sm:text-3xl">
             <T id="falseClosureHeading" />
           </h3>
@@ -151,7 +151,7 @@ function Landing() {
         </section>
 
 
-        <footer className="bg-background/92 p-6 backdrop-blur-[2px]">
+        <footer className="bg-background/68 p-6">
           <Wordmark size="sm" inline className="mb-3" />
           <p className="mono-stamp">
             <T id="footerSection6Note" />
