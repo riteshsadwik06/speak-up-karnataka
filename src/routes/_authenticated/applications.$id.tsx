@@ -599,6 +599,19 @@ function Detail() {
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
                 {ap.body}
               </pre>
+              {ap.body_kn ? (
+                <>
+                  <p lang="kn" className={`mt-2 text-[11px] text-muted-foreground ${KN_TEXT}`}>
+                    {t("tabKannadaPost")}
+                  </p>
+                  <pre
+                    lang="kn"
+                    className={`mt-1 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 text-sm ${KN_TEXT}`}
+                  >
+                    {ap.body_kn}
+                  </pre>
+                </>
+              ) : null}
               {!ap.filed_date && (
                 <div className="mt-3">
                   <label className="rule-heading block">Portal registration number (optional)</label>
