@@ -483,14 +483,24 @@ function WardPanel({ ward }: { ward: WardInfo }) {
           <T id="mapOnPortalHeading" />
         </p>
         {portal ? (
-          <p className="mt-1.5 text-xs">{portal}</p>
+          <>
+            <div className="mt-1.5 flex items-start gap-2">
+              <span className="mono-stamp min-w-0 flex-1 break-words leading-snug">{portal}</span>
+              <CopyZone value={portal} />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
+              <T id="mapMatchedFromZone" />
+            </p>
+          </>
         ) : (
           <>
             <p className="mt-1.5 text-xs" lang={lang}>
-              {t("mapNoVerifiedMapping").replace("{zone}", ward.zone)}
+              {t("mapNoVerifiedMapping").replace("{ward}", ward.name)}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
-              <T id="mapSection63Note" />
+            <p className="mt-2 text-xs" lang={lang}>
+              {t("mapGbaZoneLine")
+                .replace("{zone}", ward.zone)
+                .replace("{corp}", authorityLabel(ward.corporation))}
             </p>
             {oldWard ? (
               <p className="mt-2 text-xs" lang={lang}>
@@ -501,16 +511,13 @@ function WardPanel({ ward }: { ward: WardInfo }) {
                   )}
               </p>
             ) : null}
-            <ul className="mt-2 space-y-1">
-              {PORTAL_AUTHORITIES.bbmpZones.map((z) => (
-                <li key={z} className="flex items-start gap-2">
-                  <span className="mono-stamp min-w-0 flex-1 break-words leading-snug">{z}</span>
-                  <CopyZone value={z} />
-                </li>
-              ))}
-            </ul>
+            <p className="mt-2 text-xs text-muted-foreground" lang={lang}>
+              <T id="mapSection63Note" />
+            </p>
+            <ZonePicker />
           </>
         )}
+
       </div>
 
       <div className="mt-4 border border-border p-3">
