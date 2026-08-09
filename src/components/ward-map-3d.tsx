@@ -357,13 +357,28 @@ export function WardMap3D() {
             setHover((h) => (h ? { ...h, x: lastClient.x, y: lastClient.y } : h));
           }
         }
+        const flashing = flashId && now < flashUntil ? flashId : null;
         for (const m of meshes) {
-          const target = m.userData.targetY + (m.userData.info.id === selectedId ? 0.35 : 0);
+          const isFlash = m.userData.info.id === flashing;
+          const target =
+            m.userData.targetY +
+            (m.userData.info.id === selectedId ? 0.35 : 0) +
+            (isFlash ? 0.5 : 0);
           m.position.y += (target - m.position.y) * 0.18;
           const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
           const wantEmissive =
             m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
-          mat.emissive.setScalar(wantEmissive ? 0.14 : 0);
+          const pulse = isFlash ? 0.16 + 0.2 * Math.abs(Math.sin(now / 160)) : 0;
+          mat.emissive.setScalar(Math.max(wantEmissive ? 0.14 : 0, pulse));
+        }
+
+        // eased camera focus from the search
+        if (focus) {
+          const p = Math.min(1, (now - focus.t0) / 600);
+          const e = easeInOut(p);
+          controls.target.lerpVectors(focus.from, focus.to, e);
+          camera.position.lerpVectors(focus.camFrom, focus.camTo, e);
+          if (p >= 1) focus = null;
         }
 
         controls.update();
