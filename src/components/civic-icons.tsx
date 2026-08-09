@@ -184,12 +184,12 @@ export function CivicIcon({
       <path
         d="M37 4 l3.4 3.4 v32 l-3.4 3.4 v-32 z"
         fill={PLATE_SIDE}
-        className={`transition-colors duration-150 group-hover:[fill:${PLATE_SIDE_DEEP}] motion-reduce:transition-none`}
+        className="transition-colors duration-150 group-hover:[fill:#a3987f] motion-reduce:transition-none"
       />
       <path
         d="M5 36 l3.4 3.4 h32 l-3.4 -3.4 z"
         fill={PLATE_SIDE}
-        className={`transition-colors duration-150 group-hover:[fill:${PLATE_SIDE_DEEP}] motion-reduce:transition-none`}
+        className="transition-colors duration-150 group-hover:[fill:#a3987f] motion-reduce:transition-none"
       />
       {/* front face */}
       <rect x="5" y="4" width="32" height="32" fill={PLATE_FACE} stroke={PLATE_INK} strokeWidth={1} />
