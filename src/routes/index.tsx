@@ -67,9 +67,13 @@ function Landing() {
               colorFor={(w) => CORP_COLOR[w.c] ?? NEUTRAL}
               className="h-[240px] w-full sm:h-[340px]"
             />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <Wordmark size="lg" className="items-center text-center" />
+            </div>
             <p className="mono-stamp absolute bottom-2 left-4">
               369 wards · five city corporations · extruded by population
             </p>
+
           </div>
         </section>
 
