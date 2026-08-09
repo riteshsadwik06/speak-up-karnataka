@@ -81,9 +81,15 @@ export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick,
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(PAPER);
         const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
-        const RADIUS = 118;
-        camera.position.set(0, 92, RADIUS);
-        camera.lookAt(0, 0, 0);
+        const DIR = new THREE.Vector3(0, 0.78, 0.62).normalize();
+        const HALF = 56;
+        const fitCamera = () => {
+          const vHalf = Math.tan((camera.fov * Math.PI) / 180 / 2);
+          const dist = Math.max(HALF / vHalf, HALF / (vHalf * Math.max(camera.aspect, 0.2))) * 1.02;
+          camera.position.copy(DIR).multiplyScalar(dist);
+          camera.lookAt(0, 0, 0);
+        };
+        fitCamera();
 
         const renderer = makeRenderer(THREE, mount);
         addLights(THREE, scene);
@@ -121,6 +127,7 @@ export function WardCity3D({ colorFor, colorKey = "", spin = false, onWardClick,
           if (!w || !h) return;
           renderer.setSize(w, h, false);
           camera.aspect = w / h;
+          fitCamera();
           camera.updateProjectionMatrix();
           renderer.render(scene, camera);
         };
