@@ -123,7 +123,7 @@ export function WardCity3D({
           const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(colorForRef.current(w)) });
           const mesh = new THREE.Mesh(geo, mat);
           mesh.rotation.x = -Math.PI / 2;
-          mesh.scale.z = still ? 1 : 0.001;
+          mesh.scale.z = still || !intro ? 1 : 0.001;
           mesh.userData = { ward: w };
           pivot.add(mesh);
           meshes.push(mesh);
