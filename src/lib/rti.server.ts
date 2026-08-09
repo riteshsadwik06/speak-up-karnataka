@@ -26,14 +26,19 @@ export type RtiDraft = {
 export type WardIdentity = {
   name: string;
   nameKn?: string | null;
+  /** Plain ward number, e.g. "17". Never a synthesised code such as "C-017". */
   number?: string | null;
   corporation?: string | null;
   zone?: string | null;
+  assembly?: string | null;
   oldBbmpWard?: string | null;
 };
 
 /** Shared anti-fabrication rule. Appended to every prompt that produces filed text. */
-export const NO_FABRICATION_RULE = `Never invent or construct an identifier of any kind - ward numbers, file numbers, reference numbers, application numbers, zone codes. Use only identifiers supplied to you verbatim. If an identifier has not been supplied, omit it entirely rather than guessing or inferring a format.`;
+export const NO_FABRICATION_RULE = `Never invent or construct an identifier of any kind - ward numbers, file numbers, reference numbers, zone codes. Use only identifiers supplied to you verbatim. If one has not been supplied, omit it rather than inferring a format.`;
+
+/** Shared anti-placeholder rule. A short complete letter beats one full of blanks. */
+export const NO_PLACEHOLDER_RULE = `Never write placeholder text in square brackets or any other form. If a detail is missing, write the letter without it. A shorter, complete letter is always better than one containing blanks for the citizen to fill in.`;
 
 const WARD_TOKENS = {
   name: "[[WARD_NAME]]",
@@ -41,8 +46,17 @@ const WARD_TOKENS = {
   number: "[[WARD_NUMBER]]",
   corporation: "[[CORPORATION]]",
   zone: "[[ZONE]]",
+  assembly: "[[ASSEMBLY]]",
   oldBbmpWard: "[[OLD_BBMP_WARD]]",
+  line: "[[WARD_LINE]]",
 } as const;
+
+/** The only correct written form of ward identity: plain number + full corporation name. */
+export function wardLine(ward: WardIdentity | null | undefined): string {
+  if (!ward?.name) return "";
+  const parts = [ward.number ? `Ward ${ward.number}` : "", ward.corporation ?? ""].filter(Boolean);
+  return parts.length ? parts.join(", ") : ward.name;
+}
 
 /** Structured ward data plus opaque tokens: the model places tokens, never identity values. */
 export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
@@ -54,10 +68,12 @@ export function wardPromptBlock(ward: WardIdentity | null | undefined): string {
       ward_number: ward.number ?? null,
       corporation: ward.corporation ?? null,
       zone: ward.zone ?? null,
+      assembly_constituency: ward.assembly ?? null,
       old_bbmp_ward_name: ward.oldBbmpWard ?? null,
     })}`,
     `WARD_PLACEHOLDERS_JSON: ${JSON.stringify(WARD_TOKENS)}`,
     "When ward identity is relevant, put only the matching placeholder in the generated document. Do not copy, rewrite, translate, abbreviate or compose the identity value yourself. Omit placeholders whose structured value is null.",
+    "There is no such thing as a lettered ward code. Never write forms like \"C-017\" or \"Ward N-012\". Where a full identification is wanted, use the [[WARD_LINE]] placeholder, which the application renders as \"Ward 17, Bengaluru Central City Corporation\".",
   ].join("\n");
 }
 
@@ -69,7 +85,9 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
     [WARD_TOKENS.number]: ward?.number ?? "",
     [WARD_TOKENS.corporation]: ward?.corporation ?? "",
     [WARD_TOKENS.zone]: ward?.zone ?? "",
+    [WARD_TOKENS.assembly]: ward?.assembly ?? "",
     [WARD_TOKENS.oldBbmpWard]: ward?.oldBbmpWard ?? "",
+    [WARD_TOKENS.line]: wardLine(ward),
   };
   let output = text;
   for (const [token, value] of Object.entries(values)) output = output.split(token).join(value);
@@ -83,7 +101,8 @@ export function interpolateWardIdentity(text: string, ward: WardIdentity | null 
 const IDENTIFIER_PATTERNS: RegExp[] = [
   /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?[A-Z]-?\d{1,4}\b/gi,
   /\b(?:Ward|ವಾರ್ಡ್)\s*(?:(?:No\.?|Number|#)\s*[:.-]?\s*)?\d{1,4}\b/gi,
-  /\b[A-Z]-\d{3}\b/gi,
+  // Any "letter-hyphen-digits" construction: no department issues these.
+  /\(?\b[A-Z]-\d{1,4}\b\)?/g,
 ];
 
 export function stripUnsuppliedIdentifiers(text: string, supplied: (string | null | undefined)[]): string {
@@ -102,6 +121,7 @@ export function stripUnsuppliedIdentifiers(text: string, supplied: (string | nul
   // Tidy the punctuation the removal leaves behind.
   return out.replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",").replace(/,\s*,/g, ",").replace(/\(\s*\)/g, "");
 }
+
 
 
 export const DRAFT_SYSTEM_PROMPT = `You help Indian citizens draft Right to Information (RTI) applications under the RTI Act 2005.
