@@ -154,7 +154,6 @@ const PATHS: Record<CivicRole, React.ReactNode> = {
 
 const PLATE_FACE = "#ede7da";
 const PLATE_SIDE = "#b8ae9b";
-const PLATE_SIDE_DEEP = "#a3987f";
 const PLATE_INK = "#1f1d1a";
 
 /**

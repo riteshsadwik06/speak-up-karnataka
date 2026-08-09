@@ -99,10 +99,12 @@ export function OfficialsCredit() {
 
 function OfficialRow({ o }: { o: Official }) {
   return (
-    <li className="flex items-start gap-2 border-b border-border py-1.5">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center border border-border text-muted-foreground">
-        <CivicIcon role={civicRoleFor(o.designation)} size={16} />
-      </span>
+    <li className="group flex items-start gap-2 border-b border-border py-1.5">
+      <CivicIcon
+        role={civicRoleFor(o.designation)}
+        size={40}
+        className="mt-0.5 h-[34px] w-[34px] sm:h-10 sm:w-10"
+      />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
           {o.designation || "Official"}
