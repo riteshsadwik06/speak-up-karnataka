@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { CivicIcon, civicRoleFor } from "@/components/civic-icons";
+import { KN_TEXT, useLang } from "@/lib/i18n";
 import {
   officialsForWard,
   OFFICIALS_CAVEAT,
