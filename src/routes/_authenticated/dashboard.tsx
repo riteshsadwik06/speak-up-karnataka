@@ -24,9 +24,9 @@ const TONE_COLOR: Record<string, string> = {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Complaints & RTIs — Vicharane" },
+      { title: "What you have filed — Vicharane" },
       { name: "description", content: "Track every civic complaint and RTI application, and its deadline." },
-      { property: "og:title", content: "Complaints & RTIs — Vicharane" },
+      { property: "og:title", content: "What you have filed — Vicharane" },
       { property: "og:description", content: "Live day counters for every complaint and RTI you have filed." },
     ],
   }),

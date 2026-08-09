@@ -44,12 +44,12 @@ export const Route = createFileRoute("/_authenticated/new")({
   head: () => ({
 
     meta: [
-      { title: "New RTI application — Vicharane" },
+      { title: "New filing — Vicharane" },
       {
         name: "description",
         content: "Describe a civic grievance and get document requests a PIO must answer.",
       },
-      { property: "og:title", content: "New RTI application — Vicharane" },
+      { property: "og:title", content: "New filing — Vicharane" },
       { property: "og:description", content: "Turn a grievance into records you can legally demand." },
     ],
   }),
