@@ -131,9 +131,9 @@ function Dashboard() {
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-              {lang === "kn"
-                ? `${pending} ಶಾಸನಬದ್ಧ ಕಾಲಮಿತಿಗಳನ್ನು ಗಮನಿಸಲಾಗುತ್ತಿದೆ.`
-                : `Monitoring ${pending} statutory ${pending === 1 ? "deadline" : "deadlines"}.`}
+              {t("dashboardMonitoringDeadlines")
+                .replace("{n}", String(pending))
+                .replace("{noun}", pending === 1 ? t("dashboardDeadlineSingular") : t("dashboardDeadlinePlural"))}
             </span>
           </p>
         </div>
@@ -159,16 +159,17 @@ function Dashboard() {
           }}
 
           className="h-[180px] w-full sm:h-[220px]"
+          ariaLabel={t("dashboardCityMapAriaLabel")}
         />
-        <p className="mono-stamp absolute bottom-2 left-4">
+        <p lang={lang} className={`mono-stamp absolute bottom-2 left-4 ${lang === "kn" ? KN_TEXT : ""}`}>
           {litCount === 0
-            ? lang === "kn"
-              ? "ಇನ್ನೂ ಯಾವುದೇ ಅರ್ಜಿ ಇಲ್ಲ."
-              : "No applications yet."
-            : lang === "kn"
-              ? `${litCount} ವಾರ್ಡ್‌ಗಳಲ್ಲಿ ಸಕ್ರಿಯ ಸಲ್ಲಿಕೆಗಳಿವೆ`
-              : `${litCount} ${litCount === 1 ? "ward" : "wards"} with live filings`}
-          {wardFilter ? (lang === "kn" ? ` · ${wardFilter} ಗೆ ಸೀಮಿತ` : ` · filtered to ${wardFilter}`) : ""}
+            ? t("dashboardNoApplicationsYet")
+            : t("dashboardWardsWithLiveFilings")
+                .replace("{n}", String(litCount))
+                .replace("{noun}", litCount === 1 ? t("dashboardWardSingular") : t("dashboardWardPlural"))}
+          {wardFilter
+            ? ` · ${t("dashboardFilteredTo").replace("{ward}", wardKnFor(wardFilter) ?? wardFilter)}`
+            : ""}
         </p>
         {wardFilter && (
           <button
@@ -246,8 +247,8 @@ function Dashboard() {
                               ) : null}
                             </>
                           ) : null}
-                          {row.is_seeded ? " • demo" : ""}
-                          {row.stage === "complaint" ? " • complaint" : ""}
+                          {row.is_seeded ? ` • ${t("dashboardDemoTag")}` : ""}
+                          {row.stage === "complaint" ? ` • ${t("dashboardComplaintTag")}` : ""}
                         </p>
                       </Link>
                     </td>

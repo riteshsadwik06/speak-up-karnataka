@@ -1,4 +1,21 @@
 import { STAGE_RAIL, type StageRailId } from "@/lib/rti-data";
+import { KN_TEXT, useLang, type StrId } from "@/lib/i18n";
+
+const LABEL_ID: Record<StageRailId, StrId> = {
+  complaint: "railComplaint",
+  escalation: "railEscalation",
+  rti: "railRti",
+  first_appeal: "railFirstAppeal",
+  second_appeal: "railSecondAppeal",
+};
+
+const DEADLINE_ID: Record<StageRailId, StrId> = {
+  complaint: "railDeadlineNone",
+  escalation: "railDeadlineNone",
+  rti: "railDeadline30",
+  first_appeal: "railDeadlineFirstAppeal",
+  second_appeal: "railDeadlineSecond",
+};
 
 /**
  * Compact horizontal rail: Complaint -> Escalation -> RTI -> First appeal -> Second appeal.
@@ -11,8 +28,10 @@ export function StageRail({
   current: StageRailId;
   completed?: StageRailId[];
 }) {
+  const { lang, t } = useLang();
   const order = STAGE_RAIL.map((s) => s.id);
   const currentIndex = order.indexOf(current);
+  const knClass = lang === "kn" ? KN_TEXT : "";
 
   return (
     <ol className="flex min-w-0 flex-wrap gap-1.5 sm:flex-nowrap">
@@ -30,15 +49,19 @@ export function StageRail({
                   : "border-dashed border-muted-foreground/50 text-muted-foreground"
             }`}
           >
-            <p className="truncate font-display text-[11px] font-bold uppercase tracking-tight">
-              {s.label}
+            <p
+              lang={lang}
+              className={`font-display text-[11px] font-bold uppercase tracking-tight ${knClass}`}
+            >
+              {t(LABEL_ID[s.id])}
             </p>
             <p
-              className={`mt-0.5 text-[10px] leading-tight ${
+              lang={lang}
+              className={`mt-0.5 text-[10px] leading-tight ${knClass} ${
                 done ? "text-background/80" : "text-muted-foreground"
               }`}
             >
-              {s.deadline}
+              {t(DEADLINE_ID[s.id])}
             </p>
           </li>
         );

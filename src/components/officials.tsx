@@ -4,10 +4,9 @@
  */
 import { useEffect, useState } from "react";
 import { CivicIcon, civicRoleFor } from "@/components/civic-icons";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, T, useLang, type StrId } from "@/lib/i18n";
 import {
   officialsForWard,
-  OFFICIALS_CAVEAT,
   OFFICIALS_CREDIT,
   OFFICIALS_SOURCE,
   type Official,
@@ -15,13 +14,13 @@ import {
 } from "@/lib/officials";
 
 /** Coarse grouping so a resident can scan by the kind of problem. */
-const GROUPS: { label: string; match: RegExp }[] = [
-  { label: "Roads & works", match: /road|engineer|infrastructur|storm|drain/i },
-  { label: "Waste & health", match: /marshal|garbage|solid waste|health|sanit/i },
-  { label: "Electrical & lights", match: /electric|street light|light/i },
-  { label: "Revenue, tax & khata", match: /revenue|tax|khata|assessment/i },
-  { label: "Animals", match: /veterinar|animal|dog/i },
-  { label: "Ward office", match: /.*/ },
+const GROUPS: { labelId: StrId; match: RegExp }[] = [
+  { labelId: "officialsGroupRoadsWorks", match: /road|engineer|infrastructur|storm|drain/i },
+  { labelId: "officialsGroupWasteHealth", match: /marshal|garbage|solid waste|health|sanit/i },
+  { labelId: "officialsGroupElectricalLights", match: /electric|street light|light/i },
+  { labelId: "officialsGroupRevenueTaxKhata", match: /revenue|tax|khata|assessment/i },
+  { labelId: "officialsGroupAnimals", match: /veterinar|animal|dog/i },
+  { labelId: "officialsGroupWardOffice", match: /.*/ },
 ];
 
 /** Category keyword → designation matcher, for the complaint stage. */
@@ -76,10 +75,11 @@ export function useWardOfficials(wardName: string | undefined) {
 }
 
 export function OfficialsSkeleton({ rows = 4 }: { rows?: number }) {
+  const { t } = useLang();
   return (
-    <ul className="mt-2 space-y-2" aria-hidden>
+    <ul className="mt-2 space-y-2" role="status" aria-label={t("officialsLoading")}>
       {Array.from({ length: rows }).map((_, i) => (
-        <li key={i} className="border-b border-border pb-2">
+        <li key={i} className="border-b border-border pb-2" aria-hidden>
           <span className="block h-3 w-28 animate-pulse rounded bg-muted" />
           <span className="mt-1.5 block h-3 w-40 animate-pulse rounded bg-muted" />
         </li>
@@ -156,7 +156,7 @@ export function OfficialsList({
   grouped?: boolean;
 }) {
   if (!officials.length) {
-    return <p className="mt-2 text-xs text-muted-foreground">No officials listed for this ward.</p>;
+    return <T id="noOfficials" as="p" className="mt-2 text-xs text-muted-foreground" />;
   }
   if (!grouped) {
     return (
@@ -172,14 +172,14 @@ export function OfficialsList({
   const buckets = GROUPS.map((g) => {
     const items = officials.filter((o) => !used.has(o) && g.match.test(o.designation ?? ""));
     items.forEach((o) => used.add(o));
-    return { label: g.label, items };
+    return { labelId: g.labelId, items };
   }).filter((b) => b.items.length);
 
   return (
     <div className="mt-2 space-y-3">
       {buckets.map((b) => (
-        <div key={b.label}>
-          <p className="rule-heading">{b.label}</p>
+        <div key={b.labelId}>
+          <T id={b.labelId} as="p" className="rule-heading" />
           <ul>
             {b.items.map((o, i) => (
               <OfficialRow key={`${o.designation}-${o.name}-${i}`} o={o} />
@@ -192,5 +192,5 @@ export function OfficialsList({
 }
 
 export function OfficialsCaveat() {
-  return <p className="mt-2 text-[11px] text-muted-foreground">{OFFICIALS_CAVEAT}</p>;
+  return <T id="officialsCaveat" as="p" className="mt-2 text-[11px] text-muted-foreground" />;
 }

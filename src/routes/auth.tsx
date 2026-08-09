@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LangToggle } from "@/lib/i18n";
+import { LangToggle, T, useLang, type StrId } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { mode?: "signup" | "login" } => ({
@@ -21,9 +21,24 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function mapAuthError(message: string): StrId {
+  const m = message.toLowerCase();
+  if (m.includes("invalid login credentials") || m.includes("invalid credentials")) {
+    return "authErrorInvalidCredentials";
+  }
+  if (m.includes("already registered") || m.includes("already exists")) {
+    return "authErrorUserExists";
+  }
+  if (m.includes("weak") || m.includes("leaked") || m.includes("password")) {
+    return "authErrorWeakPassword";
+  }
+  return "somethingWentWrong";
+}
+
 function AuthPage() {
   const { mode } = Route.useSearch();
   const router = useRouter();
+  const { t } = useLang();
   const [isSignup, setIsSignup] = useState(mode === "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,7 +71,8 @@ function AuthPage() {
         router.navigate({ to: "/dashboard" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "";
+      toast.error(t(mapAuthError(message)));
     } finally {
       setBusy(false);
     }
@@ -74,10 +90,9 @@ function AuthPage() {
         <div className="paper-card w-full max-w-md p-6 sm:p-8">
           {sent ? (
             <>
-              <h1 className="text-2xl">Check your email</h1>
+              <T id="authCheckEmailTitle" as="h1" className="text-2xl" />
               <p className="mt-3 text-sm text-muted-foreground">
-                We sent a confirmation link to {email}. Click it to activate your account, then come
-                back and log in.
+                {t("authCheckEmailBody").replace("{email}", email)}
               </p>
               <button
                 onClick={() => {
@@ -86,29 +101,27 @@ function AuthPage() {
                 }}
                 className="mt-5 text-sm font-medium text-accent underline-offset-4 hover:underline"
               >
-                Back to log in
+                <T id="authBackToLogin" />
               </button>
             </>
           ) : (
             <>
-              <h1 className="text-3xl">{isSignup ? "Create your account" : "Welcome back"}</h1>
+              <T id={isSignup ? "authCreateAccountTitle" : "authWelcomeBackTitle"} as="h1" className="text-3xl" />
               <p className="mt-2 text-sm text-muted-foreground">
-                {isSignup
-                  ? "New accounts start with demo applications at every stage of the statutory clock."
-                  : "Pick up your applications and deadlines."}
+                <T id={isSignup ? "authSignupSubtitle" : "authLoginSubtitle"} />
               </p>
               <form onSubmit={submit} className="mt-6 space-y-4">
                 {isSignup && (
-                  <Field label="Full name">
+                  <Field labelId="authFullNameLabel">
                     <input
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className={inputClass}
-                      placeholder="As it should appear on the application"
+                      placeholder={t("authFullNamePlaceholder")}
                     />
                   </Field>
                 )}
-                <Field label="Email">
+                <Field labelId="authEmailLabel">
                   <input
                     type="email"
                     required
@@ -117,7 +130,7 @@ function AuthPage() {
                     className={inputClass}
                   />
                 </Field>
-                <Field label="Password">
+                <Field labelId="authPasswordLabel">
                   <input
                     type="password"
                     required
@@ -132,14 +145,14 @@ function AuthPage() {
                   disabled={busy}
                   className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
                 >
-                  {busy ? "Please wait…" : isSignup ? "Create account" : "Log in"}
+                  <T id={busy ? "authPleaseWait" : isSignup ? "authCreateAccountCta" : "authLogInCta"} />
                 </button>
               </form>
               <button
                 onClick={() => setIsSignup((v) => !v)}
                 className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground"
               >
-                {isSignup ? "Already have an account? Log in" : "No account yet? Sign up"}
+                <T id={isSignup ? "authHaveAccount" : "authNoAccount"} />
               </button>
             </>
           )}
@@ -152,10 +165,10 @@ function AuthPage() {
 const inputClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ labelId, children }: { labelId: StrId; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="rule-heading mb-1.5 block">{label}</span>
+      <T id={labelId} as="span" className="rule-heading mb-1.5 block" />
       {children}
     </label>
   );

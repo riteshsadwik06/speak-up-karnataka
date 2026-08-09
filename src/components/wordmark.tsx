@@ -5,6 +5,8 @@
  * The Kannada line is always set in the brick red used for overdue states.
  */
 import { Link } from "@tanstack/react-router";
+import type { ReactElement } from "react";
+import { useLang } from "@/lib/i18n";
 
 type Size = "lg" | "sm";
 type Variant = "mark" | "full";
@@ -75,10 +77,15 @@ export function Wordmark({
 
   if (!link) return mark;
 
+  return <WordmarkLink mark={mark} />;
+}
+
+function WordmarkLink({ mark }: { mark: ReactElement }) {
+  const { t } = useLang();
   return (
     <Link
       to="/"
-      aria-label="Vicharane home"
+      aria-label={t("wordmarkHomeAria")}
       className="pointer-events-auto inline-block rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       {mark}

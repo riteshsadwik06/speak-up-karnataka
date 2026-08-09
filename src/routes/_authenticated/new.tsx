@@ -28,7 +28,7 @@ import {
 import { generateComplaint, generateDraft, reviseDraft } from "@/lib/rti.functions";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, T, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/new")({
   validateSearch: (
@@ -56,11 +56,11 @@ export const Route = createFileRoute("/_authenticated/new")({
 const inputClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25";
 
-const FLAG_LABEL: Record<string, string> = {
-  opinion_seeking: "Asks for an opinion, not a record",
-  exemption_risk: "May be refused under Section 8",
-  too_broad: "Too broad — invites a fee demand",
-  wrong_authority: "Possibly the wrong public authority",
+const FLAG_LABEL_ID: Record<string, "flagOpinionSeeking" | "flagExemptionRisk" | "flagTooBroad" | "flagWrongAuthority"> = {
+  opinion_seeking: "flagOpinionSeeking",
+  exemption_risk: "flagExemptionRisk",
+  too_broad: "flagTooBroad",
+  wrong_authority: "flagWrongAuthority",
 };
 
 /** Loose authority equality: case-insensitive, trimmed, either containing the other. */
@@ -201,7 +201,7 @@ function NewApplication() {
         setChannelId(result.suggested_channel);
       setStep(3);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not draft the complaint");
+      toast.error(err instanceof Error ? err.message : t("couldNotDraftComplaint"));
     } finally {
       setBusy(false);
     }
@@ -236,7 +236,7 @@ function NewApplication() {
       if (error) throw error;
       router.navigate({ to: "/applications/$id", params: { id: data.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(err instanceof Error ? err.message : t("couldNotSave"));
       setSaving(false);
     }
   }
@@ -273,7 +273,7 @@ function NewApplication() {
       setInstruction("");
       setStep(3);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not draft the application");
+      toast.error(err instanceof Error ? err.message : t("couldNotDraftApplication"));
     } finally {
       setBusy(false);
     }
@@ -308,7 +308,7 @@ function NewApplication() {
       updateActive({ draft: result.draft, body: result.body, bodyKn: result.bodyKn ?? "" });
       setInstruction("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not revise the draft");
+      toast.error(err instanceof Error ? err.message : t("couldNotRevise"));
     } finally {
       setRevising(false);
     }
@@ -366,13 +366,13 @@ function NewApplication() {
       if (error) throw error;
       if (drafts.length > 1) {
         updateActive({ saved: true, savedId: data.id });
-        toast.success(`Saved "${active.subject}"`);
+        toast.success(t("savedSubject").replace("{subject}", active.subject));
         setSaving(false);
       } else {
         router.navigate({ to: "/applications/$id", params: { id: data.id } });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(err instanceof Error ? err.message : t("couldNotSave"));
       setSaving(false);
     }
   }
@@ -399,7 +399,7 @@ function NewApplication() {
       );
       router.navigate({ to: "/dashboard" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(err instanceof Error ? err.message : t("couldNotSave"));
       setSaving(false);
     }
   }
@@ -407,13 +407,13 @@ function NewApplication() {
 
   const stepLabels =
     path === "complaint"
-      ? ["What went wrong", "Where to send it", "Your complaint"]
-      : ["Grievance", "Authority", "Requests", "File it"];
+      ? [t("stepWhatWentWrong"), t("stepWhereToSend"), t("stepYourComplaint")]
+      : [t("stepGrievance"), t("stepAuthority"), t("stepRequests"), t("stepFileIt")];
 
   return (
     <AppShell>
       <h1 className="text-3xl sm:text-4xl">
-        {path === "complaint" ? "New civic complaint" : "New RTI application"}
+        <T id={path === "complaint" ? "wizardTitleComplaint" : "wizardTitleRti"} />
       </h1>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         {stepLabels.map((label, i) => (
@@ -432,7 +432,7 @@ function NewApplication() {
 
       {step === 1 && (
         <div className="paper-card mt-6 p-5">
-          <SectionLabel>Step 1 · Have you reported this already?</SectionLabel>
+          <SectionLabel>{t("step1HaveYouReported")}</SectionLabel>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <button
               onClick={() => {
@@ -443,11 +443,12 @@ function NewApplication() {
                 path === "complaint" ? "border-foreground bg-secondary/60" : "border-border"
               }`}
             >
-              <span className="block text-sm font-semibold">I haven't reported this yet</span>
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Start with a civic complaint. It is faster, free, and it creates the paper trail an RTI
-                can later test.
-              </span>
+              <T id="haventReportedYet" as="span" className="block text-sm font-semibold" />
+              <T
+                id="haventReportedYetHelp"
+                as="span"
+                className="mt-1 block text-xs text-muted-foreground"
+              />
             </button>
             <button
               onClick={() => setPath("rti")}
@@ -455,22 +456,24 @@ function NewApplication() {
                 path === "rti" ? "border-foreground bg-secondary/60" : "border-border"
               }`}
             >
-              <span className="block text-sm font-semibold">I already reported it</span>
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Go straight to an RTI application for the records behind what happened next.
-              </span>
+              <T id="alreadyReported" as="span" className="block text-sm font-semibold" />
+              <T
+                id="alreadyReportedHelp"
+                as="span"
+                className="mt-1 block text-xs text-muted-foreground"
+              />
             </button>
           </div>
 
           {path === "rti" && (
             <div className="mt-4 rounded-md border border-border p-4">
-              <SectionLabel>What happened?</SectionLabel>
+              <SectionLabel>{t("whatHappened")}</SectionLabel>
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 {(
                   [
-                    ["no_response", "No response yet"],
-                    ["false_closure", "They say it's fixed, but it isn't"],
-                    ["refused", "They refused or gave a partial answer"],
+                    ["no_response", t("priorNoResponse")],
+                    ["false_closure", t("priorFalseClosure")],
+                    ["refused", t("priorRefused")],
                   ] as [PriorOutcome, string][]
                 ).map(([id, label]) => (
                   <button
@@ -487,7 +490,7 @@ function NewApplication() {
               {prior && (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <label className="text-xs text-muted-foreground">
-                    Complaint reference (if any)
+                    {t("complaintRefLabel")}
                     <input
                       value={complaintRef}
                       onChange={(e) => setComplaintRef(e.target.value)}
@@ -495,7 +498,7 @@ function NewApplication() {
                     />
                   </label>
                   <label className="text-xs text-muted-foreground">
-                    Date you reported it
+                    {t("dateReportedLabel")}
                     <input
                       type="date"
                       value={priorFiledDate}
@@ -506,7 +509,7 @@ function NewApplication() {
                   {prior === "false_closure" && (
                     <>
                       <label className="text-xs text-muted-foreground">
-                        Date they marked it resolved
+                        {t("dateMarkedResolvedLabel")}
                         <input
                           type="date"
                           value={closureDate}
@@ -515,7 +518,7 @@ function NewApplication() {
                         />
                       </label>
                       <label className="text-xs text-muted-foreground sm:col-span-2">
-                        What is still wrong on the ground?
+                        {t("whatIsStillWrongLabel")}
                         <textarea
                           value={stillWrong}
                           onChange={(e) => setStillWrong(e.target.value)}
@@ -524,9 +527,7 @@ function NewApplication() {
                         />
                       </label>
                       <p className="text-xs text-muted-foreground sm:col-span-2">
-                        We will ask for the action-taken report, work order, completion certificate,
-                        closure photograph and the expenditure booked — records that cannot exist if the
-                        work was never done.
+                        {t("falseClosureRecordsNote")}
                       </p>
                     </>
                   )}
@@ -536,22 +537,20 @@ function NewApplication() {
           )}
 
           <div className="mt-5">
-            <SectionLabel>What went wrong?</SectionLabel>
-            <p className="text-sm text-muted-foreground">
-              Write it plainly, in English or Kannada. Do not try to sound legal — that is our job.
-            </p>
+            <SectionLabel>{t("whatWentWrongLabel")}</SectionLabel>
+            <T id="whatWentWrongHelp" as="p" className="text-sm text-muted-foreground" />
           </div>
           <textarea
             value={grievance}
             onChange={(e) => setGrievance(e.target.value)}
             rows={7}
             maxLength={3000}
-            placeholder="e.g. The storm water drain on our lane has been blocked since last monsoon and floods the road every time it rains…"
+            placeholder={t("grievancePlaceholder")}
             className={`${inputClass} mt-4 resize-y`}
           />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              Language
+              {t("languageLabel")}
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
@@ -568,7 +567,7 @@ function NewApplication() {
               onClick={() => setStep(2)}
               className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
-              Continue
+              {t("continueButton")}
             </button>
           </div>
           <p className="mt-4 rounded-md bg-secondary/70 p-3 text-xs text-muted-foreground">
@@ -580,7 +579,7 @@ function NewApplication() {
       {step === 2 && (
         <div className="paper-card mt-6 space-y-4 p-5">
           <SectionLabel>
-            {path === "complaint" ? "Step 2 · Whose problem is this?" : "Step 2 · Who holds the records?"}
+            {path === "complaint" ? t("step2WhoseProblem") : t("step2WhoHoldsRecords")}
           </SectionLabel>
           <div className="grid gap-2 sm:grid-cols-2">
             {AUTHORITIES.map((a) => (
@@ -601,35 +600,35 @@ function NewApplication() {
             <input
               value={otherAuthority}
               onChange={(e) => setOtherAuthority(e.target.value)}
-              placeholder="Name of the public authority"
+              placeholder={t("otherAuthorityPlaceholder")}
               className={inputClass}
             />
           )}
 
           <div>
-            <SectionLabel>PIO name and address (optional — details change often)</SectionLabel>
+            <SectionLabel>{t("pioNameAddressOptional")}</SectionLabel>
             <div className="grid gap-2 sm:grid-cols-2">
               <input
                 value={pioName}
                 onChange={(e) => setPioName(e.target.value)}
-                placeholder="PIO name / designation"
+                placeholder={t("pioNamePlaceholder")}
                 className={inputClass}
               />
               <input
                 value={pioAddress}
                 onChange={(e) => setPioAddress(e.target.value)}
-                placeholder="PIO office address"
+                placeholder={t("pioAddressPlaceholder")}
                 className={inputClass}
               />
             </div>
           </div>
 
           <div>
-            <SectionLabel>Ward (optional)</SectionLabel>
+            <SectionLabel>{t("wardOptionalLabel")}</SectionLabel>
             <input
               value={wardQuery}
               onChange={(e) => setWardQuery(e.target.value)}
-              placeholder="Search ward, zone or corporation…"
+              placeholder={t("wardSearchPlaceholder")}
               className={inputClass}
             />
             {wardQuery.trim() && (
@@ -660,7 +659,7 @@ function NewApplication() {
               onClick={() => setMapOpen((v) => !v)}
               className="mt-2 text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
             >
-              {mapOpen ? "Hide the map" : "Find it on the map"}
+              {mapOpen ? t("hideTheMap") : t("findItOnMap")}
             </button>
             {mapOpen && (
               <div className="mt-2">
@@ -694,7 +693,7 @@ function NewApplication() {
                     </>
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {ward.corporation} · {ward.zone_name} zone · {ward.assembly}
+                    {ward.corporation} · {ward.zone_name} {t("zoneWord")} · {ward.assembly}
                   </p>
                 </div>
                 <div className="w-full sm:w-40 sm:shrink-0">
@@ -711,7 +710,7 @@ function NewApplication() {
               onClick={() => setStep(1)}
               className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
             >
-              Back
+              {t("back")}
             </button>
             <button
               disabled={!authority || busy}
@@ -719,10 +718,10 @@ function NewApplication() {
               className="ml-auto rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
               {busy
-                ? "Drafting…"
+                ? t("drafting")
                 : path === "complaint"
-                  ? "Draft my complaint"
-                  : "Draft my requests"}
+                  ? t("draftMyComplaint")
+                  : t("draftMyRequests")}
             </button>
           </div>
         </div>
@@ -731,16 +730,16 @@ function NewApplication() {
       {step === 3 && path === "complaint" && complaint && (
         <div className="mt-6 space-y-5">
           <div className="paper-card p-5">
-            <SectionLabel>Where you are</SectionLabel>
+            <SectionLabel>{t("whereYouAre")}</SectionLabel>
             <div className="mt-2">
               <StageRail current="complaint" />
             </div>
           </div>
 
           <div className="paper-card p-5">
-            <SectionLabel>Step 3 · Your complaint</SectionLabel>
+            <SectionLabel>{t("step3YourComplaint")}</SectionLabel>
             <p className="text-sm text-muted-foreground">
-              {complaint.category} · asks for one checkable action: {complaint.checkable_action}
+              {complaint.category} · {t("asksForCheckableAction")}: {complaint.checkable_action}
             </p>
             <textarea
               value={complaintText}
@@ -752,11 +751,11 @@ function NewApplication() {
               <button
                 onClick={() => {
                   void navigator.clipboard.writeText(complaintText);
-                  toast.success("Complaint copied");
+                  toast.success(t("complaintCopied"));
                 }}
                 className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
               >
-                Copy
+                {t("copy")}
               </button>
               <button
                 onClick={() => {
@@ -769,7 +768,7 @@ function NewApplication() {
                 }}
                 className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
               >
-                Download
+                {t("download")}
               </button>
             </div>
           </div>
@@ -779,10 +778,8 @@ function NewApplication() {
 
 
           <div className="paper-card p-5">
-            <SectionLabel>Where to send it</SectionLabel>
-            <p className="text-xs text-muted-foreground">
-              A starting point — confirm the channel before you send, and tell us where it actually went.
-            </p>
+            <SectionLabel>{t("whereToSendIt")}</SectionLabel>
+            <T id="whereToSendItHelp" as="p" className="text-xs text-muted-foreground" />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {COMPLAINT_CHANNELS.map((c) => (
                 <button
@@ -814,14 +811,13 @@ function NewApplication() {
           </div>
 
           <div className="paper-card p-5">
-            <SectionLabel>Mark as filed</SectionLabel>
+            <SectionLabel>{t("markAsFiled")}</SectionLabel>
             <p className="text-xs text-muted-foreground">
-              Complaints have no statutory deadline. We track {COMPLAINT_EXPECTATION_DAYS} days as a
-              service expectation only.
+              {t("complaintNoDeadlineNote").replace("{days}", String(COMPLAINT_EXPECTATION_DAYS))}
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <label className="text-xs text-muted-foreground">
-                Complaint reference number
+                {t("complaintRefNumberLabel")}
                 <input
                   value={sentRef}
                   onChange={(e) => setSentRef(e.target.value)}
@@ -829,7 +825,7 @@ function NewApplication() {
                 />
               </label>
               <label className="text-xs text-muted-foreground">
-                Date sent
+                {t("dateSentLabel")}
                 <input
                   type="date"
                   value={sentDate}
@@ -843,21 +839,21 @@ function NewApplication() {
                 onClick={() => setStep(2)}
                 className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
               >
-                Back
+                {t("back")}
               </button>
               <button
                 disabled={saving}
                 onClick={() => void saveComplaint(false)}
                 className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-50"
               >
-                Save as draft
+                {t("saveAsDraft")}
               </button>
               <button
                 disabled={saving}
                 onClick={() => void saveComplaint(true)}
                 className="ml-auto rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
               >
-                {saving ? "Saving…" : "I have sent it — start the clock"}
+                {saving ? t("saving") : t("haveSentStartClock")}
               </button>
             </div>
           </div>
@@ -886,11 +882,11 @@ function NewApplication() {
           )}
           {authorityMismatch && (
             <div className="paper-card border-destructive bg-destructive/10 p-5">
-              <p className="rule-heading text-destructive">This may be the wrong public authority</p>
+              <T id="wrongAuthorityHeading" as="p" className="rule-heading text-destructive" />
               <p className="mt-2 text-sm">
-                You selected {authority}. Based on your grievance, these records are likely held by{" "}
-                {suggested}. Filing with the wrong authority means it must be transferred under
-                Section 6(3), which adds at least 5 days and restarts the 30-day clock.
+                {t("wrongAuthorityBody")
+                  .replace("{authority}", authority ?? "")
+                  .replace("{suggested}", suggested ?? "")}
               </p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button
@@ -898,13 +894,13 @@ function NewApplication() {
                   onClick={switchToSuggested}
                   className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
                 >
-                  {busy ? "Redrafting…" : `Switch to ${suggested} and redraft`}
+                  {busy ? t("redrafting") : t("switchAndRedraft").replace("{suggested}", suggested ?? "")}
                 </button>
                 <button
                   onClick={() => setDismissedAuthorityHint(true)}
                   className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
                 >
-                  Keep {authority}
+                  {t("keepAuthority").replace("{authority}", authority ?? "")}
                 </button>
               </div>
             </div>
@@ -912,11 +908,9 @@ function NewApplication() {
 
           {multiSubject && (
             <div className="paper-card border-warning/60 bg-warning/10 p-5">
-              <p className="rule-heading text-warning-foreground">This covers more than one subject</p>
+              <T id="multiSubjectHeading" as="p" className="rule-heading text-warning-foreground" />
               <p className="mt-2 text-sm">
-                Karnataka's Rule 14 requires one subject per application. If you file all of these
-                together, the PIO may answer only the first and tell you to file separately for the
-                rest. This draft covers {active.subject}.
+                {t("multiSubjectBody").replace("{subject}", active.subject)}
               </p>
               <ul className="mt-3 space-y-1 text-sm">
                 {otherSubjects.map((s) => (
@@ -926,7 +920,7 @@ function NewApplication() {
                       <span className="text-muted-foreground"> — {s.summary}</span>
                     ) : null}
                     {hasDraftFor(s.label) ? (
-                      <span className="text-accent"> · drafted</span>
+                      <span className="text-accent"> · {t("draftedTag")}</span>
                     ) : null}
                   </li>
                 ))}
@@ -941,7 +935,7 @@ function NewApplication() {
                       onClick={() => addSubject(s.label)}
                       className="rounded-md border border-border bg-background px-4 py-2 text-left text-sm hover:bg-secondary disabled:opacity-60"
                     >
-                      {busy ? "Drafting…" : `Draft this too — ${s.label}`}
+                      {busy ? t("drafting") : t("draftThisToo").replace("{label}", s.label)}
                     </button>
                   ))}
               </div>
@@ -951,17 +945,12 @@ function NewApplication() {
           <div className="grid gap-4 lg:grid-cols-2">
 
             <div className="paper-card border-destructive/30 p-5">
-              <p className="rule-heading text-destructive">What you wrote — a PIO can refuse this</p>
+              <T id="whatYouWroteHeading" as="p" className="rule-heading text-destructive" />
               <p className="mt-3 whitespace-pre-wrap font-display text-lg leading-snug">{grievance}</p>
-              <p className="mt-3 text-xs text-muted-foreground">
-                A grievance asks for action or an explanation. Section 2(f) only entitles you to
-                material held in recorded form.
-              </p>
+              <T id="section2fNote" as="p" className="mt-3 text-xs text-muted-foreground" />
             </div>
             <div className="paper-card border-accent/40 p-5">
-              <p className="rule-heading text-accent">
-                What we ask for — records the authority must produce
-              </p>
+              <T id="whatWeAskForHeading" as="p" className="rule-heading text-accent" />
               <ol className="mt-3 space-y-3">
                 {draft.requests.map((r, i) => (
                   <li key={i} className="text-sm">
@@ -971,30 +960,32 @@ function NewApplication() {
                 ))}
               </ol>
               <p className={`mt-3 text-xs ${overWordLimit ? "text-warning" : "text-muted-foreground"}`}>
-                {requestWords} / {RULE14_WORD_LIMIT} words (Karnataka Rule 14)
+                {t("wordsOfRule14")
+                  .replace("{count}", String(requestWords))
+                  .replace("{limit}", String(RULE14_WORD_LIMIT))}
               </p>
               {overWordLimit && (
-                <p className="mt-1 text-xs text-warning">
-                  Rule 14 says an application shall not ORDINARILY exceed 150 words, so this is not
-                  automatically invalid - but a PIO may push back. Consider trimming, or add a line
-                  explaining why the extra length is necessary.
-                </p>
+                <T id="rule14OverLimitNote" as="p" className="mt-1 text-xs text-warning" />
               )}
               <p className="mt-2 text-xs text-muted-foreground">
-                Confidence: {draft.confidence}
-                {draft.primary_subject ? ` · Subject: ${draft.primary_subject}` : ""}
-                {suggested ? ` · Suggested authority: ${suggested}` : ""}
+                {t("confidenceLabel").replace("{value}", draft.confidence)}
+                {draft.primary_subject
+                  ? ` · ${t("subjectLabel").replace("{value}", draft.primary_subject)}`
+                  : ""}
+                {suggested
+                  ? ` · ${t("suggestedAuthorityLabel").replace("{value}", suggested)}`
+                  : ""}
               </p>
             </div>
           </div>
 
           <div className="paper-card p-5">
-            <SectionLabel>Improve this draft</SectionLabel>
+            <SectionLabel>{t("improveThisDraft")}</SectionLabel>
             <textarea
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
               rows={3}
-              placeholder="Add anything that would make these harder to refuse - dates, the exact stretch of road, a complaint number you already have..."
+              placeholder={t("improveDraftPlaceholder")}
               className={`${inputClass} resize-y`}
             />
             <button
@@ -1002,69 +993,66 @@ function NewApplication() {
               onClick={() => void runRevision(instruction)}
               className="mt-3 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
-              {revising ? "Revising…" : "Revise"}
+              {revising ? t("revising") : t("reviseButton")}
             </button>
           </div>
 
 
           {draft.flags.length > 0 ? (
             <div className="paper-card p-5">
-              <SectionLabel>Pre-flight check</SectionLabel>
+              <SectionLabel>{t("preflightCheck")}</SectionLabel>
               <ul className="space-y-3">
                 {draft.flags.map((f, i) => (
                   <li key={i} className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
                     <span className="rule-heading block text-warning-foreground">
-                      {FLAG_LABEL[f.type] ?? f.type}
+                      {FLAG_LABEL_ID[f.type] ? t(FLAG_LABEL_ID[f.type]!) : f.type}
                     </span>
                     <span className="mt-1 block">{f.message}</span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      Suggestion: {f.suggestion}
+                      {t("suggestionLabel").replace("{value}", f.suggestion)}
                     </span>
                     <button
                       disabled={revising}
                       onClick={() =>
                         void runRevision(
-                          `Address this problem with request wording: ${f.message} Suggested fix: ${f.suggestion}`,
+                          t("addressWordingProblem")
+                            .replace("{message}", f.message)
+                            .replace("{suggestion}", f.suggestion),
                         )
                       }
                       className="mt-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60"
                     >
-                      {revising ? "Revising…" : "Apply this"}
+                      {revising ? t("revising") : t("applyThisFix")}
                     </button>
                   </li>
                 ))}
               </ul>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Pre-flight check passed - no opinion-seeking phrasing or obvious Section 8 exemption risk
-              detected.
-            </p>
+            <T id="preflightPassed" as="p" className="text-xs text-muted-foreground" />
           )}
 
 
           <div className="paper-card p-5">
-            <SectionLabel>The application — edit anything before you file</SectionLabel>
+            <SectionLabel>{t("editBeforeFiling")}</SectionLabel>
 
             {bodyKn ? (
               <>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {lang === "kn"
-                    ? "ಆನ್‌ಲೈನ್ ಪೋರ್ಟಲ್ ಲ್ಯಾಟಿನ್ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ ಸ್ವೀಕರಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ಕನ್ನಡ ಅರ್ಜಿಯನ್ನು ಅಂಚೆ ಮೂಲಕ ಕಳುಹಿಸಬೇಕು. ಎರಡೂ ಆವೃತ್ತಿಗಳೂ ಕಾನೂನುಬದ್ಧವಾಗಿ ಸಿಂಧು."
-                    : "The online portal accepts Latin characters only, so a Kannada application must be sent by post. Both versions are legally valid."}
+                  {t("portalLatinOnlyNote")}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     onClick={() => setLetterVersion("kn")}
                     className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "kn" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
                   >
-                    ಕನ್ನಡ (ಅಂಚೆ ಮೂಲಕ ಮಾತ್ರ)
+                    {t("kannadaPostalOnly")}
                   </button>
                   <button
                     onClick={() => setLetterVersion("en")}
                     className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "en" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
                   >
-                    English (portal)
+                    {t("englishPortal")}
                   </button>
                 </div>
               </>
@@ -1084,9 +1072,7 @@ function NewApplication() {
             />
             {bodyKn ? (
               <p className="mt-2 text-xs text-muted-foreground">
-                {letterVersion === "kn"
-                  ? "Post this version: speed post with acknowledgement due, fee by Indian Postal Order or DD."
-                  : "File this version on the RTI portal."}
+                {letterVersion === "kn" ? t("postThisVersionNote") : t("fileThisVersionNote")}
               </p>
             ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
@@ -1094,21 +1080,21 @@ function NewApplication() {
                 onClick={() => setStep(2)}
                 className="rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
               >
-                Back
+                {t("back")}
               </button>
               <button
                 disabled={saving}
                 onClick={() => save(false)}
                 className="ml-auto rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
               >
-                Save as draft
+                {t("saveAsDraft")}
               </button>
               <button
                 disabled={saving}
                 onClick={() => save(true)}
                 className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
               >
-                Save & mark filed today
+                {t("saveAndMarkFiledToday")}
               </button>
               {drafts.length > 1 && drafts.some((d) => !d.saved) && (
                 <button
@@ -1116,7 +1102,7 @@ function NewApplication() {
                   onClick={() => void saveAll()}
                   className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50 sm:w-auto"
                 >
-                  {saving ? "Saving…" : "Save all as drafts"}
+                  {saving ? t("saving") : t("saveAllAsDrafts")}
                 </button>
               )}
             </div>
@@ -1128,6 +1114,7 @@ function NewApplication() {
 }
 
 function ResponsibleOfficials({ wardName, category }: { wardName: string; category: string }) {
+  const { t } = useLang();
   const { data, loading } = useWardOfficials(wardName);
   const list = useMemo(
     () => relevantOfficials(data?.officials ?? [], category),
@@ -1136,17 +1123,17 @@ function ResponsibleOfficials({ wardName, category }: { wardName: string; catego
 
   return (
     <div className="paper-card p-5">
-      <SectionLabel>Who is responsible</SectionLabel>
-      <p className="text-sm text-muted-foreground">
-        This is who is responsible. Call them, and quote your complaint number.
-      </p>
+      <SectionLabel>{t("whoIsResponsible")}</SectionLabel>
+      <T id="whoIsResponsibleHelp" as="p" className="text-sm text-muted-foreground" />
       {loading ? (
         <OfficialsSkeleton />
       ) : (
         <>
           {data?.oldBbmpWard ? (
             <p className="mt-2 text-xs">
-              {wardName} was <strong>{data.oldBbmpWard}</strong> ward under BBMP (pre-2025).
+              {t("oldBbmpWardNote")
+                .replace("{ward}", wardName)
+                .replace("{oldWard}", data.oldBbmpWard)}
             </p>
           ) : null}
           <OfficialsList officials={list} />

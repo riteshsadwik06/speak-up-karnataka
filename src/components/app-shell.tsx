@@ -3,7 +3,7 @@ import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 import { OFFICIALS_SOURCE } from "@/lib/officials";
-import { LangToggle, useLang } from "@/lib/i18n";
+import { LangToggle, useLang, T } from "@/lib/i18n";
 
 const navBase = "block px-3 py-2 text-sm font-medium leading-[1.6] transition-colors";
 const navIdle = `${navBase} text-muted-foreground hover:bg-secondary hover:text-foreground`;
@@ -83,7 +83,7 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 export function DataCredit({ className = "" }: { className?: string }) {
   return (
     <p className={`text-[11px] text-muted-foreground ${className}`}>
-      Officials data from{" "}
+      <T id="officialsDataCredit" as="span" />{" "}
       <a
         href={OFFICIALS_SOURCE}
         target="_blank"

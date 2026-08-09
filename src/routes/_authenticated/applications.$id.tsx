@@ -9,9 +9,7 @@ import {
   appealGroundLabel,
   clockFor,
   complaintChannel,
-  COMPLAINT_ESCALATION_NOTE,
   COMPLAINT_EXPECTATION_DAYS,
-  COMPLAINT_NOT_STATUTORY,
 
   daysBetween,
   LEGAL,
@@ -20,8 +18,8 @@ import {
   PORTAL_LINKS,
   portalZoneForGbaZone,
   PORTAL_MAX_CHARS,
-  SPLIT_ADVISORY,
   STATUS_LABEL,
+  STATUS_LABEL_KN,
   today,
   toPortalSafe,
   WARDS,
@@ -66,6 +64,20 @@ type Appeal = {
   portal_ground: string | null;
 };
 
+const ONLINE_PAYMENT_IDS = ["paymentModeNetbanking", "paymentModeCard", "paymentModeUpi"] as const;
+const POSTAL_PAYMENT_IDS = ["paymentModeIpo", "paymentModeDd", "paymentModeStamp"] as const;
+
+const APPEAL_GROUND_IDS: Record<
+  string,
+  "appealGroundRefused" | "appealGroundNoResponse" | "appealGroundExcessFee" | "appealGroundIncomplete" | "appealGroundOther"
+> = {
+  refused: "appealGroundRefused",
+  no_response: "appealGroundNoResponse",
+  excess_fee: "appealGroundExcessFee",
+  incomplete: "appealGroundIncomplete",
+  other: "appealGroundOther",
+};
+
 const inputClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25";
 
@@ -91,6 +103,10 @@ function Detail() {
   const [closureDate, setClosureDate] = useState(today());
   const [stillWrong, setStillWrong] = useState("");
   const [sentRef, setSentRef] = useState("");
+  const groundLabel = (g: string | null) => {
+    const key = g ? APPEAL_GROUND_IDS[g] : undefined;
+    return key ? t(key) : (appealGroundLabel(g) ?? "");
+  };
 
 
 
@@ -138,7 +154,7 @@ function Detail() {
   if (isLoading || !data) {
     return (
       <AppShell>
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t("loading")}</p>
       </AppShell>
     );
   }
@@ -174,9 +190,11 @@ function Detail() {
     try {
       await makeAppeal({ data: { applicationId: id, tier, reason, portalGround, lang } });
       await qc.invalidateQueries({ queryKey: ["application", id] });
-      toast.success(`${tier === "first" ? "First" : "Second"} appeal drafted`);
+      toast.success(
+        `${tier === "first" ? t("firstAppeal") : t("secondAppeal")} ${t("draftedSuffix")}`,
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not draft the appeal");
+      toast.error(err instanceof Error ? err.message : t("couldNotDraftAppeal"));
     } finally {
       setBusy(false);
     }
@@ -184,12 +202,12 @@ function Detail() {
 
   async function escalate() {
     await patch({ escalation_count: (app.escalation_count ?? 0) + 1 });
-    toast.success("Escalation recorded");
+    toast.success(t("escalationRecordedToast"));
   }
 
   async function promoteToRti() {
     if (stillWrong.trim().length < 10) {
-      toast.error("Say what is still wrong on the ground — the RTI is built from it.");
+      toast.error(t("stillWrongTooShortError"));
       return;
     }
     setBusy(true);
@@ -218,9 +236,9 @@ function Detail() {
         application_body: result.body,
         application_body_kn: result.bodyKn ?? null,
       });
-      toast.success("RTI drafted against the closure");
+      toast.success(t("rtiDraftedToast"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not draft the RTI");
+      toast.error(err instanceof Error ? err.message : t("couldNotDraftRtiError"));
     } finally {
       setBusy(false);
     }
@@ -243,7 +261,7 @@ function Detail() {
   const header = (
     <>
       <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground">
-        ← All applications
+        {t("allApplications")}
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -253,11 +271,15 @@ function Detail() {
           </span>
         </StatusPill>
         {clock.tone !== "danger" && (
-          <span className="rule-heading">{STATUS_LABEL[app.status] ?? app.status}</span>
+          <span lang={lang} className={`rule-heading ${lang === "kn" ? KN_TEXT : ""}`}>
+            {(lang === "kn" ? STATUS_LABEL_KN[app.status] : STATUS_LABEL[app.status]) ??
+              STATUS_LABEL[app.status] ??
+              app.status}
+          </span>
         )}
         {app.is_seeded && (
           <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
-            Demo data
+            {t("demoDataBadge")}
           </span>
         )}
       </div>
@@ -267,7 +289,7 @@ function Detail() {
           <h1 className="text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {app.public_authority}
-            {app.ward_name ? ` · ${wardKn ?? app.ward_name} ward` : ""}
+            {app.ward_name ? ` · ${wardKn ?? app.ward_name} ${t("wardSuffix")}` : ""}
           </p>
           {wardKn ? (
             <p className="text-xs text-muted-foreground/70">{app.ward_name}</p>
@@ -299,18 +321,18 @@ function Detail() {
         <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
           <div className="space-y-5">
             <div className="paper-card p-5">
-              <SectionLabel>The complaint</SectionLabel>
+              <SectionLabel>{t("sectionComplaint")}</SectionLabel>
               <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
                 {app.complaint_text}
               </pre>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(app.complaint_text ?? "");
-                  toast.success("Copied");
+                  toast.success(t("copied"));
                 }}
                 className="mt-3 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
               >
-                Copy
+                {t("copy")}
               </button>
             </div>
 
@@ -322,41 +344,42 @@ function Detail() {
             ) : null}
 
             <div className="paper-card p-5">
-              <SectionLabel>What happened next?</SectionLabel>
+              <SectionLabel>{t("sectionWhatNext")}</SectionLabel>
               <div className="grid gap-2 sm:grid-cols-3">
                 <button
                   disabled={busy}
                   onClick={() => void escalate()}
                   className="rounded-md border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-50"
                 >
-                  Still nothing — escalate
+                  {t("btnEscalate")}
                 </button>
                 <button
                   disabled={busy}
                   onClick={() => setShowClosure((v) => !v)}
                   className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs hover:bg-destructive/10 disabled:opacity-50"
                 >
-                  They marked it resolved but it isn't
+                  {t("btnFalseClosure")}
                 </button>
                 <button
                   disabled={busy}
                   onClick={() => void patch({ status: "closed" })}
                   className="rounded-md border border-border px-3 py-2 text-xs hover:bg-secondary disabled:opacity-50"
                 >
-                  They fixed it
+                  {t("btnFixed")}
                 </button>
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">{COMPLAINT_ESCALATION_NOTE}</p>
+              <p className="mt-3 text-xs text-muted-foreground">{t("complaintEscalationNote")}</p>
               {(app.escalation_count ?? 0) > 0 && (
                 <p className="mt-1 text-xs">
-                  Escalated {app.escalation_count} time{app.escalation_count === 1 ? "" : "s"}.
+                  {t("escalatedPrefix")} {app.escalation_count}{" "}
+                  {app.escalation_count === 1 ? t("escalatedTimeSingular") : t("escalatedTimePlural")}
                 </p>
               )}
 
               {showClosure && (
                 <div className="mt-4 space-y-3 rounded-md border border-border p-3">
                   <label className="block text-xs text-muted-foreground">
-                    Date they marked it resolved
+                    {t("closureDateLabel")}
                     <input
                       type="date"
                       value={closureDate}
@@ -365,7 +388,7 @@ function Detail() {
                     />
                   </label>
                   <label className="block text-xs text-muted-foreground">
-                    What is still wrong on the ground?
+                    {t("stillWrongLabel")}
                     <textarea
                       value={stillWrong}
                       onChange={(e) => setStillWrong(e.target.value)}
@@ -373,17 +396,13 @@ function Detail() {
                       className={`${inputClass} mt-1 resize-y`}
                     />
                   </label>
-                  <p className="text-xs text-muted-foreground">
-                    The RTI will ask for the action-taken report, the work order, the closing officer's
-                    name, the completion certificate, the closure photograph, the measurement book entry
-                    and the expenditure booked. None of these exist if the work was not done.
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("rtiFromClosureExplanation")}</p>
                   <button
                     disabled={busy}
                     onClick={() => void promoteToRti()}
                     className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
                   >
-                    {busy ? "Drafting…" : "Draft the RTI against this closure"}
+                    {busy ? t("draftingEllipsis") : t("btnDraftRtiClosure")}
                   </button>
                 </div>
               )}
@@ -392,7 +411,7 @@ function Detail() {
 
           <div className="space-y-5">
             <div className="paper-card p-5">
-              <SectionLabel>Where it went</SectionLabel>
+              <SectionLabel>{t("sectionWhereItWent")}</SectionLabel>
               {channel ? (
                 <>
                   <p className="text-sm font-medium">{channel.name}</p>
@@ -412,36 +431,36 @@ function Detail() {
                   ) : null}
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground">Channel not recorded.</p>
+                <p className="text-xs text-muted-foreground">{t("channelNotRecorded")}</p>
               )}
             </div>
 
             <div className="paper-card p-5">
-              <SectionLabel>Timeline</SectionLabel>
+              <SectionLabel>{t("sectionTimeline")}</SectionLabel>
               <dl className="space-y-1.5 text-sm">
-                <TimelineRow label="Complaint reference" value={app.complaint_ref ?? "—"} />
-                <TimelineRow label="Sent on" value={app.complaint_filed_date ?? "not sent yet"} />
+                <TimelineRow label={t("complaintReferenceLabel")} value={app.complaint_ref ?? "—"} />
                 <TimelineRow
-                  label="Service expectation"
-                  value={`${COMPLAINT_EXPECTATION_DAYS} days — not a statutory deadline`}
+                  label={t("sentOnLabel")}
+                  value={app.complaint_filed_date ?? t("notSentYet")}
                 />
                 <TimelineRow
-                  label="Marked resolved"
-                  value={app.closure_claimed_date ?? "—"}
+                  label={t("serviceExpectationLabel")}
+                  value={`${COMPLAINT_EXPECTATION_DAYS} ${t("serviceExpectationDaysSuffix")}`}
                 />
+                <TimelineRow label={t("markedResolvedLabel")} value={app.closure_claimed_date ?? "—"} />
               </dl>
-              <p className="mt-3 text-xs text-muted-foreground">{COMPLAINT_NOT_STATUTORY}</p>
+              <p className="mt-3 text-xs text-muted-foreground">{t("complaintNotStatutory")}</p>
 
             </div>
 
             {!app.complaint_filed_date && (
               <div className="paper-card p-5">
-                <SectionLabel>Mark as sent</SectionLabel>
+                <SectionLabel>{t("sectionMarkAsSent")}</SectionLabel>
                 <div className="space-y-2">
                   <input
                     value={sentRef}
                     onChange={(e) => setSentRef(e.target.value)}
-                    placeholder="Complaint reference number"
+                    placeholder={t("placeholderComplaintRef")}
                     className={inputClass}
                   />
                   <input
@@ -460,7 +479,7 @@ function Detail() {
                     }
                     className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
                   >
-                    Start the clock
+                    {t("btnStartClock")}
                   </button>
                 </div>
               </div>
@@ -480,7 +499,7 @@ function Detail() {
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
           <div className="paper-card p-5">
-            <SectionLabel>Information requested</SectionLabel>
+            <SectionLabel>{t("informationRequested")}</SectionLabel>
             <ol className="space-y-3">
               {requests.map((r, i) => (
                 <li key={i} className="text-sm">
@@ -495,35 +514,35 @@ function Detail() {
 
           <div className="paper-card p-5">
             <div className="flex flex-wrap items-center gap-3">
-              <SectionLabel>The application</SectionLabel>
+              <SectionLabel>{t("theApplication")}</SectionLabel>
               <div className="mb-2 ml-auto flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(app.application_body);
-                    toast.success("Copied");
+                    toast.success(t("copied"));
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
-                  Copy
+                  {t("copy")}
                 </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(portalSafeBody);
-                    toast.success("Portal-safe text copied");
+                    toast.success(t("toastPortalSafeCopied"));
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
-                  Copy portal-safe
+                  {t("copyPortalSafe")}
                 </button>
                 {bodyKn ? (
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(bodyKn);
-                      toast.success("Kannada text copied");
+                      toast.success(t("toastKannadaCopied"));
                     }}
                     className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                   >
-                    Copy ಕನ್ನಡ
+                    {t("copyKannadaButton")}
                   </button>
                 ) : null}
                 <button
@@ -538,7 +557,7 @@ function Detail() {
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
-                  Download
+                  {t("download")}
                 </button>
               </div>
             </div>
@@ -546,22 +565,20 @@ function Detail() {
             {bodyKn ? (
               <>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  {lang === "kn"
-                    ? "ಆನ್‌ಲೈನ್ ಪೋರ್ಟಲ್ ಲ್ಯಾಟಿನ್ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ ಸ್ವೀಕರಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ಕನ್ನಡ ಅರ್ಜಿಯನ್ನು ಅಂಚೆ ಮೂಲಕ ಕಳುಹಿಸಬೇಕು. ಎರಡೂ ಆವೃತ್ತಿಗಳೂ ಕಾನೂನುಬದ್ಧವಾಗಿ ಸಿಂಧು."
-                    : "The online portal accepts Latin characters only, so a Kannada application must be sent by post. Both versions are legally valid."}
+                  {t("portalLatinOnlyNoticeApplication")}
                 </p>
                 <div className="mb-3 flex flex-wrap gap-2">
                   <button
                     onClick={() => setLetterVersion("kn")}
                     className={`rounded-md border px-3 py-1.5 text-xs ${showKn ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
                   >
-                    ಕನ್ನಡ (ಅಂಚೆ ಮೂಲಕ ಮಾತ್ರ)
+                    {t("letterKannadaPostalOnly")}
                   </button>
                   <button
                     onClick={() => setLetterVersion("en")}
                     className={`rounded-md border px-3 py-1.5 text-xs ${!showKn ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
                   >
-                    English (portal)
+                    {t("letterEnglishPortal")}
                   </button>
                 </div>
               </>
@@ -573,29 +590,25 @@ function Detail() {
             {bodyKn ? (
               showKn ? (
                 <div className="mt-3 rounded-md border border-border p-3 text-xs">
-                  <p className="rule-heading">How to file this version</p>
+                  <p className="rule-heading">{t("howToFileVersionHeading")}</p>
                   <ol className="mt-1 list-decimal space-y-1 pl-4 text-muted-foreground">
-                    <li>Print and sign it, then send it by speed post with acknowledgement due to the PIO.</li>
-                    <li>Pay the Rs 10 fee by Indian Postal Order or demand draft in favour of the public authority.</li>
-                    <li>Keep the posting receipt — the clock runs from the date of receipt.</li>
-                    <li>The English version above is the one to use if you would rather file online.</li>
+                    <li>{t("fileKnStep1")}</li>
+                    <li>{t("fileKnStep2")}</li>
+                    <li>{t("fileKnStep3")}</li>
+                    <li>{t("fileKnStep4")}</li>
                   </ol>
                 </div>
               ) : (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  File this version on the RTI portal. The Kannada version is for postal filing.
-                </p>
+                <p className="mt-3 text-xs text-muted-foreground">{t("fileEnUsePortalNotice")}</p>
               )
             ) : null}
             <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
-              {portalSafeBody.length.toLocaleString()} / {PORTAL_MAX_CHARS.toLocaleString()} characters
-              (portal limit)
+              {t("charactersOfLimit")
+                .replace("{count}", portalSafeBody.length.toLocaleString())
+                .replace("{limit}", PORTAL_MAX_CHARS.toLocaleString())}
             </p>
             {overLimit && (
-              <p className="mt-1 text-xs text-warning">
-                Over the portal limit - upload the full text as a PDF in the Supporting Document field
-                instead (PDF only, max 5MB).
-              </p>
+              <p className="mt-1 text-xs text-warning">{t("overLimitWarning")}</p>
             )}
           </div>
 
@@ -606,20 +619,22 @@ function Detail() {
                 <span lang={lang} className={lang === "kn" ? `${KN_TEXT} normal-case` : undefined}>
                   {ap.tier === "first" ? t("firstAppeal") : t("secondAppeal")}
                 </span>{" "}
-                — {ap.tier === "first" ? "Section 19(1)" : "Section 19(3)"}
+                — {ap.tier === "first" ? t("sectionNumberFirst") : t("sectionNumberSecond")}
               </SectionLabel>
               <p className="text-xs text-muted-foreground">
-                Grounds: {ap.grounds}
-                {ap.filed_date ? ` · filed ${ap.filed_date}` : " · not filed yet"}
+                {t("groundsLabel")}: {ap.grounds}
+                {ap.filed_date
+                  ? ` · ${t("filedOnMiddot")} ${ap.filed_date}`
+                  : ` · ${t("notFiledYetMiddot")}`}
                 {ap.tier === "first"
                   ? ap.due_date
-                    ? ` · FAA decision due ${ap.due_date}`
+                    ? ` · ${t("faaDecisionDueMiddot")} ${ap.due_date}`
                     : ""
-                  : " · No statutory disposal deadline for second appeals."}
+                  : ` · ${t("noStatutoryDisposalSecond")}`}
               </p>
               {ap.tier === "first" && appealGroundLabel(ap.portal_ground) && (
                 <p className="mt-1 text-xs font-medium">
-                  Portal ground to select: {appealGroundLabel(ap.portal_ground)}
+                  {t("portalGroundToSelectLabel")}: {groundLabel(ap.portal_ground)}
                 </p>
               )}
               {ap.registration_number && (
@@ -630,22 +645,20 @@ function Detail() {
               {ap.body_kn ? (
                 <>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    {lang === "kn"
-                      ? "ಪೋರ್ಟಲ್ ಲ್ಯಾಟಿನ್ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ ಸ್ವೀಕರಿಸುತ್ತದೆ — ಕನ್ನಡ ಮೇಲ್ಮನವಿಯನ್ನು ಅಂಚೆ ಮೂಲಕ ಕಳುಹಿಸಿ. ಎರಡೂ ಆವೃತ್ತಿಗಳೂ ಸಿಂಧು."
-                      : "The portal accepts Latin characters only — send the Kannada appeal by post. Both versions are valid."}
+                    {t("portalLatinOnlyNoticeAppeal")}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
                       onClick={() => setLetterVersion("kn")}
                       className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "kn" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
                     >
-                      ಕನ್ನಡ (ಅಂಚೆ ಮೂಲಕ ಮಾತ್ರ)
+                      {t("letterKannadaPostalOnly")}
                     </button>
                     <button
                       onClick={() => setLetterVersion("en")}
                       className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "en" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
                     >
-                      English (portal)
+                      {t("letterEnglishPortal")}
                     </button>
                   </div>
                 </>
@@ -655,12 +668,12 @@ function Detail() {
               </pre>
               {ap.body_kn && letterVersion === "kn" ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Post this version by speed post with acknowledgement due, with the fee by IPO or DD.
+                  {t("postThisVersionNote")}
                 </p>
               ) : null}
               {!ap.filed_date && (
                 <div className="mt-3">
-                  <label className="rule-heading block">Portal registration number (optional)</label>
+                  <label className="rule-heading block">{t("portalRegNumberOptionalLabel")}</label>
                   <input
                     value={appealReg[ap.id] ?? ""}
                     onChange={(e) => setAppealReg((s) => ({ ...s, [ap.id]: e.target.value }))}
@@ -673,30 +686,30 @@ function Detail() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(ap.body);
-                    toast.success("Copied");
+                    toast.success(t("copied"));
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
-                  Copy
+                  {t("copy")}
                 </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(toPortalSafe(ap.body));
-                    toast.success("Portal-safe text copied");
+                    toast.success(t("toastPortalSafeCopied"));
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                 >
-                  Copy portal-safe
+                  {t("copyPortalSafe")}
                 </button>
                 {ap.body_kn ? (
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(ap.body_kn!);
-                      toast.success("Kannada text copied");
+                      toast.success(t("toastKannadaCopied"));
                     }}
                     className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
                   >
-                    Copy ಕನ್ನಡ
+                    {t("copyKannadaButton")}
                   </button>
                 ) : null}
                 {!ap.filed_date && (
@@ -717,11 +730,11 @@ function Detail() {
                       await patch({
                         status: ap.tier === "first" ? "first_appeal_filed" : "second_appeal_filed",
                       });
-                      toast.success("Marked as filed");
+                      toast.success(t("toastMarkedFiled"));
                     }}
                     className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
                   >
-                    Mark appeal filed today
+                    {t("btnMarkAppealFiled")}
                   </button>
                 )}
               </div>
@@ -731,10 +744,10 @@ function Detail() {
 
         <div className="space-y-5">
           <div className="paper-card p-5">
-            <SectionLabel>Timeline</SectionLabel>
+            <SectionLabel>{t("sectionTimeline")}</SectionLabel>
             <ul className="space-y-2 text-sm">
-              <TimelineRow label="Created" value={String(app.created_at).slice(0, 10)} />
-              <TimelineRow label="Filed" value={app.filed_date ?? "—"} />
+              <TimelineRow label={t("timelineCreated")} value={String(app.created_at).slice(0, 10)} />
+              <TimelineRow label={t("filedOn")} value={app.filed_date ?? "—"} />
               {app.registration_number && (
                 <>
                   <TimelineRow label={t("registrationNumber")} value={app.registration_number} />
@@ -745,35 +758,41 @@ function Detail() {
                       rel="noopener noreferrer"
                       className="text-accent underline underline-offset-4"
                     >
-                      Check status on the portal
+                      {t("checkStatusPortalLink")}
                     </a>
                   </li>
                 </>
               )}
               {app.transfer_date && (
-                <TimelineRow label="Transferred (Section 6(3))" value={app.transfer_date} />
+                <TimelineRow label={t("timelineTransferred")} value={app.transfer_date} />
               )}
               {app.transferred_to && (
-                <TimelineRow label="Transferred to" value={app.transferred_to} />
+                <TimelineRow label={t("timelineTransferredTo")} value={app.transferred_to} />
               )}
               {app.transfer_registration_number && (
                 <TimelineRow
-                  label="New registration number"
+                  label={t("timelineNewRegNumber")}
                   value={app.transfer_registration_number}
                 />
               )}
               <TimelineRow
                 label={
-                  app.transfer_date ? "Reply due (transfer + 30 days)" : "Reply due (filed + 30 days)"
+                  app.transfer_date ? t("replyDueTransfer") : t("replyDueFiled")
                 }
                 value={app.response_due_date ?? "—"}
               />
-              <TimelineRow label="Reply received" value={app.reply_received_date ?? "—"} />
+              <TimelineRow label={t("timelineReplyReceived")} value={app.reply_received_date ?? "—"} />
               {firstAppeal && (
-                <TimelineRow label={`${t("firstAppeal")} filed`} value={firstAppeal.filed_date ?? "drafted"} />
+                <TimelineRow
+                  label={`${t("firstAppeal")} ${t("filedSuffix")}`}
+                  value={firstAppeal.filed_date ?? t("draftedValue")}
+                />
               )}
               {secondAppeal && (
-                <TimelineRow label={`${t("secondAppeal")} filed`} value={secondAppeal.filed_date ?? "drafted"} />
+                <TimelineRow
+                  label={`${t("secondAppeal")} ${t("filedSuffix")}`}
+                  value={secondAppeal.filed_date ?? t("draftedValue")}
+                />
               )}
             </ul>
 
@@ -786,12 +805,8 @@ function Detail() {
 
           {kind !== "none" && (
             <div className="paper-card p-5">
-              <SectionLabel>On the portal, select this</SectionLabel>
-              <p className="text-sm text-muted-foreground">
-                Bengaluru was reorganised into the Greater Bengaluru Authority and five city
-                corporations, but the RTI portal still lists the old BBMP zones. Select the zone
-                below, not your GBA corporation.
-              </p>
+              <SectionLabel>{t("sectionPortalSelect")}</SectionLabel>
+              <p className="text-sm text-muted-foreground">{t("gbaReorgNotice")}</p>
 
               {kind === "bescom" ? (
                 <PortalString value={PORTAL_AUTHORITIES.bescom} />
@@ -799,13 +814,13 @@ function Detail() {
                 <>
                   <PortalString value={autoZone} />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Matched from your ward's zone ({wardZone}). Confirm it looks right.
+                    {t("matchedFromWardZonePrefix")} ({wardZone}). {t("confirmLooksRight")}
                   </p>
                   <button
                     onClick={() => patch({ portal_authority: autoZone })}
                     className="mt-2 w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
                   >
-                    Confirm and save
+                    {t("btnConfirmSave")}
                   </button>
                 </>
               ) : (
@@ -816,7 +831,7 @@ function Detail() {
                     onChange={(e) => setPortalChoice(e.target.value)}
                     className={`${inputClass} mt-3`}
                   >
-                    <option value="">Select the exact portal entry…</option>
+                    <option value="">{t("selectExactPortalEntry")}</option>
                     {portalOptions.map((o) => (
                       <option key={o} value={o}>
                         {o}
@@ -825,23 +840,18 @@ function Detail() {
                   </select>
                   {kind === "bbmp" && wardZone && (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Your ward's GBA zone is {wardZone}. The portal has no verified equivalent, so
-                      pick the closest old BBMP zone yourself.
+                      {t("wardZoneNoEquivalentPrefix")} {wardZone}. {t("wardZoneNoEquivalentSuffix")}
                     </p>
                   )}
                   {kind === "bwssb" && (
-                    <p className="mt-2 text-xs text-warning">
-                      BWSSB is split by function and area on the portal. Picking the wrong unit means
-                      a Section 6(3) transfer, which costs at least 5 days and restarts the 30-day
-                      clock.
-                    </p>
+                    <p className="mt-2 text-xs text-warning">{t("bwssbSplitWarning")}</p>
                   )}
                   <button
                     disabled={!(portalChoice || portalValue)}
                     onClick={() => patch({ portal_authority: portalChoice || portalValue })}
                     className="mt-2 w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-50"
                   >
-                    Save this selection
+                    {t("btnSaveSelection")}
                   </button>
                 </>
               )}
@@ -852,14 +862,11 @@ function Detail() {
 
           {app.status === "draft" && (
             <div className="paper-card p-5">
-              <SectionLabel>Filing instructions</SectionLabel>
+              <SectionLabel>{t("sectionFilingInstructions")}</SectionLabel>
               <div className="space-y-4 text-sm text-muted-foreground">
                 <div>
-                  <p className="rule-heading">Online (recommended)</p>
-                  <p className="mt-1">
-                    File at {LEGAL.portal}. No account is needed. The portal takes your email, mobile
-                    number and a captcha, then verifies by OTP.
-                  </p>
+                  <p className="rule-heading">{t("onlineRecommended")}</p>
+                  <p className="mt-1">{t("onlineFileAtNotice").replace("{portal}", LEGAL.portal)}</p>
                   <p className="mt-2 flex flex-col gap-1">
                     <a
                       href={PORTAL_LINKS.submitRequest}
@@ -867,7 +874,7 @@ function Detail() {
                       rel="noopener noreferrer"
                       className="font-medium text-accent underline underline-offset-4"
                     >
-                      File on the Karnataka RTI portal
+                      {t("linkFileOnPortal")}
                     </a>
                     <a
                       href={PORTAL_LINKS.userManual}
@@ -875,63 +882,56 @@ function Detail() {
                       rel="noopener noreferrer"
                       className="text-xs underline underline-offset-4"
                     >
-                      Official user manual (PDF)
+                      {t("linkUserManual")}
                     </a>
                   </p>
 
                   <ul className="mt-2 list-disc space-y-1 pl-4">
-                    {LEGAL.onlinePaymentModes.map((m) => (
-                      <li key={m}>{m}</li>
+                    {ONLINE_PAYMENT_IDS.map((mid) => (
+                      <li key={mid}>{t(mid)}</li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-xs">{LEGAL.onlinePaymentNote}</p>
+                  <p className="mt-2 text-xs">{t("legalOnlinePaymentNote")}</p>
                 </div>
 
                 <div>
-                  <p className="rule-heading">By post</p>
+                  <p className="rule-heading">{t("byPostHeading")}</p>
                   <ul className="mt-1 list-disc space-y-1 pl-4">
-                    {LEGAL.postalPaymentModes.map((m) => (
-                      <li key={m}>{m}</li>
+                    {POSTAL_PAYMENT_IDS.map((mid) => (
+                      <li key={mid}>{t(mid)}</li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-xs">
-                    Send by speed post with acknowledgement due, and keep the receipt - it is your proof
-                    of the filing date.
-                  </p>
+                  <p className="mt-2 text-xs">{t("postalSendNotice")}</p>
                 </div>
 
                 <ul className="space-y-2 border-t border-border pt-3">
-                  <li>{LEGAL.fee}</li>
+                  <li>{t("legalFee")}</li>
+                  <li>{t("bplApplicantsNotice")}</li>
+                  <li>{t("legalCopyCharges")}</li>
+                  <li>{t("supportingDocsNotice")}</li>
+                  <li>{t("legalPortalCaveat")}</li>
+                  <li>{t("additionalFeeNotice")}</li>
                   <li>
-                    BPL applicants pay nothing. The portal validates the BPL card number directly; if you
-                    do not have a BPL card, an income certificate can be uploaded instead.
+                    {t("pioReplyWithinNotice")
+                      .replace("{days}", String(LEGAL.pioDays))
+                      .replace("{hours}", String(LEGAL.lifeLibertyHours))}{" "}
+                    {t("legalCalendarDays")}
                   </li>
-                  <li>{LEGAL.copyCharges}</li>
-                  <li>
-                    Supporting documents must be a single PDF, maximum 5MB, with a filename containing
-                    only letters, numbers, dots, underscores and hyphens.
-                  </li>
-                  <li>{LEGAL.portalCaveat}</li>
-                  <li>The PIO may demand an additional fee; that is paid through a link on the status page.</li>
-                  <li>
-                    The PIO must reply within {LEGAL.pioDays} days ({LEGAL.lifeLibertyHours} hours where
-                    life or liberty is concerned). {LEGAL.calendarDays}
-                  </li>
-                  <li>{LEGAL.section62}</li>
-                  <li>{LEGAL.rule14}</li>
-                  <li>{SPLIT_ADVISORY}</li>
+                  <li>{t("legalSection62")}</li>
+                  <li>{t("legalRule14")}</li>
+                  <li>{t("splitAdvisory")}</li>
                 </ul>
               </div>
 
               <div className="mt-4 space-y-2">
-                <label className="rule-heading block">Date you filed it</label>
+                <label className="rule-heading block">{t("dateFiledLabel")}</label>
                 <input
                   type="date"
                   value={filedDate}
                   onChange={(e) => setFiledDate(e.target.value)}
                   className={inputClass}
                 />
-                <label className="rule-heading block">Portal registration number (optional)</label>
+                <label className="rule-heading block">{t("portalRegNumberOptionalLabel")}</label>
                 <input
                   value={regNumber}
                   onChange={(e) => setRegNumber(e.target.value)}
@@ -949,7 +949,7 @@ function Detail() {
                   }
                   className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
                 >
-                  Mark as filed
+                  {t("btnMarkFiled")}
                 </button>
               </div>
             </div>
@@ -957,28 +957,24 @@ function Detail() {
 
           {app.status === "filed" && (
             <div className="paper-card p-5">
-              <SectionLabel>Was it transferred?</SectionLabel>
-              <p className="text-sm text-muted-foreground">
-                Under Section 6(3) a misdirected application must be transferred within 5 days, and the
-                30-day clock runs afresh from the new authority's receipt. The portal issues a new
-                registration number on transfer.
-              </p>
+              <SectionLabel>{t("sectionTransferred")}</SectionLabel>
+              <p className="text-sm text-muted-foreground">{t("section63Notice")}</p>
               <div className="mt-3 space-y-2">
-                <label className="rule-heading block">Transfer date</label>
+                <label className="rule-heading block">{t("transferDateLabel")}</label>
                 <input
                   type="date"
                   value={transferDate}
                   onChange={(e) => setTransferDate(e.target.value)}
                   className={inputClass}
                 />
-                <label className="rule-heading block">Transferred to</label>
+                <label className="rule-heading block">{t("transferredToLabel")}</label>
                 <input
                   value={transferTo}
                   onChange={(e) => setTransferTo(e.target.value)}
-                  placeholder="Name of the new public authority"
+                  placeholder={t("placeholderNewAuthority")}
                   className={inputClass}
                 />
-                <label className="rule-heading block">New registration number (optional)</label>
+                <label className="rule-heading block">{t("newRegNumberOptionalLabel")}</label>
                 <input
                   value={transferReg}
                   onChange={(e) => setTransferReg(e.target.value)}
@@ -996,7 +992,7 @@ function Detail() {
                   }
                   className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
                 >
-                  Save transfer and reset the clock
+                  {t("btnSaveTransfer")}
                 </button>
               </div>
             </div>
@@ -1005,7 +1001,7 @@ function Detail() {
 
           {(app.status === "filed" || app.status === "overdue") && (
             <div className="paper-card p-5">
-              <SectionLabel>Record the reply</SectionLabel>
+              <SectionLabel>{t("sectionRecordReply")}</SectionLabel>
               <input
                 type="date"
                 value={replyDate}
@@ -1016,7 +1012,7 @@ function Detail() {
                 value={replyNotes}
                 onChange={(e) => setReplyNotes(e.target.value)}
                 rows={3}
-                placeholder="What did they send? What is missing?"
+                placeholder={t("placeholderReplyNotes")}
                 className={`${inputClass} mt-2`}
               />
               <button
@@ -1029,21 +1025,21 @@ function Detail() {
                 }
                 className="mt-2 w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
               >
-                Save reply
+                {t("btnSaveReply")}
               </button>
             </div>
           )}
 
           {overdue && !firstAppeal && (
             <div className="paper-card border-destructive/40 p-5">
-              <SectionLabel>Deemed refusal — Section 7(2)</SectionLabel>
+              <SectionLabel>{t("sectionDeemedRefusal")}</SectionLabel>
               <p className="text-sm text-muted-foreground">
-                No reply within {LEGAL.pioDays} days is a deemed refusal. You have{" "}
-                {LEGAL.firstAppealWindowDays} days from the due date to file a first appeal with the
-                First Appellate Authority of the same public authority.
+                {t("deemedRefusalNotice")
+                  .replace("{days}", String(LEGAL.pioDays))
+                  .replace("{window}", String(LEGAL.firstAppealWindowDays))}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Portal ground to select: {appealGroundLabel("no_response")}
+                {t("portalGroundToSelectLabel")}: {groundLabel("no_response")}
               </p>
               <button
                 disabled={busy}
@@ -1056,7 +1052,7 @@ function Detail() {
                 }
                 className="mt-3 w-full rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
               >
-                {busy ? "Drafting…" : "Draft first appeal"}
+                {busy ? t("draftingEllipsis") : t("btnDraftFirstAppeal")}
               </button>
               <a
                 href={PORTAL_LINKS.submitFirstAppeal}
@@ -1071,9 +1067,12 @@ function Detail() {
 
           {app.status === "replied" && !firstAppeal && (
             <div className="paper-card border-warning/50 p-5">
-              <SectionLabel>Reply incomplete or refused?</SectionLabel>
+              <SectionLabel>{t("sectionReplyIncomplete")}</SectionLabel>
               <p className="text-sm text-muted-foreground">
-                A first appeal must be filed within {LEGAL.firstAppealWindowDays} days of the reply.
+                {t("firstAppealMustFileNotice").replace(
+                  "{window}",
+                  String(LEGAL.firstAppealWindowDays),
+                )}
               </p>
               <div className="mt-3 space-y-2">
                 <button
@@ -1081,39 +1080,39 @@ function Detail() {
                   onClick={() =>
                     draftAppeal(
                       "first",
-                      `Incomplete reply. ${replyNotes || app.reply_notes || "Several points were not answered and no exemption was cited, contrary to Section 7(8)."}`,
+                      `${t("incompleteReplyPrefix")} ${replyNotes || app.reply_notes || t("incompleteReplyDefault")}`,
                       "incomplete",
                     )
                   }
                   className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
                 >
-                  Draft first appeal — incomplete reply
+                  {t("btnDraftIncomplete")}
                 </button>
                 <button
                   disabled={busy}
                   onClick={() =>
                     draftAppeal(
                       "first",
-                      `Refusal of information. ${replyNotes || app.reply_notes || "The PIO refused the information."}`,
+                      `${t("refusalPrefix")} ${replyNotes || app.reply_notes || t("refusalDefault")}`,
                       "refused",
                     )
                   }
                   className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"
                 >
-                  Draft first appeal — refusal
+                  {t("btnDraftRefusal")}
                 </button>
                 <button
                   disabled={busy}
                   onClick={() =>
                     draftAppeal(
                       "first",
-                      `Unreasonable fee demanded. ${replyNotes || app.reply_notes || "The PIO demanded an excessive additional fee."}`,
+                      `${t("excessFeePrefix")} ${replyNotes || app.reply_notes || t("excessFeeDefault")}`,
                       "excess_fee",
                     )
                   }
                   className="w-full rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"
                 >
-                  Draft first appeal — unreasonable fee
+                  {t("btnDraftExcessFee")}
                 </button>
               </div>
               <a
@@ -1130,16 +1129,18 @@ function Detail() {
 
           {firstAppeal && (
             <div className="paper-card p-5">
-              <SectionLabel>Second appeal — Section 19(3)</SectionLabel>
+              <SectionLabel>{t("sectionSecondAppealHeading")}</SectionLabel>
               <p className="text-sm text-muted-foreground">
-                The First Appellate Authority must decide within {LEGAL.faaDecisionDays} days,
-                extendable to {LEGAL.faaMaxDays} with recorded reasons. A second appeal lies to the{" "}
-                {LEGAL.ksicAddress}, within {LEGAL.secondAppealWindowDays} days, and may be filed once{" "}
-                {LEGAL.secondAppealAfterDays} days have elapsed with no decision.
+                {t("secondAppealNotice")
+                  .replace("{decisionDays}", String(LEGAL.faaDecisionDays))
+                  .replace("{maxDays}", String(LEGAL.faaMaxDays))
+                  .replace("{ksic}", LEGAL.ksicAddress)
+                  .replace("{windowDays}", String(LEGAL.secondAppealWindowDays))
+                  .replace("{afterDays}", String(LEGAL.secondAppealAfterDays))}
               </p>
               {firstAppeal.filed_date && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {faaSilentDays} days since the first appeal was filed.
+                  {t("daysSinceFirstAppeal").replace("{days}", String(faaSilentDays))}
                 </p>
               )}
               <button
@@ -1153,20 +1154,23 @@ function Detail() {
                 className="mt-3 w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-40"
               >
                 {secondAppeal
-                  ? "Second appeal drafted"
+                  ? t("secondAppealDraftedLabel")
                   : secondAvailable
                     ? busy
-                      ? "Drafting…"
-                      : "Draft second appeal"
-                    : `Available after ${LEGAL.secondAppealAfterDays} days`}
+                      ? t("draftingEllipsis")
+                      : t("btnDraftSecondAppeal")
+                    : t("availableAfterDays").replace(
+                        "{days}",
+                        String(LEGAL.secondAppealAfterDays),
+                      )}
               </button>
             </div>
           )}
 
           <div className="paper-card p-5">
-            <SectionLabel>If you have missed a window</SectionLabel>
-            <p className="text-sm text-muted-foreground">{LEGAL.section18}</p>
-            <p className="mt-2 text-xs text-muted-foreground">{LEGAL.ksicAddress}</p>
+            <SectionLabel>{t("sectionMissedWindow")}</SectionLabel>
+            <p className="text-sm text-muted-foreground">{t("legalSection18")}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{t("legalKsicAddress")}</p>
           </div>
         </div>
       </div>
@@ -1184,39 +1188,39 @@ function TimelineRow({ label, value }: { label: string; value: string }) {
 }
 
 function PortalString({ value }: { value: string }) {
+  const { t } = useLang();
   return (
     <div className="mt-3 flex flex-wrap items-start gap-2 rounded-md bg-secondary/60 p-3">
       <span className="min-w-0 flex-1 break-words font-mono text-xs">{value}</span>
       <button
         onClick={() => {
           navigator.clipboard.writeText(value);
-          toast.success("Copied");
+          toast.success(t("copied"));
         }}
         className="rounded-md border border-border bg-background px-2.5 py-1 text-xs hover:bg-secondary"
       >
-        Copy
+        {t("copy")}
       </button>
     </div>
   );
 }
 
 function ResponsibleOfficials({ wardName, category }: { wardName: string; category: string }) {
+  const { t } = useLang();
   const { data, loading } = useWardOfficials(wardName);
   const list = useMemo(() => relevantOfficials(data?.officials ?? [], category), [data, category]);
 
   return (
     <div className="paper-card p-5">
-      <SectionLabel>Who is responsible</SectionLabel>
-      <p className="text-sm text-muted-foreground">
-        This is who is responsible. Call them and quote your complaint number.
-      </p>
+      <SectionLabel>{t("whoIsResponsible")}</SectionLabel>
+      <p className="text-sm text-muted-foreground">{t("whoIsResponsibleNotice")}</p>
       {loading ? (
         <OfficialsSkeleton />
       ) : (
         <>
           {data?.oldBbmpWard ? (
             <p className="mt-2 text-xs">
-              {wardName} was <strong>{data.oldBbmpWard}</strong> ward under BBMP (pre-2025).
+              {t("oldBbmpWardPrefix")} <strong>{data.oldBbmpWard}</strong> {t("oldBbmpWardSuffix")}
             </p>
           ) : null}
           <OfficialsList officials={list} />

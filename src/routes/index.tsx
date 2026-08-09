@@ -6,7 +6,7 @@ import { DataCredit } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 
 import { CORP_COLOR, NEUTRAL } from "@/lib/ward-3d";
-import { LangToggle, useLang } from "@/lib/i18n";
+import { LangToggle, useLang, T } from "@/lib/i18n";
 
 
 
@@ -32,10 +32,10 @@ export const Route = createFileRoute("/")({
 });
 
 const CLOCKS = [
-  { day: "30", t: "Reply due", d: "Calendar days from filing. Silence is deemed refusal under Section 7(2)." },
-  { day: "30", t: "First appeal", d: "To the First Appellate Authority, from the reply or the date it was due." },
-  { day: "90", t: "Second appeal", d: "To the Karnataka State Information Commission, once the FAA goes quiet." },
-];
+  { day: "30", tId: "clockReplyDueTitle", dId: "clockReplyDueDesc" },
+  { day: "30", tId: "clockFirstAppealTitle", dId: "clockFirstAppealDesc" },
+  { day: "90", tId: "clockSecondAppealTitle", dId: "clockSecondAppealDesc" },
+] as const;
 
 function Landing() {
   const { t } = useLang();
@@ -67,20 +67,19 @@ function Landing() {
               <Wordmark size="lg" variant="full" className="items-center text-center" />
             </div>
             <p className="mono-stamp absolute bottom-2 left-4">
-              369 wards · five city corporations · extruded by population
+              <T id="wardCityCaption" />
             </p>
 
           </div>
         </section>
 
         <section className="border-b border-border p-6 md:p-10">
-          <p className="rule-heading">Right to Information Act, 2005 · Karnataka</p>
+          <p className="rule-heading"><T id="heroEyebrow" /></p>
           <h2 className="mt-3 max-w-3xl font-display text-3xl leading-[1.05] sm:text-5xl">
-            Ask for records, not explanations — then watch the clock.
+            <T id="heroHeadline" />
           </h2>
           <p className="mt-5 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            Vicharane turns a Bengaluru civic grievance into an application a Public Information Officer is legally
-            obliged to answer, and tracks every statutory deadline through to the second appeal.
+            <T id="heroSubhead" />
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
@@ -88,10 +87,10 @@ function Landing() {
               search={{ mode: "signup" }}
               className="bg-foreground px-5 py-2.5 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
             >
-              DRAFT MY FIRST RTI
+              <T id="ctaDraftFirst" />
             </Link>
             <Link to="/auth" className="border border-foreground px-5 py-2.5 text-sm font-medium hover:bg-secondary">
-              I already have an account
+              <T id="ctaAlreadyHaveAccount" />
             </Link>
           </div>
         </section>
@@ -99,33 +98,33 @@ function Landing() {
 
         <section className="grid border-b border-border md:grid-cols-2">
           <div className="border-b border-border p-6 md:border-b-0 md:border-r">
-            <p className="rule-heading">Rejected — not information</p>
+            <p className="rule-heading"><T id="rejectedNotInfoLabel" /></p>
             <p className="mt-3 font-display text-lg leading-snug text-muted-foreground">
-              “Why hasn’t my road been resurfaced in four years?”
+              <T id="rejectedExampleQuote" />
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Section 2(f) defines information as material held in recorded form. No authority is obliged to explain
-              itself.
+              <T id="rejectedExplanation" />
             </p>
           </div>
           <div className="p-6">
-            <p className="rule-heading text-foreground">Must be answered</p>
+            <p className="rule-heading text-foreground"><T id="mustBeAnsweredLabel" /></p>
             <p className="mt-3 font-display text-lg leading-snug">
-              “Provide certified copies of work orders, sanctioned amounts and completion certificates for road works
-              in Ward 25 between 2022 and 2026.”
+              <T id="mustBeAnsweredExampleQuote" />
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Every one of these is a record already held. Refusal now needs a specific exemption under Section 8 or 9.
+              <T id="mustBeAnsweredExplanation" />
             </p>
           </div>
         </section>
 
         <section className="grid divide-y divide-border border-b border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {CLOCKS.map((c) => (
-            <div key={c.t} className="p-6">
-              <div className="font-display text-3xl font-bold">DAY {c.day}</div>
-              <p className="rule-heading mt-1">{c.t}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{c.d}</p>
+            <div key={c.tId} className="p-6">
+              <div className="font-display text-3xl font-bold">
+                <T id="day" as="span" /> {c.day}
+              </div>
+              <p className="rule-heading mt-1"><T id={c.tId} /></p>
+              <p className="mt-2 text-sm text-muted-foreground"><T id={c.dId} /></p>
             </div>
           ))}
         </section>
@@ -133,8 +132,7 @@ function Landing() {
         <footer className="p-6">
           <Wordmark size="sm" inline className="mb-3" />
           <p className="mono-stamp">
-            Section 6(2): a public authority cannot require you to give a reason for wanting the information.
-            Vicharane never asks you for one.
+            <T id="footerSection6Note" />
           </p>
           <DataCredit className="mt-3" />
         </footer>
