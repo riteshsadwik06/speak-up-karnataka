@@ -6,6 +6,8 @@ type SeedApp = {
   language: string;
   public_authority: string;
   ward_name: string;
+  /** Only set when the ward name maps unambiguously to one real GBA ward — never guessed. */
+  ward_id?: string;
   corporation: string;
   generated_requests: { text: string; rationale: string }[];
   application_body: string;
@@ -124,6 +126,7 @@ const SEEDS: SeedApp[] = [
     language: "en",
     public_authority: "Bengaluru South City Corporation",
     ward_name: "HSR Layout",
+    ward_id: "S-072",
     corporation: "Bengaluru South City Corporation",
     generated_requests: [
       {
@@ -213,6 +216,7 @@ export function buildSeedRows(userId: string, applicant: Applicant = {}) {
       language: s.language,
       public_authority: s.public_authority,
       ward_name: s.ward_name,
+      ward_id: s.ward_id ?? null,
       corporation: s.corporation,
       generated_requests: s.generated_requests,
       application_body: filed === null ? "" : body(s.public_authority, s.ward_name, s.generated_requests, applicant),

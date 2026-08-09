@@ -260,7 +260,7 @@ function NewApplication() {
           const hit = await wardForLocality(result.locality);
           if (hit) {
             setWardId(hit.ward_id);
-            wardName = hit.ward_name;
+            wardName = lang === "kn" ? (hit.ward_name_kn ?? hit.ward_name) : hit.ward_name;
             // The ward list is authoritative: it decides which corporation owns the ward.
             if (match && CORP_IDS.includes(match.id)) {
               match = AUTHORITIES.find((a) => a.name === hit.corporation) ?? match;
