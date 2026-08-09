@@ -16,7 +16,7 @@ const TONE_COLOR: Record<string, string> = {
   calm: "#2c5c4f",
   neutral: "#6f6a5f",
 };
-const MUTED_WARD = "#cfc9bb";
+
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
