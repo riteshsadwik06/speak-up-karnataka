@@ -72,4 +72,25 @@ export const DICT_MAP = {
     en: "3D preview of the ward's shape",
     kn: "ವಾರ್ಡ್‌ನ ಆಕಾರದ 3D ಪೂರ್ವವೀಕ್ಷಣೆ",
   },
+
+  mapSearchLabel: { en: "Find your ward", kn: "ನಿಮ್ಮ ವಾರ್ಡ್ ಹುಡುಕಿ" },
+  mapSearchPlaceholder: {
+    en: "Ward name, number, or old BBMP ward",
+    kn: "ವಾರ್ಡ್ ಹೆಸರು, ಸಂಖ್ಯೆ, ಅಥವಾ ಹಳೆಯ ಬಿಬಿಎಂಪಿ ವಾರ್ಡ್",
+  },
+  mapSearchHint: {
+    en: "Type part of a name — punctuation and spacing do not matter.",
+    kn: "ಹೆಸರಿನ ಒಂದು ಭಾಗವನ್ನು ಟೈಪ್ ಮಾಡಿ — ವಿರಾಮಚಿಹ್ನೆ ಮತ್ತು ಅಂತರ ಮುಖ್ಯವಲ್ಲ.",
+  },
+  mapSearchResultsLabel: { en: "Matching wards", kn: "ಹೊಂದಿಕೆಯಾದ ವಾರ್ಡ್‌ಗಳು" },
+  mapSearchWasBbmp: {
+    en: "was {ward} under BBMP",
+    kn: "ಬಿಬಿಎಂಪಿ ಅಡಿಯಲ್ಲಿ {ward} ಆಗಿತ್ತು",
+  },
+  mapSearchNoResults: { en: "No ward matches that.", kn: "ಅದಕ್ಕೆ ಯಾವ ವಾರ್ಡ್ ಕೂಡ ಹೊಂದಿಕೆಯಾಗಲಿಲ್ಲ." },
+  mapSearchNoResultsHint: {
+    en: "Try the old BBMP ward name, or the ward number.",
+    kn: "ಹಳೆಯ ಬಿಬಿಎಂಪಿ ವಾರ್ಡ್ ಹೆಸರನ್ನು ಅಥವಾ ವಾರ್ಡ್ ಸಂಖ್ಯೆಯನ್ನು ಪ್ರಯತ್ನಿಸಿ.",
+  },
+  mapSearchClear: { en: "Clear search", kn: "ಹುಡುಕಾಟವನ್ನು ತೆರವುಗೊಳಿಸಿ" },
 } as const;
