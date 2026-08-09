@@ -478,7 +478,7 @@ function Detail() {
               <div className="mb-2 ml-auto flex flex-wrap gap-2">
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(app.application_body);
+                    navigator.clipboard.writeText(showKn ? bodyKn : app.application_body);
                     toast.success("Copied");
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
@@ -496,11 +496,12 @@ function Detail() {
                 </button>
                 <button
                   onClick={() => {
-                    const blob = new Blob([app.application_body], { type: "text/plain" });
+                    const text = showKn ? bodyKn : app.application_body;
+                    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = `rti-application-${id.slice(0, 8)}.txt`;
+                    a.download = `rti-application-${id.slice(0, 8)}${showKn ? "-kn" : ""}.txt`;
                     a.click();
                     URL.revokeObjectURL(url);
                   }}
@@ -510,9 +511,45 @@ function Detail() {
                 </button>
               </div>
             </div>
-            <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
-              {app.application_body}
-            </pre>
+
+            {hasKn && (
+              <>
+                <p
+                  lang={lang}
+                  className={`mb-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs ${lang === "kn" ? KN_TEXT : "leading-relaxed"}`}
+                >
+                  {t("postalNote")}
+                </p>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setBodyTab("kn")}
+                    lang="kn"
+                    className={`${KN_TEXT} rounded-md border px-3 py-1.5 text-xs ${bodyTab === "kn" ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("tabKannadaPost")}
+                  </button>
+                  <button
+                    onClick={() => setBodyTab("en")}
+                    className={`rounded-md border px-3 py-1.5 text-xs leading-[1.6] ${bodyTab === "en" ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("tabEnglishPortal")}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {showKn ? (
+              <pre
+                lang="kn"
+                className={`whitespace-pre-wrap rounded-md bg-secondary/60 p-4 text-sm ${KN_TEXT}`}
+              >
+                {bodyKn}
+              </pre>
+            ) : (
+              <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
+                {app.application_body}
+              </pre>
+            )}
             <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
               {portalSafeBody.length.toLocaleString()} / {PORTAL_MAX_CHARS.toLocaleString()} characters
               (portal limit)
