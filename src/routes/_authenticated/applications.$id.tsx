@@ -175,7 +175,7 @@ function Detail() {
   // Portal-safe text is ALWAYS derived from the English body. toPortalSafe strips
   // non-Latin characters, so running it over the Kannada version would empty it.
   const portalSafeBody = toPortalSafe(app.application_body);
-  const bodyHasBlanks = hasPlaceholders(app.application_body) || hasPlaceholders(bodyKn);
+  const bodyHasBlanks = hasPlaceholders(app.application_body);
   const bodyKn = (app.application_body_kn as string | null) ?? "";
   const showKn = !!bodyKn && letterVersion === "kn";
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
