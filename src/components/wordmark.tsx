@@ -33,7 +33,9 @@ const STEP = 12;
 
 function point(angleDeg: number, r: number) {
   const a = (angleDeg * Math.PI) / 180;
-  return [CX + r * Math.cos(a), CY + r * Math.sin(a)] as const;
+  // Round: float noise differs between server and client and trips hydration.
+  const round = (n: number) => Math.round(n * 1000) / 1000;
+  return [round(CX + r * Math.cos(a)), round(CY + r * Math.sin(a))] as const;
 }
 
 export function Seal({ size = 28, className = "" }: { size?: number; className?: string }) {
