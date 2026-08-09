@@ -372,7 +372,7 @@ function NewApplication() {
         data: {
           grievance,
           authority,
-          ward: ward?.ward_name ?? null,
+          ward: await identityWithHistory(ward),
           subject: active.subject,
           requests: active.draft.requests,
           instruction: text,
