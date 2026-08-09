@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { WardCity3D } from "@/components/ward-city-3d";
+import { DataCredit } from "@/components/app-shell";
+
 import { CORP_COLOR, NEUTRAL } from "@/lib/ward-3d";
 
 
@@ -130,7 +132,9 @@ function Landing() {
             Section 6(2): a public authority cannot require you to give a reason for wanting the information.
             Vicharane never asks you for one.
           </p>
+          <DataCredit className="mt-3" />
         </footer>
+
       </div>
     </div>
   );
