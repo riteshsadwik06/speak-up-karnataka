@@ -26,6 +26,8 @@ import {
   useWardOfficials,
 } from "@/components/officials";
 import { generateComplaint, generateDraft, reviseDraft, suggestRouting } from "@/lib/rti.functions";
+import { findPlaceholders } from "@/lib/placeholders";
+import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
 import { identityWithHistory, wardForLocality } from "@/lib/ward-identity";
 import type { ComplaintDraft, RtiDraft } from "@/lib/rti.server";
 import { toast } from "sonner";
@@ -256,12 +258,14 @@ function NewApplication() {
         }
       : null;
 
-  async function generateTheComplaint() {
+  async function generateTheComplaint(extraDetails?: string) {
     setBusy(true);
     try {
       const result = await runComplaint({
         data: {
-          grievance,
+          grievance: extraDetails
+            ? `${grievance}\n\nAdditional details supplied by the resident:\n${extraDetails}`
+            : grievance,
           authority,
           ward: await identityWithHistory(ward),
           lang,
@@ -880,15 +884,17 @@ function NewApplication() {
             />
             <div className="mt-3 flex flex-wrap gap-2">
               <button
+                disabled={complaintBlanks.length > 0}
                 onClick={() => {
                   void navigator.clipboard.writeText(complaintText);
                   toast.success(t("complaintCopied"));
                 }}
-                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-50"
               >
                 {t("copy")}
               </button>
               <button
+                disabled={complaintBlanks.length > 0}
                 onClick={() => {
                   const blob = new Blob([complaintText], { type: "text/plain" });
                   const a = document.createElement("a");
@@ -897,12 +903,19 @@ function NewApplication() {
                   a.click();
                   URL.revokeObjectURL(a.href);
                 }}
-                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary"
+                className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-50"
               >
                 {t("download")}
               </button>
             </div>
+            {complaintBlanks.length > 0 ? <PlaceholderBlockNote /> : null}
           </div>
+
+          <MissingDetails
+            placeholders={complaintBlanks}
+            busy={busy}
+            onFill={(instruction) => void generateTheComplaint(instruction)}
+          />
 
           {ward && <ResponsibleOfficials wardName={ward.ward_name} category={complaint.category} />}
 
