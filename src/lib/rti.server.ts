@@ -595,6 +595,8 @@ ${NO_PLACEHOLDER_RULE}
 - Ward identity is supplied as structured JSON with placeholders. In complaint text, use only those placeholders; application code replaces them with authoritative values after generation. If a value is not supplied, omit its placeholder.
 
 
+The resident may write their account in Kannada. Read it as written; never ask them to restate it in English.
+
 Return ONLY valid JSON, no markdown fences:
 { "complaint": "the complaint text", "suggested_channel": "sahaaya|bwssb|bescom|other", "category": "short issue category", "checkable_action": "the one specific action requested" }`;
 
@@ -607,8 +609,9 @@ export async function draftComplaint(input: {
 }): Promise<ComplaintDraft> {
   const user = [
     input.lang === "kn"
-      ? "Write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority. The JSON keys stay in English; only the value of \"complaint\" is in Kannada."
+      ? "Write the complaint in Kannada, in the formal register a citizen uses when writing to a municipal authority. The JSON keys stay in English; the values of \"complaint\", \"category\" and \"checkable_action\" are all in Kannada script. \"suggested_channel\" stays one of the English ids."
       : "",
+
     `Public authority / department: ${input.authority}`,
     wardPromptBlock(input.ward),
     "",
