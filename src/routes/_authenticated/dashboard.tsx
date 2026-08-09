@@ -139,11 +139,10 @@ function Dashboard() {
             return tone ? (TONE_COLOR[tone] ?? NEUTRAL) : NEUTRAL;
           }}
           colorKey={`${litCount}:${Object.entries(wardTone).sort().join(",")}`}
-          onWardClick={(id) => {
-            const name = Object.keys(wardTone).length ? null : null;
-            void name;
-            void id;
+          onWardClick={(w) => {
+            if (wardTone[w.n]) setWardFilter((cur) => (cur === w.n ? "" : w.n));
           }}
+
           className="h-[180px] w-full sm:h-[220px]"
         />
         <p className="mono-stamp absolute bottom-2 left-4">
