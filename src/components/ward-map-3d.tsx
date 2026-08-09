@@ -610,9 +610,13 @@ function WardSearch({ onPick }: { onPick: (w: WardInfo) => void }) {
     if (q.length < 1) return [];
     const scored: { e: SearchEntry; rank: number; starts: boolean }[] = [];
     for (const e of entries) {
-      const rank = e.keys.findIndex((k) => k.length > 0 && k.includes(q));
+      // compare with spacing removed too, so "K.R. Pura" === "KR Pura" === "kr pura"
+      const qc = q.replace(/ /g, "");
+      const rank = e.keys.findIndex(
+        (k) => k.length > 0 && (k.includes(q) || k.replace(/ /g, "").includes(qc)),
+      );
       if (rank < 0) continue;
-      scored.push({ e, rank, starts: e.keys[rank]!.startsWith(q) });
+      scored.push({ e, rank, starts: e.keys[rank]!.replace(/ /g, "").startsWith(qc) });
     }
     scored.sort(
       (a, b) =>
