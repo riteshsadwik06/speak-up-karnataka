@@ -11,7 +11,7 @@ import {
   OfficialsSkeleton,
   useWardOfficials,
 } from "@/components/officials";
-import { T, useLang } from "@/lib/i18n";
+import { T, useAuthorityLabel, useCorporationShort, useLang } from "@/lib/i18n";
 
 
 type RawWard = {
@@ -68,6 +68,7 @@ function easeInOut(t: number) {
 
 export function WardMap3D({ mode }: { mode: MapMode }) {
   const { t, lang } = useLang();
+  const corpShort = useCorporationShort();
   const legendAllWards = t("mapLegendAllWards");
   const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -465,7 +466,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
     if (mode === "gba") {
       return Object.keys(CORP_COLOR).map((c) => ({
         color: CORP_COLOR[c]!,
-        label: `Bengaluru ${c}`,
+        label: `${t("bengaluruWord")} ${corpShort(`Bengaluru ${c} City Corporation`)}`,
         note: legendWardCount.replace("{n}", String(counts[c] ?? 0)),
       }));
     }
@@ -474,7 +475,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
       label: z,
       note: t("mapLegendVerifiedZone"),
     }));
-  }, [mode, counts, t, legendAllWards, legendWardCount]);
+  }, [mode, counts, t, corpShort, legendAllWards, legendWardCount]);
 
   if (webgl === false) {
     return (
@@ -510,7 +511,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
               <p className="font-display text-xs font-bold">{hover.w.name}</p>
               <p className="mono-stamp">
                 {t("mapWardLabel")} {hover.w.number} ·{" "}
-                {hover.w.corporation.replace("Bengaluru ", "").replace(" City Corporation", "")}
+                {corpShort(hover.w.corporation)}
               </p>
             </div>
           )}
@@ -561,6 +562,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
 
 function WardPanel({ ward }: { ward: WardInfo }) {
   const { t, lang } = useLang();
+  const authorityLabel = useAuthorityLabel();
   const portal = portalZoneForGbaZone(ward.zone);
   const { data, loading } = useWardOfficials(ward.name);
   const oldWard = data?.oldBbmpWard;
@@ -575,7 +577,7 @@ function WardPanel({ ward }: { ward: WardInfo }) {
 
       <dl className="mt-4 space-y-2 text-xs">
         {[
-          [t("mapDlCorporation"), ward.corporation],
+          [t("mapDlCorporation"), authorityLabel(ward.corporation)],
           [t("mapDlAssembly"), ward.assembly],
           [t("mapDlGbaZone"), ward.zone],
           [t("mapDlPopulation"), ward.population ? ward.population.toLocaleString("en-IN") : "—"],

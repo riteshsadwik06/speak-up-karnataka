@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 import { WARDS } from "@/lib/wards";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { clockFor, daysBetween, LEGAL } from "@/lib/rti-data";
@@ -57,6 +57,7 @@ function stamp(date: string | null) {
 
 function Dashboard() {
   const { lang, t } = useLang();
+  const authorityLabel = useAuthorityLabel();
   const knCell = lang === "kn" ? `${KN_TEXT} normal-case` : "";
   /** Authoritative Kannada ward name from the ward asset — never machine-translated. */
   const wardKnFor = (name: string) =>
@@ -235,7 +236,7 @@ function Dashboard() {
                           {row.grievance_text}
                         </h3>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {row.public_authority}
+                          {authorityLabel(row.public_authority)}
                           {row.ward_name ? (
                             <>
                               {" • "}
@@ -285,7 +286,7 @@ function Dashboard() {
       )}
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
-        <p className="text-[11px] text-muted-foreground">{LEGAL.calendarDays}</p>
+        <p className="text-[11px] text-muted-foreground">{t("legalCalendarDays")}</p>
         {hasDemo && (
           <button
             onClick={async () => {

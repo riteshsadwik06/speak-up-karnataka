@@ -37,7 +37,7 @@ import {
 } from "@/components/officials";
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
-import { KN_TEXT, useLang } from "@/lib/i18n";
+import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
@@ -87,6 +87,7 @@ function Detail() {
   const makeAppeal = useServerFn(generateAppealDraft);
   const makeDraft = useServerFn(generateDraft);
   const { lang, t } = useLang();
+  const authorityLabel = useAuthorityLabel();
   const [busy, setBusy] = useState(false);
   const [filedDate, setFiledDate] = useState(today());
   const [regNumber, setRegNumber] = useState("");
@@ -288,7 +289,7 @@ function Detail() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {app.public_authority}
+            {authorityLabel(app.public_authority)}
             {app.ward_name ? ` · ${wardKn ?? app.ward_name} ${t("wardSuffix")}` : ""}
           </p>
           {wardKn ? (

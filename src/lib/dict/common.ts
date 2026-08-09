@@ -87,5 +87,6 @@ export const DICT_COMMON = {
   switchToKannada: { en: "ಕನ್ನಡ", kn: "ಕನ್ನಡ" },
   switchToEnglish: { en: "English", kn: "English" },
   langToggleLabelKn: { en: "View in Kannada", kn: "ಕನ್ನಡದಲ್ಲಿ ವೀಕ್ಷಿಸಿ" },
-  langToggleLabelEn: { en: "View in English", kn: "English ನಲ್ಲಿ ವೀಕ್ಷಿಸಿ" },
+  langToggleLabelEn: { en: "View in English", kn: "ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ವೀಕ್ಷಿಸಿ" },
+  bengaluruWord: { en: "Bengaluru", kn: "ಬೆಂಗಳೂರು" },
 } as const;
