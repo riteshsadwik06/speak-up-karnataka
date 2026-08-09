@@ -157,28 +157,31 @@ function HeaderAuthAction() {
     };
   }, []);
 
-  if (signedIn === null) return <div className="h-9" aria-hidden="true" />;
+  if (signedIn === null) return <div className="h-9 w-[7.5rem]" aria-hidden="true" />;
 
   if (signedIn) {
     return (
       <Link
         to="/dashboard"
-        className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
+        className="bg-foreground px-4 py-2 font-display text-sm font-bold whitespace-nowrap text-background transition-transform hover:-translate-y-0.5"
       >
-        GO TO DASHBOARD
+        DASHBOARD
       </Link>
     );
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Link to="/auth" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <Link
+        to="/auth"
+        className="hidden px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground sm:block"
+      >
         Log in
       </Link>
       <Link
         to="/auth"
         search={{ mode: "signup" }}
-        className="bg-foreground px-4 py-2 font-display text-sm font-bold text-background transition-transform hover:-translate-y-0.5"
+        className="bg-foreground px-4 py-2 font-display text-sm font-bold whitespace-nowrap text-background transition-transform hover:-translate-y-0.5"
       >
         SIGN UP
       </Link>
