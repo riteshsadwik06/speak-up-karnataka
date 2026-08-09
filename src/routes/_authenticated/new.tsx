@@ -1025,12 +1025,51 @@ function NewApplication() {
 
           <div className="paper-card p-5">
             <SectionLabel>The application — edit anything before you file</SectionLabel>
-            <textarea
-              value={body}
-              onChange={(e) => updateActive({ body: e.target.value })}
-              rows={22}
-              className={`${inputClass} font-mono text-xs leading-relaxed`}
-            />
+
+            {showKannadaTabs && (
+              <>
+                <p
+                  lang={lang}
+                  className={`mb-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs ${lang === "kn" ? KN_TEXT : "leading-relaxed"}`}
+                >
+                  {t("postalNote")}
+                </p>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBodyTab("kn")}
+                    lang="kn"
+                    className={`${KN_TEXT} rounded-md border px-3 py-1.5 text-xs ${bodyTab === "kn" ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("tabKannadaPost")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBodyTab("en")}
+                    className={`rounded-md border px-3 py-1.5 text-xs leading-[1.6] ${bodyTab === "en" ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("tabEnglishPortal")}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {showKannadaTabs && bodyTab === "kn" ? (
+              <textarea
+                value={bodyKn}
+                lang="kn"
+                onChange={(e) => updateActive({ bodyKn: e.target.value })}
+                rows={22}
+                className={`${inputClass} ${KN_TEXT} text-sm`}
+              />
+            ) : (
+              <textarea
+                value={body}
+                onChange={(e) => updateActive({ body: e.target.value })}
+                rows={22}
+                className={`${inputClass} font-mono text-xs leading-relaxed`}
+              />
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={() => setStep(2)}
