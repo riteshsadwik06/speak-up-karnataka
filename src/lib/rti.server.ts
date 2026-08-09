@@ -662,20 +662,29 @@ Authority ids you may return, and what each owns:
 
 Choose the corporation only when you can tell which one from the locality named. If the resident names a locality but you are not certain of the corporation, still return the locality and set confidence to "low".
 
-Return the locality exactly as the resident wrote it (a neighbourhood, ward or area name). Return an empty string if no locality is named. Never invent an identifier of any kind - no ward numbers, no zone codes. ${NO_FABRICATION_RULE}
+Return the locality exactly as the resident wrote it (a neighbourhood, ward or area name), in the script they used. Return an empty string if no locality is named. Never invent an identifier of any kind - no ward numbers, no zone codes. ${NO_FABRICATION_RULE}
+
+The grievance may be written in Kannada. Read Kannada as written and route it the same way; a Kannada locality name is returned verbatim in Kannada script.
 
 Return ONLY valid JSON, no markdown fences:
-{ "authority_id": "one of the ids above", "locality": "locality as written, or empty string", "category": "short issue category in English, e.g. Storm water drainage", "confidence": "high|medium|low" }`;
+{ "authority_id": "one of the ids above", "locality": "locality as written, or empty string", "category": "short issue category", "confidence": "high|medium|low" }`;
 
 const ROUTE_IDS = new Set([
   "bcc", "bec", "bwc", "bnc", "bsc", "gba", "bwssb", "bescom", "bmrcl", "bda", "other",
 ]);
 
 /** Best-effort. Never throws — a failed routing pass simply means no suggestion. */
-export async function routeGrievance(grievance: string): Promise<RouteSuggestion | null> {
+export async function routeGrievance(
+  grievance: string,
+  lang: "en" | "kn" = "en",
+): Promise<RouteSuggestion | null> {
   try {
+    const instruction =
+      lang === "kn"
+        ? 'Write the value of "category" in Kannada script. All other values stay as specified.'
+        : 'Write the value of "category" in English, e.g. Storm water drainage.';
     const parsed = parseJson(
-      await callGateway(ROUTE_SYSTEM_PROMPT, `Resident's grievance:\n${grievance}`),
+      await callGateway(ROUTE_SYSTEM_PROMPT, `${instruction}\n\nResident's grievance:\n${grievance}`),
     ) as Partial<RouteSuggestion>;
     const id = typeof parsed.authority_id === "string" ? parsed.authority_id.trim() : "";
     if (!ROUTE_IDS.has(id)) return null;
@@ -692,6 +701,8 @@ export async function routeGrievance(grievance: string): Promise<RouteSuggestion
     return null;
   }
 }
+
+
 
 
 /**
