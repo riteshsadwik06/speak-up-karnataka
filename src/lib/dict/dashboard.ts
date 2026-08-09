@@ -35,4 +35,14 @@ export const DICT_DASHBOARD = {
     en: "3D map of GBA wards, lit up where RTI filings are active",
     kn: "ಮಾಹಿತಿ ಹಕ್ಕು ಸಲ್ಲಿಕೆಗಳು ಸಕ್ರಿಯವಿರುವ GBA ವಾರ್ಡ್‌ಗಳ 3D ನಕ್ಷೆ",
   },
+  groupNeedsYou: { en: "Needs you now", kn: "ಈಗ ನಿಮ್ಮ ಕ್ರಮ ಬೇಕು" },
+  groupWaiting: { en: "Waiting on them", kn: "ಅವರ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ" },
+  groupDone: { en: "Done", kn: "ಮುಗಿದಿದೆ" },
+  groupShow: { en: "Show", kn: "ತೋರಿಸಿ" },
+  groupHide: { en: "Hide", kn: "ಮರೆಮಾಡಿ" },
+  statusNotFiledYet: { en: "Not filed yet", kn: "ಇನ್ನೂ ಸಲ್ಲಿಸಿಲ್ಲ" },
+  statusFalseClosure: {
+    en: "Closed without the work being done",
+    kn: "ಕೆಲಸ ಆಗದೆ ಮುಚ್ಚಲಾಗಿದೆ",
+  },
 } as const;

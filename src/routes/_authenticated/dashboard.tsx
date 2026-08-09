@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
 import { WARDS } from "@/lib/wards";
-import { AppShell, StatusPill } from "@/components/app-shell";
+import { AppShell } from "@/components/app-shell";
 import { clockFor, consistencyIssue, daysBetween, LEGAL } from "@/lib/rti-data";
 import { clearDemoData, seedDemoData } from "@/lib/rti.functions";
 import { WardCity3D } from "@/components/ward-city-3d";
@@ -24,9 +24,9 @@ const TONE_COLOR: Record<string, string> = {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Complaints & RTIs — Vicharane" },
+      { title: "What you have filed — Vicharane" },
       { name: "description", content: "Track every civic complaint and RTI application, and its deadline." },
-      { property: "og:title", content: "Complaints & RTIs — Vicharane" },
+      { property: "og:title", content: "What you have filed — Vicharane" },
       { property: "og:description", content: "Live day counters for every complaint and RTI you have filed." },
     ],
   }),
@@ -52,10 +52,6 @@ type AppRow = {
   escalation_count: number;
   transfer_date: string | null;
 };
-
-function stamp(date: string | null) {
-  return date ? date.replaceAll("-", ".") : "—";
-}
 
 function Dashboard() {
   const { lang, t } = useLang();
@@ -155,6 +151,144 @@ function Dashboard() {
   }, [data]);
   const litCount = Object.keys(wardTone).length;
 
+  const [doneOpen, setDoneOpen] = useState(false);
+
+  /** Presentation-only triage: which pile does this row belong in? */
+  function bucket(r: AppRow): "needs" | "waiting" | "done" {
+    if (r.status === "closed") return "done";
+    if (issueFor(r)) return "needs";
+    if (r.status === "draft") return "needs";
+    if (r.stage === "complaint" && r.closure_claimed_date) return "needs";
+    const clock = clockFor(r, byApp[r.id]);
+    if (clock.tone === "danger") return "needs";
+    if (r.status === "replied") return "needs";
+    return "waiting";
+  }
+
+  const groups = {
+    needs: rows.filter((r) => bucket(r) === "needs"),
+    waiting: rows.filter((r) => bucket(r) === "waiting"),
+    done: rows.filter((r) => bucket(r) === "done"),
+  };
+
+  /** One status expression per row — never a badge and a deadline saying the same thing. */
+  function statusLine(r: AppRow): string {
+    const issue = issueFor(r);
+    if (issue) return lang === "kn" ? issue.reasonKn : issue.reason;
+    if (r.status === "draft") return t("statusNotFiledYet");
+    if (r.stage === "complaint" && r.closure_claimed_date && r.status !== "closed")
+      return t("statusFalseClosure");
+    const clock = clockFor(r, byApp[r.id]);
+    return lang === "kn" ? clock.labelKn : clock.label;
+  }
+
+  /** Thin full-width time cue, only used in "Waiting on them". */
+  function progressPct(r: AppRow): number {
+    const start = r.stage === "complaint" ? r.complaint_filed_date : r.filed_date;
+    if (!start) return 0;
+    return Math.min(100, Math.round((daysBetween(start) / LEGAL.pioDays) * 100));
+  }
+
+  function Group({
+    title,
+    count,
+    tone,
+    collapsible,
+    open,
+    onToggle,
+    toggleLabel,
+    children,
+  }: {
+    title: string;
+    count: number;
+    tone?: "urgent";
+    collapsible?: boolean;
+    open?: boolean;
+    onToggle?: () => void;
+    toggleLabel?: string;
+    children?: ReactNode;
+  }) {
+    return (
+      <section className="border-b border-border">
+        <div
+          className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-6 ${
+            tone === "urgent" ? "bg-destructive/5" : "bg-background"
+          }`}
+        >
+          <h3 className="min-w-0 truncate">
+            <span lang={lang} className={`rule-heading ${tone === "urgent" ? "text-destructive" : ""} ${lang === "kn" ? KN_TEXT : ""}`}>
+              {title}
+            </span>{" "}
+            <span className="mono-stamp">{count}</span>
+          </h3>
+          {collapsible && (
+            <button
+              onClick={onToggle}
+              aria-expanded={open}
+              className="shrink-0 text-[11px] font-bold uppercase tracking-tight underline"
+            >
+              <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>{toggleLabel}</span>
+            </button>
+          )}
+        </div>
+        {children ? <ul className="divide-y divide-border border-t border-border">{children}</ul> : null}
+      </section>
+    );
+  }
+
+  function RecordRow({ row, urgent, muted }: { row: AppRow; urgent?: boolean; muted?: boolean }) {
+    const ref = row.registration_number ?? row.complaint_ref;
+    const wardKn = row.ward_name ? wardKnFor(row.ward_name) : null;
+    const meta = [
+      authorityLabel(row.public_authority),
+      row.ward_name ? (wardKn ?? row.ward_name) : null,
+      ref,
+    ].filter(Boolean) as string[];
+    return (
+      <li className="relative">
+        <Link
+          to="/applications/$id"
+          params={{ id: row.id }}
+          className={`block px-4 py-4 transition-colors hover:bg-muted sm:px-6 ${muted ? "opacity-70" : ""}`}
+        >
+          <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-4">
+            <div className="min-w-0">
+              <p className="truncate font-display text-sm font-semibold leading-tight">
+                {row.grievance_text}
+              </p>
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                {meta.join(" · ")}
+                {row.is_seeded ? (
+                  <span
+                    lang={lang}
+                    className={`ml-1.5 inline-block border border-border bg-secondary px-1 py-px align-middle text-[9px] font-bold uppercase tracking-wide ${lang === "kn" ? KN_TEXT : ""}`}
+                  >
+                    {t("dashboardDemoTag")}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+            <p
+              lang={lang}
+              className={`text-xs font-bold leading-tight sm:max-w-[15rem] sm:text-right ${
+                urgent ? "text-destructive" : "text-muted-foreground"
+              } ${lang === "kn" ? KN_TEXT : ""}`}
+            >
+              {statusLine(row)}
+            </p>
+          </div>
+        </Link>
+        {!urgent && !muted && (
+          <div className="absolute bottom-0 left-0 h-px w-full bg-secondary">
+            <div className="h-px bg-foreground/40" style={{ width: `${progressPct(row)}%` }} />
+          </div>
+        )}
+      </li>
+    );
+  }
+
+
+
   return (
     <AppShell bare>
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-6">
@@ -234,119 +368,35 @@ function Dashboard() {
         </div>
       )}
 
-      {rows.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-background text-left">
-                <th className={`rule-heading p-4 ${knCell}`}>{t("colRefStatus")}</th>
-                <th className={`rule-heading p-4 ${knCell}`}>{t("colGrievance")}</th>
-                <th className={`rule-heading hidden p-4 sm:table-cell ${knCell}`}>{t("colTimeline")}</th>
-                <th className={`rule-heading p-4 text-right ${knCell}`}>{t("colDeadline")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((row) => {
-                const issue = issueFor(row);
-                const clock = clockFor(row, byApp[row.id]);
-                const ref = row.registration_number ?? row.complaint_ref;
-                // A complaint's clock starts when it was sent, not when an RTI was filed.
-                const startDate = row.stage === "complaint" ? row.complaint_filed_date ?? null : row.filed_date;
-                const day = startDate ? daysBetween(startDate) : 0;
-                const pct = Math.min(100, Math.round((day / LEGAL.pioDays) * 100));
-                return (
-                  <tr key={row.id} className="group transition-colors hover:bg-muted">
-                    <td className="p-4 align-top">
-                      {ref ? <div className="mono-stamp mb-1.5 hidden sm:block">{ref}</div> : null}
-                      <StatusPill tone={issue ? "danger" : clock.tone}>
-                        <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
-                          {issue
-                            ? t("dashboardInconsistent")
-                            : row.status === "draft"
-                              ? t("statusNotFiled")
-                              : clock.tone === "danger"
-                                ? t("statusActionDue")
-                                : t("statusInProgress")}
-                        </span>
-                      </StatusPill>
-                    </td>
-                    <td className="p-4 align-top">
-                      <Link to="/applications/$id" params={{ id: row.id }} className="block">
-                        <h3
-                          className={`font-display text-sm font-semibold leading-tight group-hover:underline ${row.status === "draft" ? "text-muted-foreground" : ""}`}
-                        >
-                          {row.grievance_text}
-                        </h3>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {authorityLabel(row.public_authority)}
-                          {row.ward_name ? (
-                            <>
-                              {" • "}
-                              <span lang={wardKnFor(row.ward_name) ? "kn" : undefined} className={wardKnFor(row.ward_name) ? KN_TEXT : undefined}>
-                                {wardKnFor(row.ward_name) ?? row.ward_name}
-                              </span>
-                              {wardKnFor(row.ward_name) ? (
-                                <span className="text-[11px] text-muted-foreground/70"> ({row.ward_name})</span>
-                              ) : null}
-                            </>
-                          ) : null}
-                          {row.is_seeded ? (
-                            <>
-                              {" "}
-                              <span
-                                lang={lang}
-                                className={`ml-0.5 inline-block border border-border bg-secondary px-1 py-px align-middle text-[9px] font-bold uppercase tracking-wide text-muted-foreground ${lang === "kn" ? KN_TEXT : ""}`}
-                              >
-                                {t("dashboardDemoTag")}
-                              </span>
-                            </>
-                          ) : null}
-                          {row.stage === "complaint" ? ` • ${t("dashboardComplaintTag")}` : ""}
-                        </p>
-                      </Link>
-                    </td>
-                    <td className="hidden p-4 align-top sm:table-cell">
-                      {startDate ? (
-                        <div className="flex flex-col gap-1.5">
-                          <span className="mono-stamp">{t("filedOn")} {stamp(startDate)}</span>
-                          <div className="h-1 w-28 bg-secondary">
-                            <div className="h-full bg-foreground" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      ) : (
-                        <span lang={lang} className={`text-xs italic text-muted-foreground ${lang === "kn" ? KN_TEXT : ""}`}>{t("awaitingAction")}</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right align-top">
-                      {issue ? (
-                        <div
-                          lang={lang}
-                          className={`text-[11px] font-medium leading-tight text-destructive ${lang === "kn" ? KN_TEXT : ""}`}
-                        >
-                          {lang === "kn" ? issue.reasonKn : issue.reason}
-                        </div>
-                      ) : (
-                        <>
-                          <div
-                            className={`font-display text-base font-bold ${row.status === "draft" ? "text-muted-foreground/40" : ""}`}
-                          >
-                            {`${t("day")} ${startDate ? day : 0}`}
-                          </div>
-                          <div
-                            className={`mt-0.5 text-[10px] font-bold uppercase leading-tight ${clock.tone === "danger" ? "text-destructive" : "text-muted-foreground"}`}
-                          >
-                            {lang === "kn" ? clock.labelKn : clock.label}
-                          </div>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {groups.needs.length > 0 && (
+        <Group title={t("groupNeedsYou")} count={groups.needs.length} tone="urgent">
+          {groups.needs.map((r) => (
+            <RecordRow key={r.id} row={r} urgent />
+          ))}
+        </Group>
       )}
+
+      {groups.waiting.length > 0 && (
+        <Group title={t("groupWaiting")} count={groups.waiting.length}>
+          {groups.waiting.map((r) => (
+            <RecordRow key={r.id} row={r} />
+          ))}
+        </Group>
+      )}
+
+      {groups.done.length > 0 && (
+        <Group
+          title={t("groupDone")}
+          count={groups.done.length}
+          collapsible
+          open={doneOpen}
+          onToggle={() => setDoneOpen((o) => !o)}
+          toggleLabel={doneOpen ? t("groupHide") : t("groupShow")}
+        >
+          {doneOpen ? groups.done.map((r) => <RecordRow key={r.id} row={r} muted />) : null}
+        </Group>
+      )}
+
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
         <p className="text-[11px] text-muted-foreground">{t("legalCalendarDays")}</p>

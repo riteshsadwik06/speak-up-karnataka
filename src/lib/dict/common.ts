@@ -27,13 +27,13 @@ export const DICT_COMMON = {
   navWardMap: { en: "Ward map", kn: "ವಾರ್ಡ್ ನಕ್ಷೆ" },
   navSignOut: { en: "Sign out", kn: "ನಿರ್ಗಮಿಸಿ" },
   navMenu: { en: "Menu", kn: "ಮೆನು" },
-  tagline: { en: "Complaints & RTI Tracker", kn: "ದೂರು ಮತ್ತು ಮಾಹಿತಿ ಹಕ್ಕು ಟ್ರ್ಯಾಕರ್" },
+  tagline: { en: "Track what you have filed", kn: "ನೀವು ಸಲ್ಲಿಸಿದ್ದನ್ನು ಗಮನಿಸಿ" },
   dashboard: { en: "Dashboard", kn: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್" },
   logIn: { en: "Log in", kn: "ಪ್ರವೇಶಿಸಿ" },
   signUp: { en: "Sign up", kn: "ನೋಂದಾಯಿಸಿ" },
 
   // --- Registry / dashboard (legacy keys kept for existing call sites) ---
-  registryTitle: { en: "Complaints & RTIs", kn: "ದೂರುಗಳು ಮತ್ತು ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿಗಳು" },
+  registryTitle: { en: "What you have filed", kn: "ನೀವು ಸಲ್ಲಿಸಿದವು" },
   newFilingCta: { en: "NEW FILING", kn: "ಹೊಸ ಸಲ್ಲಿಕೆ" },
   colRefStatus: { en: "Status", kn: "ಸ್ಥಿತಿ" },
   colGrievance: { en: "Grievance & Authority", kn: "ದೂರು ಮತ್ತು ಪ್ರಾಧಿಕಾರ" },
