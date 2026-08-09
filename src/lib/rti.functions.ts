@@ -20,11 +20,12 @@ import { addDays } from "./rti-data";
 /** Routing pass: proposes the owning authority before the user is asked to choose. */
 export const suggestRouting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { grievance: string }) => input)
+  .inputValidator((input: { grievance: string; lang?: "en" | "kn" }) => input)
   .handler(async ({ data }) => {
     if (!data.grievance || data.grievance.trim().length < 15) return null;
-    return routeGrievance(data.grievance);
+    return routeGrievance(data.grievance, data.lang === "kn" ? "kn" : "en");
   });
+
 
 export const generateComplaint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
