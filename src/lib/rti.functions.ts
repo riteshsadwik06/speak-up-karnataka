@@ -6,6 +6,7 @@ import {
   draftComplaint,
   draftRequests,
   reviseRequests,
+  translateLetterToKannada,
   type FalseClosure,
   type RtiRequest,
 } from "./rti.server";
@@ -20,6 +21,7 @@ export const generateComplaint = createServerFn({ method: "POST" })
       authority: string;
       ward?: string | null;
       wardNumber?: string | null;
+      lang?: "en" | "kn";
     }) => input,
   )
   .handler(async ({ data }) =>
@@ -28,6 +30,7 @@ export const generateComplaint = createServerFn({ method: "POST" })
       authority: data.authority,
       ward: data.ward ?? null,
       wardNumber: data.wardNumber ?? null,
+      lang: data.lang === "kn" ? "kn" : "en",
     }),
   );
 
@@ -39,6 +42,7 @@ export const generateDraft = createServerFn({ method: "POST" })
       authority: string;
       ward?: string | null;
       language?: string;
+      lang?: "en" | "kn";
       focusSubject?: string | null;
       falseClosure?: FalseClosure | null;
     }) => input,
@@ -68,7 +72,10 @@ export const generateDraft = createServerFn({ method: "POST" })
       isBpl: profile?.is_bpl ?? false,
     });
 
-    return { draft, body };
+    // The Kannada letter is the postal version; the English one stays for the portal.
+    const bodyKn = data.lang === "kn" ? await translateLetterToKannada(body) : null;
+
+    return { draft, body, bodyKn };
   });
 
 export const reviseDraft = createServerFn({ method: "POST" })
@@ -81,6 +88,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
       subject: string;
       requests: RtiRequest[];
       instruction: string;
+      lang?: "en" | "kn";
     }) => input,
   )
   .handler(async ({ data, context }) => {
@@ -109,7 +117,10 @@ export const reviseDraft = createServerFn({ method: "POST" })
       isBpl: profile?.is_bpl ?? false,
     });
 
-    return { draft, body };
+    // The Kannada letter is the postal version; the English one stays for the portal.
+    const bodyKn = data.lang === "kn" ? await translateLetterToKannada(body) : null;
+
+    return { draft, body, bodyKn };
   });
 
 export const generateAppealDraft = createServerFn({ method: "POST" })
@@ -120,6 +131,7 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
       tier: "first" | "second";
       reason: string;
       portalGround?: string | undefined;
+      lang?: "en" | "kn";
     }) => input,
   )
 
@@ -152,6 +164,8 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
       firstAppealFiledDate: firstAppeal?.filed_date ?? null,
     });
 
+    const bodyKn = data.lang === "kn" ? await translateLetterToKannada(body) : null;
+
     const { data: inserted, error: insertError } = await context.supabase
       .from("appeals")
       .insert({
@@ -159,6 +173,7 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
         tier: data.tier,
         grounds: data.reason,
         body,
+        body_kn: bodyKn,
         due_date: null,
         portal_ground: data.portalGround ?? null,
       })
