@@ -58,6 +58,7 @@ type Appeal = {
   tier: string;
   grounds: string;
   body: string;
+  body_kn: string | null;
   filed_date: string | null;
   due_date: string | null;
   created_at: string;
@@ -84,6 +85,8 @@ function Detail() {
   const [transferReg, setTransferReg] = useState("");
   const [appealReg, setAppealReg] = useState<Record<string, string>>({});
   const [portalChoice, setPortalChoice] = useState("");
+  /** Which version of a letter is on screen. Kannada is postal-only. */
+  const [letterVersion, setLetterVersion] = useState<"en" | "kn">(lang === "kn" ? "kn" : "en");
   const [showClosure, setShowClosure] = useState(false);
   const [closureDate, setClosureDate] = useState(today());
   const [stillWrong, setStillWrong] = useState("");
@@ -121,6 +124,7 @@ function Detail() {
     escalation_count: number;
     generated_requests: { text: string; rationale: string }[];
     application_body: string;
+    application_body_kn: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -148,7 +152,11 @@ function Detail() {
   const overdue = clockStart ? daysBetween(clockStart) > LEGAL.pioDays : false;
   const faaSilentDays = firstAppeal?.filed_date ? daysBetween(firstAppeal.filed_date) : 0;
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
+  // Portal-safe text is ALWAYS derived from the English body. toPortalSafe strips
+  // non-Latin characters, so running it over the Kannada version would empty it.
   const portalSafeBody = toPortalSafe(app.application_body);
+  const bodyKn = (app.application_body_kn as string | null) ?? "";
+  const showKn = !!bodyKn && letterVersion === "kn";
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
   const wardRecord = WARDS.find((w) => w.ward_id === app.ward_id);
   const wardZone = wardRecord?.zone_name ?? null;
@@ -164,7 +172,7 @@ function Detail() {
   async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
     try {
-      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround } });
+      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround, lang } });
       await qc.invalidateQueries({ queryKey: ["application", id] });
       toast.success(`${tier === "first" ? "First" : "Second"} appeal drafted`);
     } catch (err) {
@@ -192,6 +200,7 @@ function Detail() {
           authority: app.public_authority,
           ward: app.ward_name,
           language: app.language,
+          lang,
           falseClosure: {
             ref: app.complaint_ref ?? "",
             complaintText: app.complaint_text ?? app.grievance_text,
@@ -207,6 +216,7 @@ function Detail() {
         closure_claimed_date: closureDate || null,
         generated_requests: result.draft.requests,
         application_body: result.body,
+        application_body_kn: result.bodyKn ?? null,
       });
       toast.success("RTI drafted against the closure");
     } catch (err) {
@@ -505,6 +515,17 @@ function Detail() {
                 >
                   Copy portal-safe
                 </button>
+                {bodyKn ? (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(bodyKn);
+                      toast.success("Kannada text copied");
+                    }}
+                    className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                  >
+                    Copy ಕನ್ನಡ
+                  </button>
+                ) : null}
                 <button
                   onClick={() => {
                     const blob = new Blob([app.application_body], { type: "text/plain;charset=utf-8" });
@@ -522,9 +543,50 @@ function Detail() {
               </div>
             </div>
 
+            {bodyKn ? (
+              <>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  {lang === "kn"
+                    ? "ಆನ್‌ಲೈನ್ ಪೋರ್ಟಲ್ ಲ್ಯಾಟಿನ್ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ ಸ್ವೀಕರಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ಕನ್ನಡ ಅರ್ಜಿಯನ್ನು ಅಂಚೆ ಮೂಲಕ ಕಳುಹಿಸಬೇಕು. ಎರಡೂ ಆವೃತ್ತಿಗಳೂ ಕಾನೂನುಬದ್ಧವಾಗಿ ಸಿಂಧು."
+                    : "The online portal accepts Latin characters only, so a Kannada application must be sent by post. Both versions are legally valid."}
+                </p>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setLetterVersion("kn")}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${showKn ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                  >
+                    ಕನ್ನಡ (ಅಂಚೆ ಮೂಲಕ ಮಾತ್ರ)
+                  </button>
+                  <button
+                    onClick={() => setLetterVersion("en")}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${!showKn ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                  >
+                    English (portal)
+                  </button>
+                </div>
+              </>
+            ) : null}
+
             <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
-              {app.application_body}
+              {showKn ? bodyKn : app.application_body}
             </pre>
+            {bodyKn ? (
+              showKn ? (
+                <div className="mt-3 rounded-md border border-border p-3 text-xs">
+                  <p className="rule-heading">How to file this version</p>
+                  <ol className="mt-1 list-decimal space-y-1 pl-4 text-muted-foreground">
+                    <li>Print and sign it, then send it by speed post with acknowledgement due to the PIO.</li>
+                    <li>Pay the Rs 10 fee by Indian Postal Order or demand draft in favour of the public authority.</li>
+                    <li>Keep the posting receipt — the clock runs from the date of receipt.</li>
+                    <li>The English version above is the one to use if you would rather file online.</li>
+                  </ol>
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  File this version on the RTI portal. The Kannada version is for postal filing.
+                </p>
+              )
+            ) : null}
             <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
               {portalSafeBody.length.toLocaleString()} / {PORTAL_MAX_CHARS.toLocaleString()} characters
               (portal limit)
@@ -565,9 +627,37 @@ function Detail() {
                   {t("registrationNumber")}: {ap.registration_number}
                 </p>
               )}
+              {ap.body_kn ? (
+                <>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {lang === "kn"
+                      ? "ಪೋರ್ಟಲ್ ಲ್ಯಾಟಿನ್ ಅಕ್ಷರಗಳನ್ನು ಮಾತ್ರ ಸ್ವೀಕರಿಸುತ್ತದೆ — ಕನ್ನಡ ಮೇಲ್ಮನವಿಯನ್ನು ಅಂಚೆ ಮೂಲಕ ಕಳುಹಿಸಿ. ಎರಡೂ ಆವೃತ್ತಿಗಳೂ ಸಿಂಧು."
+                      : "The portal accepts Latin characters only — send the Kannada appeal by post. Both versions are valid."}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setLetterVersion("kn")}
+                      className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "kn" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                    >
+                      ಕನ್ನಡ (ಅಂಚೆ ಮೂಲಕ ಮಾತ್ರ)
+                    </button>
+                    <button
+                      onClick={() => setLetterVersion("en")}
+                      className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "en" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                    >
+                      English (portal)
+                    </button>
+                  </div>
+                </>
+              ) : null}
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
-                {ap.body}
+                {ap.body_kn && letterVersion === "kn" ? ap.body_kn : ap.body}
               </pre>
+              {ap.body_kn && letterVersion === "kn" ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Post this version by speed post with acknowledgement due, with the fee by IPO or DD.
+                </p>
+              ) : null}
               {!ap.filed_date && (
                 <div className="mt-3">
                   <label className="rule-heading block">Portal registration number (optional)</label>
@@ -598,6 +688,17 @@ function Detail() {
                 >
                   Copy portal-safe
                 </button>
+                {ap.body_kn ? (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(ap.body_kn!);
+                      toast.success("Kannada text copied");
+                    }}
+                    className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                  >
+                    Copy ಕನ್ನಡ
+                  </button>
+                ) : null}
                 {!ap.filed_date && (
                   <button
                     onClick={async () => {
