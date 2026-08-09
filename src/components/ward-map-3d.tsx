@@ -76,11 +76,16 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
 
   useEffect(() => {
     if (webgl !== true) return;
+    const release = acquireGlSlot();
+    if (!release) return;
     const mount = mountRef.current;
-    if (!mount) return;
+    if (!mount) {
+      release();
+      return;
+    }
 
     let disposed = false;
-    const cleanups: (() => void)[] = [];
+    const cleanups: (() => void)[] = [() => release()];
 
     (async () => {
       const THREE = await import("three");
