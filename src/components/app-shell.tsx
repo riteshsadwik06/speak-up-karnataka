@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
+import { OFFICIALS_SOURCE } from "@/lib/officials";
 
 const navBase = "block px-3 py-2 text-sm font-medium transition-colors";
 const navIdle = `${navBase} text-muted-foreground hover:bg-secondary hover:text-foreground`;
@@ -67,4 +68,21 @@ export function StatusPill({ tone, children }: { tone: string; children: ReactNo
 
 export function SectionLabel({ children }: { children: ReactNode }) {
   return <p className="rule-heading mb-2">{children}</p>;
+}
+
+export function DataCredit({ className = "" }: { className?: string }) {
+  return (
+    <p className={`text-[11px] text-muted-foreground ${className}`}>
+      Officials data from{" "}
+      <a
+        href={OFFICIALS_SOURCE}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="underline underline-offset-2"
+      >
+        Bengawalk City Officials
+      </a>
+      , CC BY 4.0
+    </p>
+  );
 }
