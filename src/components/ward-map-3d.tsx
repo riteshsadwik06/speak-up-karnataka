@@ -466,7 +466,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
     if (mode === "gba") {
       return Object.keys(CORP_COLOR).map((c) => ({
         color: CORP_COLOR[c]!,
-        label: `Bengaluru ${c}`,
+        label: `${t("bengaluruWord")} ${corpShort(`Bengaluru ${c} City Corporation`)}`,
         note: legendWardCount.replace("{n}", String(counts[c] ?? 0)),
       }));
     }
@@ -475,7 +475,7 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
       label: z,
       note: t("mapLegendVerifiedZone"),
     }));
-  }, [mode, counts, t, legendAllWards, legendWardCount]);
+  }, [mode, counts, t, corpShort, legendAllWards, legendWardCount]);
 
   if (webgl === false) {
     return (
