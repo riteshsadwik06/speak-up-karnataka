@@ -54,8 +54,8 @@ function Landing() {
           </div>
         </header>
 
-        <section className="border-b border-border p-6 md:p-10">
         <section className="border-b border-border">
+
           <div className="relative">
             <WardCity3D
               spin
