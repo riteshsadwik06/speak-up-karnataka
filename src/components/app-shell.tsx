@@ -3,34 +3,41 @@ import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 import { OFFICIALS_SOURCE } from "@/lib/officials";
+import { LangToggle, useLang } from "@/lib/i18n";
 
-const navBase = "block px-3 py-2 text-sm font-medium transition-colors";
+const navBase = "block px-3 py-2 text-sm font-medium leading-[1.6] transition-colors";
 const navIdle = `${navBase} text-muted-foreground hover:bg-secondary hover:text-foreground`;
 const navActive = `${navBase} bg-foreground text-background`;
 
 
 export function AppShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
   const router = useRouter();
+  const { t } = useLang();
 
 
   return (
     <div className="min-h-screen w-full bg-background p-4 md:p-8">
       <div className="registry-frame mx-auto flex w-full max-w-6xl flex-col md:flex-row">
         <aside className="w-full shrink-0 border-b border-border bg-background p-6 md:w-60 md:border-b-0 md:border-r">
-          <h1>
-            <Wordmark size="sm" />
-          </h1>
-          <p className="rule-heading mt-1.5">Public Records Tracker</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1>
+                <Wordmark size="sm" />
+              </h1>
+              <p className="rule-heading mt-1.5">{t("tagline")}</p>
+            </div>
+            <LangToggle />
+          </div>
 
           <nav className="mt-8 space-y-1">
             <Link to="/dashboard" className={navIdle} activeProps={{ className: navActive }}>
-              Registry
+              {t("navRegistry")}
             </Link>
             <Link to="/new" className={navIdle} activeProps={{ className: navActive }}>
-              New filing
+              {t("navNewFiling")}
             </Link>
             <Link to="/map" className={navIdle} activeProps={{ className: navActive }}>
-              Ward map
+              {t("navWardMap")}
             </Link>
 
             <button
@@ -40,7 +47,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
               }}
               className={`${navIdle} w-full text-left`}
             >
-              Sign out
+              {t("navSignOut")}
             </button>
           </nav>
         </aside>
