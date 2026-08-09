@@ -16,7 +16,8 @@ export const Route = createFileRoute("/_authenticated/map")({
       { property: "og:title", content: "Bengaluru, as it is and as the portal sees it" },
       {
         property: "og:description",
-        content: "Five city corporations, 369 wards — and only four zones the RTI portal can match.",
+        content:
+          "Five city corporations, 369 wards — and only four zones the RTI portal can match.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

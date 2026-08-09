@@ -13,7 +13,6 @@ import {
 } from "@/components/officials";
 import { T, useAuthorityLabel, useCorporationShort, useLang } from "@/lib/i18n";
 
-
 type RawWard = {
   id: string;
   n: string;
@@ -38,7 +37,6 @@ export type WardInfo = {
 };
 
 export { CORP_COLOR } from "@/lib/ward-3d";
-
 
 const GREY = "#a9a396";
 
@@ -191,7 +189,11 @@ export function WardMap3D() {
         const geo = new THREE.ExtrudeGeometry(shapes, { depth, bevelEnabled: false });
         geo.computeBoundingBox();
         const color = new THREE.Color(CORP_COLOR[w.c] ?? GREY);
-        const mat = new THREE.MeshLambertMaterial({ color: color.clone(), transparent: true, opacity: 1 });
+        const mat = new THREE.MeshLambertMaterial({
+          color: color.clone(),
+          transparent: true,
+          opacity: 1,
+        });
         const mesh = new THREE.Mesh(geo, mat) as unknown as WardMesh;
         mesh.rotation.x = -Math.PI / 2;
         mesh.scale.z = 0.001;
@@ -309,7 +311,8 @@ export function WardMap3D() {
           const target = m.userData.targetY + (m.userData.info.id === selectedId ? 0.35 : 0);
           m.position.y += (target - m.position.y) * 0.18;
           const mat = m.material as InstanceType<typeof THREE.MeshLambertMaterial>;
-          const wantEmissive = m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
+          const wantEmissive =
+            m.userData.info.id === selectedId || m.userData.info.id === hoveredId;
           mat.emissive.setScalar(wantEmissive ? 0.14 : 0);
         }
 
@@ -412,8 +415,7 @@ export function WardMap3D() {
             >
               <p className="font-display text-xs font-bold">{hover.w.name}</p>
               <p className="mono-stamp">
-                {t("mapWardLabel")} {hover.w.number} ·{" "}
-                {corpShort(hover.w.corporation)}
+                {t("mapWardLabel")} {hover.w.number} · {corpShort(hover.w.corporation)}
               </p>
             </div>
           )}
@@ -517,7 +519,6 @@ function WardPanel({ ward }: { ward: WardInfo }) {
             <ZonePicker />
           </>
         )}
-
       </div>
 
       <div className="mt-4 border border-border p-3">
@@ -608,4 +609,3 @@ function CopyZone({ value }: { value: string }) {
     </button>
   );
 }
-
