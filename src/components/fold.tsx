@@ -57,7 +57,6 @@ function useUserId() {
   return uid;
 }
 
-
 function storageKey(uid: string) {
   return `vicharane.folds.${uid}`;
 }
@@ -97,11 +96,11 @@ export function Fold({
   function toggle() {
     const next = !open;
     setOpen(next);
-    if (!uid) return;
+    const who = uid ?? "anon";
     try {
-      const all = readAll(uid);
+      const all = readAll(who);
       all[id] = next;
-      window.localStorage.setItem(storageKey(uid), JSON.stringify(all));
+      window.localStorage.setItem(storageKey(who), JSON.stringify(all));
     } catch {
       /* storage unavailable — the section still toggles for this session */
     }
