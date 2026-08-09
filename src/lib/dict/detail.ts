@@ -358,4 +358,62 @@ export const DICT_DETAIL = {
   },
   oldBbmpWardPrefix: { en: "was", kn: "ಇದು" },
   oldBbmpWardSuffix: { en: "ward under BBMP (pre-2025).", kn: "ಎಂಬ ಬಿಬಿಎಂಪಿ ವಾರ್ಡ್ ಆಗಿತ್ತು (2025ಕ್ಕೂ ಮೊದಲು)." },
+
+  // --- Next action card ---
+  nextActionLabel: { en: "Next action", kn: "ಮುಂದಿನ ಕ್ರಮ" },
+  naInconsistentTitle: {
+    en: "This record does not add up. Check the dates before acting on it.",
+    kn: "ಈ ದಾಖಲೆ ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತಿಲ್ಲ. ಕ್ರಮ ಕೈಗೊಳ್ಳುವ ಮೊದಲು ದಿನಾಂಕಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
+  },
+  naFileTitle: { en: "File this and tell us the date.", kn: "ಇದನ್ನು ಸಲ್ಲಿಸಿ ಮತ್ತು ದಿನಾಂಕವನ್ನು ತಿಳಿಸಿ." },
+  naSendComplaintTitle: {
+    en: "Send this complaint and tell us the date.",
+    kn: "ಈ ದೂರನ್ನು ಕಳುಹಿಸಿ ಮತ್ತು ದಿನಾಂಕವನ್ನು ತಿಳಿಸಿ.",
+  },
+  naNothingToDo: { en: "Nothing to do yet.", kn: "ಸದ್ಯಕ್ಕೆ ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ." },
+  naTheyHaveUntil: { en: "They have until {date}.", kn: "ಅವರಿಗೆ {date} ವರೆಗೆ ಕಾಲಾವಕಾಶವಿದೆ." },
+  naOverdueTitle: {
+    en: "They have missed the deadline. Draft your first appeal.",
+    kn: "ಅವರು ಕಾಲಮಿತಿಯನ್ನು ಮೀರಿದ್ದಾರೆ. ನಿಮ್ಮ ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ರಚಿಸಿ.",
+  },
+  naFalseClosureTitle: {
+    en: "They closed this without doing the work. Turn it into an RTI.",
+    kn: "ಕೆಲಸ ಮಾಡದೆಯೇ ಇದನ್ನು ಮುಚ್ಚಿದ್ದಾರೆ. ಇದನ್ನು ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿಯಾಗಿ ಪರಿವರ್ತಿಸಿ.",
+  },
+  naSecondTitle: { en: "Second appeal is now available.", kn: "ಈಗ ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಲಭ್ಯವಿದೆ." },
+  naRecordReplyTitle: { en: "Record what they sent.", kn: "ಅವರು ಕಳುಹಿಸಿದ್ದನ್ನು ದಾಖಲಿಸಿ." },
+  naReplyCheckTitle: {
+    en: "They replied. If the reply is incomplete or refused, appeal it.",
+    kn: "ಅವರು ಉತ್ತರಿಸಿದ್ದಾರೆ. ಉತ್ತರ ಅಪೂರ್ಣವಾಗಿದ್ದರೆ ಅಥವಾ ನಿರಾಕರಿಸಿದ್ದರೆ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಿ.",
+  },
+  naDoneTitle: { en: "This is finished. Nothing further is needed.", kn: "ಇದು ಮುಗಿದಿದೆ. ಇನ್ನೇನೂ ಬೇಕಿಲ್ಲ." },
+  btnRecordFalseClosure: {
+    en: "Record the closure and draft the RTI",
+    kn: "ಮುಚ್ಚುಗಡೆಯನ್ನು ದಾಖಲಿಸಿ ಮತ್ತು ಮಾಹಿತಿ ಹಕ್ಕು ಅರ್ಜಿ ರಚಿಸಿ",
+  },
+
+  // --- Collapsed reference sections ---
+  sectionWhereToSend: { en: "Where to send it", kn: "ಎಲ್ಲಿಗೆ ಕಳುಹಿಸಬೇಕು" },
+  sectionOnPortal: { en: "On the RTI portal", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ಪೋರ್ಟಲ್‌ನಲ್ಲಿ" },
+  sectionFeeRules: { en: "Fee and filing rules", kn: "ಶುಲ್ಕ ಮತ್ತು ಸಲ್ಲಿಕೆ ನಿಯಮಗಳು" },
+  sectionWasItTransferred: { en: "Was it transferred?", kn: "ಇದು ವರ್ಗಾವಣೆಯಾಗಿದೆಯೇ?" },
+  summaryOfficialsOne: { en: "1 official", kn: "1 ಅಧಿಕಾರಿ" },
+  summaryOfficialsMany: { en: "{n} officials", kn: "{n} ಅಧಿಕಾರಿಗಳು" },
+  summaryNoOfficials: { en: "No officials mapped for this ward", kn: "ಈ ವಾರ್ಡ್‌ಗೆ ಅಧಿಕಾರಿಗಳ ಮಾಹಿತಿ ಇಲ್ಲ" },
+  summaryLoading: { en: "Loading…", kn: "ಲೋಡ್ ಆಗುತ್ತಿದೆ…" },
+  summaryNoVerifiedMapping: { en: "No verified mapping", kn: "ಪರಿಶೀಲಿತ ಹೊಂದಾಣಿಕೆ ಇಲ್ಲ" },
+  summaryNotRecorded: { en: "Not recorded", kn: "ದಾಖಲಾಗಿಲ್ಲ" },
+  summaryNotFiledYet: { en: "Not filed yet", kn: "ಇನ್ನೂ ಸಲ್ಲಿಸಿಲ್ಲ" },
+  summaryNotSentYet: { en: "Not sent yet", kn: "ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ" },
+  summaryFiledDay: { en: "Filed {date} · day {n}", kn: "{date} ರಂದು ಸಲ್ಲಿಸಲಾಗಿದೆ · {n}ನೇ ದಿನ" },
+  summarySentDay: { en: "Sent {date} · day {n}", kn: "{date} ರಂದು ಕಳುಹಿಸಲಾಗಿದೆ · {n}ನೇ ದಿನ" },
+  summaryFeeRules: {
+    en: "Rs. 10, BPL exemption, PDF and character limits",
+    kn: "ರೂ. 10, ಬಿಪಿಎಲ್ ವಿನಾಯಿತಿ, ಪಿಡಿಎಫ್ ಮತ್ತು ಅಕ್ಷರ ಮಿತಿಗಳು",
+  },
+  summaryTransferNotRecorded: {
+    en: "No transfer recorded under Section 6(3)",
+    kn: "ಸೆಕ್ಷನ್ 6(3) ಅಡಿಯಲ್ಲಿ ಯಾವುದೇ ವರ್ಗಾವಣೆ ದಾಖಲಾಗಿಲ್ಲ",
+  },
+  summaryOnlineOrPost: { en: "RTI portal, or by post", kn: "ಮಾಹಿತಿ ಹಕ್ಕು ಪೋರ್ಟಲ್, ಅಥವಾ ಅಂಚೆ ಮೂಲಕ" },
 } as const;
