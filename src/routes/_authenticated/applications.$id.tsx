@@ -237,7 +237,11 @@ function Detail() {
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <StatusPill tone={clock.tone}>{clock.label}</StatusPill>
+        <StatusPill tone={clock.tone}>
+          <span lang={lang} className={lang === "kn" ? KN_TEXT : undefined}>
+            {lang === "kn" ? clock.labelKn : clock.label}
+          </span>
+        </StatusPill>
         {clock.tone !== "danger" && (
           <span className="rule-heading">{STATUS_LABEL[app.status] ?? app.status}</span>
         )}
