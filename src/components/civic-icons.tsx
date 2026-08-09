@@ -3,6 +3,8 @@
  * Not lucide: these are drawn from the actual civic world (broom, transformer,
  * mosquito, khata, ballot box) so an officials list scans by role.
  */
+import { useLang, type StrId } from "@/lib/i18n";
+
 export type CivicRole =
   | "waste"
   | "road_maintenance"
@@ -36,6 +38,22 @@ export function civicRoleFor(designation?: string | null): CivicRole {
   const text = designation ?? "";
   return MAPPING.find((m) => m.match.test(text))?.role ?? "default";
 }
+
+/** Role -> dictionary id for the accessible label on each glyph. */
+const ROLE_LABEL_ID: Record<CivicRole, StrId> = {
+  waste: "civicRoleWaste",
+  road_maintenance: "civicRoleRoadMaintenance",
+  road_infra: "civicRoleRoadInfra",
+  street_light: "civicRoleStreetLight",
+  electrical: "civicRoleElectrical",
+  water: "civicRoleWater",
+  revenue: "civicRoleRevenue",
+  veterinary: "civicRoleVeterinary",
+  health: "civicRoleHealth",
+  police: "civicRolePolice",
+  representative: "civicRoleRepresentative",
+  default: "civicRoleDefault",
+};
 
 const PATHS: Record<CivicRole, React.ReactNode> = {
   waste: (
@@ -170,15 +188,21 @@ export function CivicIcon({
   size?: number;
   className?: string;
 }) {
+  const { lang, t } = useLang();
+  const label = t(ROLE_LABEL_ID[role] ?? "civicRoleDefault");
+
   return (
     <svg
       viewBox="0 0 44 44"
       width={size}
       height={size}
-      aria-hidden="true"
+      role="img"
+      aria-label={label}
+      lang={lang}
       focusable="false"
       className={`shrink-0 transition-transform duration-150 group-hover:-translate-x-px group-hover:-translate-y-px motion-reduce:transition-none motion-reduce:transform-none ${className}`}
     >
+      <title>{label}</title>
       {/* shaded side faces, drawn first so they sit behind */}
       <path
         d="M37 4 l3.4 3.4 v32 l-3.4 3.4 v-32 z"

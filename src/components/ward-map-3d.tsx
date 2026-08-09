@@ -11,6 +11,7 @@ import {
   OfficialsSkeleton,
   useWardOfficials,
 } from "@/components/officials";
+import { T, useLang } from "@/lib/i18n";
 
 
 type RawWard = {
@@ -66,6 +67,9 @@ function easeInOut(t: number) {
 }
 
 export function WardMap3D({ mode }: { mode: MapMode }) {
+  const { t, lang } = useLang();
+  const legendAllWards = t("mapLegendAllWards");
+  const legendWardCount = t("mapLegendWardCount");
   const mountRef = useRef<HTMLDivElement | null>(null);
   const modeRef = useRef(mode);
   const [webgl, setWebgl] = useState<boolean | null>(null);
@@ -451,7 +455,10 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
         {
           color: SAHAAYA,
           label: "Sahaaya 2.0",
-          note: `all ${Object.values(counts).reduce((a, b) => a + b, 0)} wards, five corporations`,
+          note: legendAllWards.replace(
+            "{n}",
+            String(Object.values(counts).reduce((a, b) => a + b, 0)),
+          ),
         },
       ];
     }
@@ -459,21 +466,21 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
       return Object.keys(CORP_COLOR).map((c) => ({
         color: CORP_COLOR[c]!,
         label: `Bengaluru ${c}`,
-        note: `${counts[c] ?? 0} wards`,
+        note: legendWardCount.replace("{n}", String(counts[c] ?? 0)),
       }));
     }
     return Object.keys(PORTAL_ZONE_COLOR).map((z) => ({
       color: PORTAL_ZONE_COLOR[z]!,
       label: z,
-      note: "verified portal zone",
+      note: t("mapLegendVerifiedZone"),
     }));
-  }, [mode, counts]);
+  }, [mode, counts, t, legendAllWards, legendWardCount]);
 
   if (webgl === false) {
     return (
       <div className="p-6">
         <p className="mb-3 text-xs text-muted-foreground">
-          Your browser cannot render 3D graphics, so this is the flat ward map instead.
+          <T id="mapNoWebgl" />
         </p>
         <WardMap selectedId="" onSelect={() => undefined} />
       </div>
@@ -484,10 +491,15 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
     <div className="flex flex-col lg:flex-row">
       <div className="min-w-0 flex-1 border-b border-border lg:border-b-0 lg:border-r">
         <div className="relative">
-          <div ref={mountRef} className="h-[360px] w-full sm:h-[520px]" />
+          <div
+            ref={mountRef}
+            role="img"
+            aria-label={t("mapCanvasAriaLabel")}
+            className="h-[360px] w-full sm:h-[520px]"
+          />
           {!ready && (
             <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-              Building the city…
+              <T id="mapBuildingCity" />
             </div>
           )}
           {hover && (
@@ -497,7 +509,8 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
             >
               <p className="font-display text-xs font-bold">{hover.w.name}</p>
               <p className="mono-stamp">
-                Ward {hover.w.number} · {hover.w.corporation.replace("Bengaluru ", "").replace(" City Corporation", "")}
+                {t("mapWardLabel")} {hover.w.number} ·{" "}
+                {hover.w.corporation.replace("Bengaluru ", "").replace(" City Corporation", "")}
               </p>
             </div>
           )}
@@ -511,31 +524,32 @@ export function WardMap3D({ mode }: { mode: MapMode }) {
             </span>
           ))}
           {mode === "complaints" && (
-            <span className="text-[11px] text-muted-foreground">
-              All five city corporations route civic complaints through Sahaaya 2.0. Water and sewerage go to
-              BWSSB (1916) and power to BESCOM (1912) instead - those are not ward-mapped.
+            <span className="text-[11px] text-muted-foreground" lang={lang}>
+              <T id="mapLegendComplaintsNote" />
             </span>
           )}
           {mode === "portal" && (
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 opacity-50" style={{ backgroundColor: GREY }} />
-              <span className="text-[11px] text-muted-foreground">
-                No verified portal equivalent — you must choose the BBMP zone yourself when filing.
+              <span className="text-[11px] text-muted-foreground" lang={lang}>
+                <T id="mapLegendNoPortalEquivalent" />
               </span>
             </span>
           )}
         </div>
         <p className="border-t border-border p-3 text-[11px] text-muted-foreground sm:hidden">
-          Rotate with one finger, pinch to zoom.
+          <T id="mapRotateHint" />
         </p>
       </div>
 
       <aside className="w-full shrink-0 p-5 lg:w-80">
         {!selected && (
           <>
-            <p className="rule-heading">Ward detail</p>
+            <p className="rule-heading">
+              <T id="mapWardDetailHeading" />
+            </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Tap a ward to see how it is administered today and how the RTI portal still files it.
+              <T id="mapWardDetailHint" />
             </p>
           </>
         )}
