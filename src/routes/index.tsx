@@ -83,7 +83,7 @@ function Landing() {
   return (
     <div className="relative min-h-screen w-full p-4 md:p-8">
       <CityBackdrop />
-      <div className="registry-frame relative z-10 mx-auto w-full max-w-5xl bg-transparent">
+      <div className="registry-frame relative z-10 mx-auto w-full max-w-5xl !bg-transparent">
         <header className="flex items-center justify-between gap-4 border-b border-border bg-background/72 p-6">
           <div>
             <h1>
