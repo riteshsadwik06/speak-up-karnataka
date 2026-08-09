@@ -6,6 +6,7 @@ import {
   draftComplaint,
   draftRequests,
   reviseRequests,
+  translateToKannada,
   type FalseClosure,
   type RtiRequest,
 } from "./rti.server";
@@ -20,6 +21,7 @@ export const generateComplaint = createServerFn({ method: "POST" })
       authority: string;
       ward?: string | null;
       wardNumber?: string | null;
+      lang?: "en" | "kn";
     }) => input,
   )
   .handler(async ({ data }) =>
@@ -28,6 +30,7 @@ export const generateComplaint = createServerFn({ method: "POST" })
       authority: data.authority,
       ward: data.ward ?? null,
       wardNumber: data.wardNumber ?? null,
+      lang: data.lang === "kn" ? "kn" : "en",
     }),
   );
 
@@ -39,6 +42,7 @@ export const generateDraft = createServerFn({ method: "POST" })
       authority: string;
       ward?: string | null;
       language?: string;
+      lang?: "en" | "kn";
       focusSubject?: string | null;
       falseClosure?: FalseClosure | null;
     }) => input,
@@ -68,7 +72,9 @@ export const generateDraft = createServerFn({ method: "POST" })
       isBpl: profile?.is_bpl ?? false,
     });
 
-    return { draft, body };
+    const bodyKn = data.lang === "kn" ? await translateToKannada(body) : null;
+
+    return { draft, body, bodyKn };
   });
 
 export const reviseDraft = createServerFn({ method: "POST" })
@@ -81,6 +87,7 @@ export const reviseDraft = createServerFn({ method: "POST" })
       subject: string;
       requests: RtiRequest[];
       instruction: string;
+      lang?: "en" | "kn";
     }) => input,
   )
   .handler(async ({ data, context }) => {
@@ -109,7 +116,9 @@ export const reviseDraft = createServerFn({ method: "POST" })
       isBpl: profile?.is_bpl ?? false,
     });
 
-    return { draft, body };
+    const bodyKn = data.lang === "kn" ? await translateToKannada(body) : null;
+
+    return { draft, body, bodyKn };
   });
 
 export const generateAppealDraft = createServerFn({ method: "POST" })
@@ -120,6 +129,7 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
       tier: "first" | "second";
       reason: string;
       portalGround?: string | undefined;
+      lang?: "en" | "kn";
     }) => input,
   )
 
@@ -159,6 +169,7 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
         tier: data.tier,
         grounds: data.reason,
         body,
+        body_kn: data.lang === "kn" ? await translateToKannada(body) : null,
         due_date: null,
         portal_ground: data.portalGround ?? null,
       })

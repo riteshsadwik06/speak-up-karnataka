@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { LangToggle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { mode?: "signup" | "login" } => ({
@@ -63,8 +64,11 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6">
+      <header className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-5 sm:px-6">
         <Wordmark size="lg" variant="full" />
+        <div className="ml-auto">
+          <LangToggle />
+        </div>
       </header>
       <div className="flex flex-1 items-start justify-center px-4 pb-16 pt-4 sm:items-center sm:pt-0">
         <div className="paper-card w-full max-w-md p-6 sm:p-8">

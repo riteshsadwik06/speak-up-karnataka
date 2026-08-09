@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           application_id: string
           body: string
+          body_kn: string | null
           created_at: string
           due_date: string | null
           filed_date: string | null
@@ -30,6 +31,7 @@ export type Database = {
         Insert: {
           application_id: string
           body?: string
+          body_kn?: string | null
           created_at?: string
           due_date?: string | null
           filed_date?: string | null
@@ -42,6 +44,7 @@ export type Database = {
         Update: {
           application_id?: string
           body?: string
+          body_kn?: string | null
           created_at?: string
           due_date?: string | null
           filed_date?: string | null
@@ -64,9 +67,11 @@ export type Database = {
       applications: {
         Row: {
           application_body: string
+          application_body_kn: string | null
           closure_claimed_date: string | null
           complaint_channel: string | null
           complaint_filed_date: string | null
+          complaint_language: string | null
           complaint_ref: string | null
           complaint_text: string | null
           corporation: string | null
@@ -97,9 +102,11 @@ export type Database = {
         }
         Insert: {
           application_body?: string
+          application_body_kn?: string | null
           closure_claimed_date?: string | null
           complaint_channel?: string | null
           complaint_filed_date?: string | null
+          complaint_language?: string | null
           complaint_ref?: string | null
           complaint_text?: string | null
           corporation?: string | null
@@ -130,9 +137,11 @@ export type Database = {
         }
         Update: {
           application_body?: string
+          application_body_kn?: string | null
           closure_claimed_date?: string | null
           complaint_channel?: string | null
           complaint_filed_date?: string | null
+          complaint_language?: string | null
           complaint_ref?: string | null
           complaint_text?: string | null
           corporation?: string | null

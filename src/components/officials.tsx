@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { CivicIcon, civicRoleFor } from "@/components/civic-icons";
+import { KN_TEXT, useLang } from "@/lib/i18n";
 import {
   officialsForWard,
   OFFICIALS_CAVEAT,
@@ -98,6 +99,13 @@ export function OfficialsCredit() {
 }
 
 function OfficialRow({ o }: { o: Official }) {
+  const { lang, t } = useLang();
+  const kn = lang === "kn";
+  const designation = kn && o.designationKn?.trim() ? o.designationKn : o.designation;
+  const designationAlt = kn && o.designationKn?.trim() ? o.designation : null;
+  const name = kn && o.nameKn?.trim() ? o.nameKn : o.name;
+  const nameAlt = kn && o.nameKn?.trim() ? o.name : o.nameKn;
+
   return (
     <li className="group flex items-start gap-2 border-b border-border py-1.5">
       <CivicIcon
@@ -106,11 +114,21 @@ function OfficialRow({ o }: { o: Official }) {
         className="mt-0.5 h-[34px] w-[34px] sm:h-10 sm:w-10"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          {o.designation || "Official"}
+        <p
+          lang={kn ? "kn" : undefined}
+          className={`text-[11px] uppercase tracking-wide text-muted-foreground ${kn ? `${KN_TEXT} normal-case` : ""}`}
+        >
+          {designation || t("official")}
         </p>
-        <p className="text-sm leading-tight">{o.name || "—"}</p>
-        {o.nameKn ? <p className="text-xs text-muted-foreground">{o.nameKn}</p> : null}
+        {designationAlt ? (
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">{designationAlt}</p>
+        ) : null}
+        <p lang={kn ? "kn" : undefined} className={`text-sm ${kn ? KN_TEXT : "leading-tight"}`}>
+          {name || "—"}
+        </p>
+        {nameAlt && nameAlt !== name ? (
+          <p className="text-xs leading-tight text-muted-foreground">{nameAlt}</p>
+        ) : null}
         {o.phone ? (
           <p className="mt-0.5 flex flex-wrap gap-x-3">
             {o.phone

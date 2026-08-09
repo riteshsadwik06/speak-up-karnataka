@@ -39,6 +39,7 @@ import {
 } from "@/components/officials";
 import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
 import { toast } from "sonner";
+import { KN_TEXT, useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
@@ -57,6 +58,7 @@ type Appeal = {
   tier: string;
   grounds: string;
   body: string;
+  body_kn: string | null;
   filed_date: string | null;
   due_date: string | null;
   created_at: string;
@@ -72,7 +74,9 @@ function Detail() {
   const qc = useQueryClient();
   const makeAppeal = useServerFn(generateAppealDraft);
   const makeDraft = useServerFn(generateDraft);
+  const { lang, t } = useLang();
   const [busy, setBusy] = useState(false);
+  const [bodyTab, setBodyTab] = useState<"kn" | "en">("kn");
   const [filedDate, setFiledDate] = useState(today());
   const [regNumber, setRegNumber] = useState("");
   const [replyDate, setReplyDate] = useState(today());
@@ -119,6 +123,7 @@ function Detail() {
     escalation_count: number;
     generated_requests: { text: string; rationale: string }[];
     application_body: string;
+    application_body_kn: string | null;
   }>) {
     const { error } = await supabase.from("applications").update(values).eq("id", id);
     if (error) {
@@ -147,6 +152,9 @@ function Detail() {
   const faaSilentDays = firstAppeal?.filed_date ? daysBetween(firstAppeal.filed_date) : 0;
   const secondAvailable = !!firstAppeal && faaSilentDays >= LEGAL.secondAppealAfterDays && !secondAppeal;
   const portalSafeBody = toPortalSafe(app.application_body);
+  const bodyKn = (app as { application_body_kn?: string | null }).application_body_kn ?? "";
+  const hasKn = !!bodyKn.trim();
+  const showKn = hasKn && bodyTab === "kn";
   const overLimit = portalSafeBody.length > PORTAL_MAX_CHARS;
   const wardZone = WARDS.find((w) => w.ward_id === app.ward_id)?.zone_name ?? null;
   const kind = portalAuthorityKind(app.public_authority);
@@ -160,7 +168,7 @@ function Detail() {
   async function draftAppeal(tier: "first" | "second", reason: string, portalGround?: string) {
     setBusy(true);
     try {
-      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround } });
+      await makeAppeal({ data: { applicationId: id, tier, reason, portalGround, lang } });
       await qc.invalidateQueries({ queryKey: ["application", id] });
       toast.success(`${tier === "first" ? "First" : "Second"} appeal drafted`);
     } catch (err) {
@@ -188,6 +196,7 @@ function Detail() {
           authority: app.public_authority,
           ward: app.ward_name,
           language: app.language,
+          lang,
           falseClosure: {
             ref: app.complaint_ref ?? "",
             complaintText: app.complaint_text ?? app.grievance_text,
@@ -203,6 +212,7 @@ function Detail() {
         closure_claimed_date: closureDate || null,
         generated_requests: result.draft.requests,
         application_body: result.body,
+        application_body_kn: result.bodyKn ?? null,
       });
       toast.success("RTI drafted against the closure");
     } catch (err) {
@@ -478,7 +488,7 @@ function Detail() {
               <div className="mb-2 ml-auto flex flex-wrap gap-2">
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(app.application_body);
+                    navigator.clipboard.writeText(showKn ? bodyKn : app.application_body);
                     toast.success("Copied");
                   }}
                   className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
@@ -496,11 +506,12 @@ function Detail() {
                 </button>
                 <button
                   onClick={() => {
-                    const blob = new Blob([app.application_body], { type: "text/plain" });
+                    const text = showKn ? bodyKn : app.application_body;
+                    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = `rti-application-${id.slice(0, 8)}.txt`;
+                    a.download = `rti-application-${id.slice(0, 8)}${showKn ? "-kn" : ""}.txt`;
                     a.click();
                     URL.revokeObjectURL(url);
                   }}
@@ -510,9 +521,45 @@ function Detail() {
                 </button>
               </div>
             </div>
-            <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
-              {app.application_body}
-            </pre>
+
+            {hasKn && (
+              <>
+                <p
+                  lang={lang}
+                  className={`mb-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs ${lang === "kn" ? KN_TEXT : "leading-relaxed"}`}
+                >
+                  {t("postalNote")}
+                </p>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setBodyTab("kn")}
+                    lang="kn"
+                    className={`${KN_TEXT} rounded-md border px-3 py-1.5 text-xs ${bodyTab === "kn" ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("tabKannadaPost")}
+                  </button>
+                  <button
+                    onClick={() => setBodyTab("en")}
+                    className={`rounded-md border px-3 py-1.5 text-xs leading-[1.6] ${bodyTab === "en" ? "border-foreground bg-foreground text-background" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("tabEnglishPortal")}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {showKn ? (
+              <pre
+                lang="kn"
+                className={`whitespace-pre-wrap rounded-md bg-secondary/60 p-4 text-sm ${KN_TEXT}`}
+              >
+                {bodyKn}
+              </pre>
+            ) : (
+              <pre className="whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
+                {app.application_body}
+              </pre>
+            )}
             <p className={`mt-2 font-mono text-xs ${overLimit ? "text-warning" : "text-muted-foreground"}`}>
               {portalSafeBody.length.toLocaleString()} / {PORTAL_MAX_CHARS.toLocaleString()} characters
               (portal limit)
@@ -553,6 +600,19 @@ function Detail() {
               <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
                 {ap.body}
               </pre>
+              {ap.body_kn ? (
+                <>
+                  <p lang="kn" className={`mt-2 text-[11px] text-muted-foreground ${KN_TEXT}`}>
+                    {t("tabKannadaPost")}
+                  </p>
+                  <pre
+                    lang="kn"
+                    className={`mt-1 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 text-sm ${KN_TEXT}`}
+                  >
+                    {ap.body_kn}
+                  </pre>
+                </>
+              ) : null}
               {!ap.filed_date && (
                 <div className="mt-3">
                   <label className="rule-heading block">Portal registration number (optional)</label>
