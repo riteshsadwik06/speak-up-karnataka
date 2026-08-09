@@ -296,7 +296,7 @@ function Detail() {
             {app.ward_name ? (
               <ResponsibleOfficials
                 wardName={app.ward_name}
-                category={`${app.grievance_text ?? ""} ${app.subject ?? ""}`}
+                category={app.grievance_text ?? ""}
               />
             ) : null}
 
