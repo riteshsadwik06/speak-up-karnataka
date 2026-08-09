@@ -152,9 +152,19 @@ const PATHS: Record<CivicRole, React.ReactNode> = {
   ),
 };
 
+const PLATE_FACE = "#ede7da";
+const PLATE_SIDE = "#b8ae9b";
+const PLATE_SIDE_DEEP = "#a3987f";
+const PLATE_INK = "#1f1d1a";
+
+/**
+ * The glyph sits on an extruded plate, matching the extrusion language of the
+ * 3D ward map. Plate colours are fixed (not currentColor) because the glyph
+ * rests on its own light face.
+ */
 export function CivicIcon({
   role,
-  size = 16,
+  size = 40,
   className = "",
 }: {
   role: CivicRole;
@@ -163,19 +173,46 @@ export function CivicIcon({
 }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 44 44"
       width={size}
       height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.4}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
-      className={`shrink-0 ${className}`}
+      className={`shrink-0 transition-transform duration-150 group-hover:-translate-x-px group-hover:-translate-y-px motion-reduce:transition-none motion-reduce:transform-none ${className}`}
     >
-      {PATHS[role] ?? PATHS.default}
+      {/* shaded side faces, drawn first so they sit behind */}
+      <path
+        d="M37 4 l3.4 3.4 v32 l-3.4 3.4 v-32 z"
+        fill={PLATE_SIDE}
+        className={`transition-colors duration-150 group-hover:[fill:${PLATE_SIDE_DEEP}] motion-reduce:transition-none`}
+      />
+      <path
+        d="M5 36 l3.4 3.4 h32 l-3.4 -3.4 z"
+        fill={PLATE_SIDE}
+        className={`transition-colors duration-150 group-hover:[fill:${PLATE_SIDE_DEEP}] motion-reduce:transition-none`}
+      />
+      {/* front face */}
+      <rect x="5" y="4" width="32" height="32" fill={PLATE_FACE} stroke={PLATE_INK} strokeWidth={1} />
+      {/* edges */}
+      <path
+        d="M37 4 l3.4 3.4 v32 l-3.4 3.4 M5 36 l3.4 3.4 h32"
+        fill="none"
+        stroke={PLATE_INK}
+        strokeWidth={1}
+        strokeLinejoin="round"
+      />
+      {/* the glyph, centred on the front face */}
+      <g
+        transform="translate(9.72 8.72) scale(0.94)"
+        fill="none"
+        stroke={PLATE_INK}
+        strokeWidth={1.49}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {PATHS[role] ?? PATHS.default}
+      </g>
     </svg>
   );
 }
+
