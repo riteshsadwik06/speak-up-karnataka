@@ -35,11 +35,16 @@ import {
   relevantOfficials,
   useWardOfficials,
 } from "@/components/officials";
-import { generateAppealDraft, generateDraft } from "@/lib/rti.functions";
+import {
+  generateAppealDraft,
+  generateDraft,
+  reviseAppealLetter,
+  saveApplicantDetails,
+} from "@/lib/rti.functions";
 import { toast } from "sonner";
 import { KN_TEXT, useAuthorityLabel, useLang } from "@/lib/i18n";
-import { hasPlaceholders } from "@/lib/placeholders";
-import { PlaceholderBlockNote } from "@/components/missing-details";
+import { findPlaceholders, hasPlaceholders } from "@/lib/placeholders";
+import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
 
 export const Route = createFileRoute("/_authenticated/applications/$id")({
   head: () => ({
@@ -103,6 +108,9 @@ function Detail() {
   const qc = useQueryClient();
   const makeAppeal = useServerFn(generateAppealDraft);
   const makeDraft = useServerFn(generateDraft);
+  const reviseAppeal = useServerFn(reviseAppealLetter);
+  const saveApplicant = useServerFn(saveApplicantDetails);
+  const [appealBusy, setAppealBusy] = useState<string | null>(null);
   const { lang, t } = useLang();
   const authorityLabel = useAuthorityLabel();
   const knClass = lang === "kn" ? KN_TEXT : "";
@@ -126,6 +134,26 @@ function Detail() {
     const key = g ? APPEAL_GROUND_IDS[g] : undefined;
     return key ? t(key) : (appealGroundLabel(g) ?? "");
   };
+
+  /** Missing-details flow for an appeal letter: store the answers, then redraft it. */
+  async function fillAppealBlanks(
+    appealId: string,
+    instruction: string,
+    fields: Record<string, string>,
+  ) {
+    setAppealBusy(appealId);
+    try {
+      if (Object.keys(fields).length > 0) await saveApplicant({ data: fields });
+      await reviseAppeal({
+        data: { appealId, instruction, lang: lang === "kn" ? "kn" : "en" },
+      });
+      await qc.invalidateQueries({ queryKey: ["application", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAppealBusy(null);
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["application", id],
@@ -1302,6 +1330,15 @@ function Detail() {
           {ap.body_kn && letterVersion === "kn" ? (
             <p className="mt-2 text-xs text-muted-foreground">{t("postThisVersionNote")}</p>
           ) : null}
+          {hasPlaceholders(ap.body) ? <PlaceholderBlockNote /> : null}
+          <div className="mt-3">
+            <MissingDetails
+              placeholders={findPlaceholders(ap.body)}
+              busy={appealBusy === ap.id}
+              onFill={(instruction, fields) => void fillAppealBlanks(ap.id, instruction, fields)}
+            />
+          </div>
+
           {!ap.filed_date && (
             <div className="mt-3">
               <label className="rule-heading block">{t("portalRegNumberOptionalLabel")}</label>

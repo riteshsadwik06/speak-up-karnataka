@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { buildFillInstruction, placeholderQuestion } from "@/lib/placeholders";
+import { applicantFieldFor, type ProfileField } from "@/lib/applicant";
 
 export function MissingDetails({
   placeholders,
@@ -16,7 +17,8 @@ export function MissingDetails({
 }: {
   placeholders: string[];
   busy: boolean;
-  onFill: (instruction: string) => void;
+  /** `fields` carries answers that belong on the profile, so they are never asked twice. */
+  onFill: (instruction: string, fields: Partial<Record<ProfileField, string>>) => void;
 }) {
   const { t } = useLang();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -43,11 +45,18 @@ export function MissingDetails({
       </div>
       <button
         disabled={busy || !anyAnswer}
-        onClick={() =>
+        onClick={() => {
+          const fields: Partial<Record<ProfileField, string>> = {};
+          for (const label of placeholders) {
+            const value = (answers[label] ?? "").trim();
+            const field = applicantFieldFor(label);
+            if (value && field) fields[field] = value;
+          }
           onFill(
             buildFillInstruction(placeholders.map((label) => ({ label, value: answers[label] ?? "" }))),
-          )
-        }
+            fields,
+          );
+        }}
         className="mt-3 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
       >
         {busy ? t("missingDetailsWorking") : t("missingDetailsSubmit")}
@@ -55,6 +64,7 @@ export function MissingDetails({
     </div>
   );
 }
+
 
 /** Shown next to a disabled Copy/Download pair. */
 export function PlaceholderBlockNote() {

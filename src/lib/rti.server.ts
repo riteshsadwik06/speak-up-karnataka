@@ -1,4 +1,8 @@
 import { LEGAL } from "./rti-data";
+import { applicantFieldFor, applicantSignature, type Applicant } from "./applicant";
+
+export type { Applicant };
+
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
 const MODEL = "openai/gpt-5.6-sol";
@@ -139,6 +143,84 @@ export function stripUnsuppliedIdentifiers(text: string, supplied: (string | nul
     .replace(/\(\s*\)/g, "")
     .replace(/[ \t]+([.,;:])/g, "$1");
 }
+/* ------------------------------------------------------------------ *
+ * Applicant identity — interpolated, never left as a blank
+ * ------------------------------------------------------------------ */
+
+/** We do not hold the appellate authority's address, and the model must not guess it. */
+export const FAA_ADDRESS_LINE =
+  "Address: see the First Appellate Authority details on your RTI acknowledgement";
+
+/** Verbatim applicant data for the model, plus the rules for what to do when it is absent. */
+export function applicantPromptBlock(a: Applicant): string {
+  const known = [
+    a.name?.trim() ? `Applicant name: ${a.name.trim()}` : "",
+    a.address?.trim() ? `Applicant postal address: ${a.address.trim()}` : "",
+    a.phone?.trim() ? `Applicant mobile number: ${a.phone.trim()}` : "",
+    a.email?.trim() ? `Applicant email: ${a.email.trim()}` : "",
+  ].filter(Boolean);
+  return [
+    known.length ? known.join("\n") : "No applicant contact details are on file.",
+    "Use these values verbatim in the signature block. Any of these details that is not listed above is unknown: omit that line entirely from the letter. Never write a blank, a bracket, an underscore run or a dotted line for a citizen to fill in.",
+    `You do not know the appellate authority's office address or PIN code. Do not guess them. Write exactly this single line in place of the addressee's street address: "${FAA_ADDRESS_LINE}".`,
+  ].join("\n");
+}
+
+const SINGLE_BRACKET = /(?<!\[)\[([^[\]\n]{2,90})\](?!\])/g;
+
+/**
+ * Post-generation repair: fills applicant placeholders from the profile, drops the
+ * line where we genuinely hold nothing, and substitutes the acknowledgement line for
+ * an office address. Only the applicant's name survives as a bracket, because the
+ * missing-details panel must ask for it.
+ */
+export function resolveApplicantPlaceholders(text: string, a: Applicant): string {
+  const out: string[] = [];
+  let faaDone = false;
+
+  for (const raw of text.split("\n")) {
+    let dropLine = false;
+    let faaLine = false;
+
+    const line = raw.replace(SINGLE_BRACKET, (m, label: string) => {
+      const lab = String(label).trim();
+      if (/^(sic|\d+)$/i.test(lab)) return m;
+      const field = applicantFieldFor(lab);
+      if (field) {
+        const value =
+          field === "full_name" ? a.name : field === "address" ? a.address : field === "phone" ? a.phone : a.email;
+        const v = (value ?? "").trim();
+        if (v) return v;
+        if (field === "full_name") return m; // deliberate: prompts in missing-details
+        dropLine = true;
+        return "";
+      }
+      if (/address|pin/i.test(lab)) {
+        faaLine = true;
+        return "";
+      }
+      dropLine = true;
+      return "";
+    });
+
+    if (faaLine) {
+      if (!faaDone) {
+        out.push(FAA_ADDRESS_LINE);
+        faaDone = true;
+      }
+      continue;
+    }
+    if (dropLine) {
+      const residual = line.replace(/^[^:]{0,40}:/, "").trim();
+      if (!residual) continue;
+      out.push(line.trimEnd());
+      continue;
+    }
+    out.push(line.trimEnd());
+  }
+
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
 
 
 
@@ -175,7 +257,7 @@ export const APPEAL_SYSTEM_PROMPT = `You draft appeals under the Right to Inform
 A FIRST APPEAL is under Section 19(1), filed with the First Appellate Authority of the same public authority, within 30 days of the reply or of the date the reply was due. Where no reply was received within 30 days, cite deemed refusal under Section 7(2).
 A SECOND APPEAL is under Section 19(3), filed with the Karnataka State Information Commission (${LEGAL.ksicAddress}) within 90 days, and may be filed once 45 days have elapsed with no decision from the First Appellate Authority.
 
-Write a complete, formal, ready-to-send appeal letter in plain text. Include: addressee block, subject line citing the correct section, a short numbered chronology of dates, the grounds of appeal with the correct statutory citations, the relief sought, and a signature block. ${NO_FABRICATION_RULE} ${NO_PLACEHOLDER_RULE} Never ask for explanations or reasons — only records. Never state a reason for wanting the information (Section 6(2)).
+Write a complete, formal, ready-to-send appeal letter in plain text. Include: addressee block, subject line citing the correct section, a short numbered chronology of dates, the grounds of appeal with the correct statutory citations, the relief sought, and a signature block. ${NO_FABRICATION_RULE} ${NO_PLACEHOLDER_RULE} The applicant's name, address, mobile number and email are supplied to you verbatim when they are known; use those values and omit any line whose value was not supplied. Never write "[Name of Appellant]", "[Address]", "[Mobile Number]", "[Email Address]", "[Office Address]", "[PIN Code]" or any similar blank. Never ask for explanations or reasons — only records. Never state a reason for wanting the information (Section 6(2)).
 
 Return ONLY the letter text. No markdown, no commentary, no code fences.`;
 
@@ -292,7 +374,9 @@ export function assembleApplication(input: {
   applicantName?: string | null;
   applicantAddress?: string | null;
   applicantPhone?: string | null;
+  applicantEmail?: string | null;
   isBpl?: boolean;
+
 }): string {
   const numbered = input.requests
     .map((r, i) => `${i + 1}. ${r.text}`)
@@ -328,8 +412,17 @@ If any part is refused, please state the specific exemption under Section 8 or 9
 
 Yours faithfully,
 
-${[input.applicantName, input.applicantAddress, input.applicantPhone ? `Phone: ${input.applicantPhone}` : ""].filter(Boolean).join("\n")}
+${applicantSignature(
+  {
+    name: input.applicantName ?? null,
+    address: input.applicantAddress ?? null,
+    phone: input.applicantPhone ?? null,
+    email: input.applicantEmail ?? null,
+  },
+  { requireName: true },
+)}
 Date: ${new Date().toISOString().slice(0, 10)}`;
+
 }
 
 export async function draftAppeal(input: {
@@ -344,7 +437,9 @@ export async function draftAppeal(input: {
   replyDate: string | null;
   replyNotes: string | null;
   firstAppealFiledDate?: string | null;
+  applicant?: Applicant;
 }): Promise<string> {
+  const applicant = input.applicant ?? {};
   const user = [
     `Appeal tier: ${input.tier === "first" ? "FIRST APPEAL, Section 19(1)" : "SECOND APPEAL, Section 19(3)"}`,
     `Reason for appeal: ${input.reason}`,
@@ -357,6 +452,8 @@ export async function draftAppeal(input: {
     input.firstAppealFiledDate ? `First appeal was filed on: ${input.firstAppealFiledDate}` : "",
     `Today's date: ${new Date().toISOString().slice(0, 10)}`,
     "",
+    applicantPromptBlock(applicant),
+    "",
     "Original grievance:",
     input.grievance,
     "",
@@ -366,8 +463,41 @@ export async function draftAppeal(input: {
     .filter(Boolean)
     .join("\n");
 
-  return callGateway(APPEAL_SYSTEM_PROMPT, user);
+  return resolveApplicantPlaceholders(await callGateway(APPEAL_SYSTEM_PROMPT, user), applicant);
 }
+
+export const REVISE_LETTER_SYSTEM_PROMPT = `You revise a formal letter written under the Right to Information Act 2005 for an applicant in Karnataka, India.
+
+You will be given the current letter and a revision instruction, usually supplying details the letter was missing. Apply the instruction and return the complete revised letter.
+
+Keep the structure, the statutory citations and every ground of appeal unchanged unless the instruction says otherwise. Do not soften or drop the relief sought.
+
+${NO_FABRICATION_RULE} ${NO_PLACEHOLDER_RULE}
+
+Return ONLY the letter text. No markdown, no commentary, no code fences.`;
+
+/** Revision path for an already-generated letter — used by the missing-details panel. */
+export async function reviseLetter(input: {
+  letter: string;
+  instruction: string;
+  applicant?: Applicant;
+}): Promise<string> {
+  const applicant = input.applicant ?? {};
+  const user = [
+    applicantPromptBlock(applicant),
+    "",
+    "Current letter:",
+    input.letter,
+    "",
+    "Revision instruction:",
+    input.instruction,
+  ].join("\n");
+  return resolveApplicantPlaceholders(
+    await callGateway(REVISE_LETTER_SYSTEM_PROMPT, user),
+    applicant,
+  );
+}
+
 
 export const REVISE_SYSTEM_PROMPT = `You revise draft Right to Information requests under the RTI Act 2005 for applicants in Karnataka.
 

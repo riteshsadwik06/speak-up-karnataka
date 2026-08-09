@@ -25,7 +25,13 @@ import {
   relevantOfficials,
   useWardOfficials,
 } from "@/components/officials";
-import { generateComplaint, generateDraft, reviseDraft, suggestRouting } from "@/lib/rti.functions";
+import {
+  generateComplaint,
+  generateDraft,
+  reviseDraft,
+  saveApplicantDetails,
+  suggestRouting,
+} from "@/lib/rti.functions";
 import { findPlaceholders } from "@/lib/placeholders";
 import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
 import { identityWithHistory, wardForLocality } from "@/lib/ward-identity";
@@ -97,6 +103,16 @@ function NewApplication() {
   const knClass = lang === "kn" ? KN_TEXT : "";
   const run = useServerFn(generateDraft);
   const revise = useServerFn(reviseDraft);
+  const saveApplicant = useServerFn(saveApplicantDetails);
+  /** Answers that belong on the profile are stored before the letter is rebuilt from it. */
+  async function persistApplicant(fields: Record<string, string>) {
+    if (Object.keys(fields).length === 0) return;
+    try {
+      await saveApplicant({ data: fields });
+    } catch {
+      /* the revision still carries the answers; persistence is a convenience */
+    }
+  }
   const runComplaint = useServerFn(generateComplaint);
 
   const search = Route.useSearch();
@@ -940,7 +956,9 @@ function NewApplication() {
           <MissingDetails
             placeholders={complaintBlanks}
             busy={busy}
-            onFill={(instruction) => void generateTheComplaint(instruction)}
+            onFill={(instruction, fields) =>
+              void persistApplicant(fields).then(() => generateTheComplaint(instruction))
+            }
           />
 
           {ward && <ResponsibleOfficials wardName={ward.ward_name} category={complaint.category} />}
@@ -1152,7 +1170,7 @@ function NewApplication() {
           <MissingDetails
             placeholders={letterBlanks}
             busy={revising}
-            onFill={(fill) => void runRevision(fill)}
+            onFill={(fill, fields) => void persistApplicant(fields).then(() => runRevision(fill))}
           />
 
           <div className="paper-card p-5">
