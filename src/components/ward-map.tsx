@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import shapesAsset from "@/assets/ward-shapes.json.asset.json";
 import { WARDS } from "@/lib/wards";
 import { T, useLang } from "@/lib/i18n";
 
@@ -24,7 +23,7 @@ export function WardMap({
 
   useEffect(() => {
     let alive = true;
-    fetch(shapesAsset.url)
+    fetch("/data/ward-shapes.json")
       .then((r) => r.json())
       .then((j: Shapes) => alive && setData(j))
       .catch(() => undefined);

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import asset from "@/assets/gba-wards-3d.json.asset.json";
 import { portalZoneForGbaZone, PORTAL_AUTHORITIES } from "@/lib/rti-data";
 import { WardMap } from "@/components/ward-map";
 import { acquireGlSlot, CORP_COLOR, loadWards } from "@/lib/ward-3d";
@@ -93,7 +92,7 @@ export function WardMap3D() {
     (async () => {
       const THREE = await import("three");
       const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
-      const raw: { wards: RawWard[] } = await fetch(asset.url).then((r) => r.json());
+      const raw: { wards: RawWard[] } = await fetch("/data/gba-wards-3d.json").then((r) => r.json());
       if (disposed) return;
 
       const small = window.innerWidth < 768;

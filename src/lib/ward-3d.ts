@@ -5,7 +5,6 @@
  *
  * Only ONE WebGL canvas may be live at a time — acquireGlSlot() enforces it.
  */
-import asset from "@/assets/gba-wards-3d.json.asset.json";
 
 export type ThreeNS = typeof import("three");
 
@@ -37,7 +36,7 @@ export const PAPER = "#f3efe6";
 let wardsPromise: Promise<RawWard[]> | null = null;
 
 export function loadWards(): Promise<RawWard[]> {
-  wardsPromise ??= fetch(asset.url)
+  wardsPromise ??= fetch("/data/gba-wards-3d.json")
     .then((r) => r.json())
     .then((j: { wards: RawWard[] }) => j.wards)
     .catch((e) => {

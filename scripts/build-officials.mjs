@@ -1,6 +1,6 @@
 /**
  * Build-time transform of the Bengawalk "city officials" dataset into the
- * compact asset the app ships (src/assets/blr-officials.json).
+ * compact asset the app ships (public/data/blr-officials.json).
  *
  * Source: https://github.com/Vonter/city-officials (non-code data: CC BY 4.0)
  * Run:    node scripts/build-officials.mjs [outfile]
@@ -10,7 +10,7 @@
 import { writeFileSync } from "node:fs";
 
 const SRC = "https://raw.githubusercontent.com/Vonter/city-officials/main/static/blr/officials.json";
-const OUT = process.argv[2] ?? "src/assets/blr-officials.json";
+const OUT = process.argv[2] ?? "public/data/blr-officials.json";
 
 const DEPARTMENT_BLOCKS = {
   gba_zone: "gbaZone",
