@@ -8,6 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { CORP_COLOR, NEUTRAL } from "@/lib/ward-3d";
 import { LangToggle, useLang, T } from "@/lib/i18n";
+import { 
+  ArrowRight, ArrowDown, User, BrainCircuit, Database, FileText, 
+  Scale, MapPin, Building2, Gavel, CalendarClock, History, MessageSquare, Code2
+} from "lucide-react";
 
 
 
@@ -149,6 +153,133 @@ function Landing() {
           <p className="mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
             <T id="falseClosureBody" />
           </p>
+        </section>
+
+        <section className="border-b border-border bg-background/50 p-6 md:p-10">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-12 text-left md:text-center">
+              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">Architecture & Platform Flow</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                A comprehensive view of how Vicharane transforms unstructured citizen grievances into legally binding, trackable resolutions using AI and modern web infrastructure.
+              </p>
+            </div>
+
+            {/* User Flow Pipeline */}
+            <h3 className="font-display text-2xl font-bold mb-6 border-b border-border pb-2">1. The Resolution Pipeline</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-16">
+              {/* 1. Citizen Input */}
+              <div className="bg-background border border-border rounded-xl p-6 shadow-sm flex flex-col h-full relative">
+                <div className="h-12 w-12 rounded-lg bg-foreground text-background flex items-center justify-center mb-4 transition-transform hover:scale-105">
+                  <User size={24} />
+                </div>
+                <h4 className="font-display font-bold text-lg mb-2">1. Citizen Input</h4>
+                <p className="text-sm text-muted-foreground mb-4">Users submit their grievances in plain, unstructured language.</p>
+                <ul className="text-xs space-y-2 mt-auto">
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary mt-1 shrink-0" /> Native Kannada support</li>
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary mt-1 shrink-0" /> Natural English support</li>
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary mt-1 shrink-0" /> No legal knowledge required</li>
+                </ul>
+                <ArrowRight className="hidden lg:block absolute -right-5 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+                <ArrowDown className="lg:hidden absolute -bottom-5 left-1/2 -translate-x-1/2 text-muted-foreground z-10" />
+              </div>
+
+              {/* 2. AI Intelligence Engine */}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 shadow-sm flex flex-col h-full relative">
+                <div className="h-12 w-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center mb-4 transition-transform hover:scale-105">
+                  <BrainCircuit size={24} />
+                </div>
+                <h4 className="font-display font-bold text-lg mb-2">2. AI Intelligence</h4>
+                <p className="text-sm text-muted-foreground mb-4">Multi-stage LLM processing of the unstructured input.</p>
+                <ul className="text-xs space-y-3 mt-auto">
+                  <li className="flex gap-2 items-start"><Building2 size={14} className="shrink-0 text-primary mt-0.5" /> <b>Stakeholder Mapping:</b> Identifies exact civic authority (BBMP, BESCOM, BWSSB)</li>
+                  <li className="flex gap-2 items-start"><MapPin size={14} className="shrink-0 text-primary mt-0.5" /> <b>Location Mapping:</b> Extracts ward identities & local coordinates</li>
+                  <li className="flex gap-2 items-start"><FileText size={14} className="shrink-0 text-primary mt-0.5" /> <b>Problem Drafting:</b> Converts emotion into concise actionable summaries</li>
+                  <li className="flex gap-2 items-start"><Gavel size={14} className="shrink-0 text-primary mt-0.5" /> <b>Legal Translation:</b> Formats into RTI Act 2005 syntax and rule structures</li>
+                </ul>
+                <ArrowRight className="hidden lg:block absolute -right-5 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+                <ArrowDown className="lg:hidden absolute -bottom-5 left-1/2 -translate-x-1/2 text-muted-foreground z-10" />
+              </div>
+
+              {/* 3. Document Generation */}
+              <div className="bg-background border border-border rounded-xl p-6 shadow-sm flex flex-col h-full relative">
+                <div className="h-12 w-12 rounded-lg bg-secondary flex items-center justify-center mb-4 border border-border transition-transform hover:scale-105">
+                  <FileText size={24} />
+                </div>
+                <h4 className="font-display font-bold text-lg mb-2">3. Statutory Drafts</h4>
+                <p className="text-sm text-muted-foreground mb-4">Outputs strictly formatted legal documents ready for submission.</p>
+                <ul className="text-xs space-y-2 mt-auto">
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary-foreground mt-1 shrink-0" /> Section 6(1) RTI Applications</li>
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary-foreground mt-1 shrink-0" /> First Appeals under 19(1)</li>
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary-foreground mt-1 shrink-0" /> Second Appeals under 19(3)</li>
+                  <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary-foreground mt-1 shrink-0" /> Dual-language output formats</li>
+                </ul>
+                <ArrowRight className="hidden lg:block absolute -right-5 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+                <ArrowDown className="lg:hidden absolute -bottom-5 left-1/2 -translate-x-1/2 text-muted-foreground z-10" />
+              </div>
+
+              {/* 4. Action Timeline */}
+              <div className="bg-background border border-border rounded-xl p-6 shadow-sm flex flex-col h-full">
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center mb-4 border border-border transition-transform hover:scale-105">
+                  <CalendarClock size={24} />
+                </div>
+                <h4 className="font-display font-bold text-lg mb-2">4. Action Timeline</h4>
+                <p className="text-sm text-muted-foreground mb-4">Dynamic dashboard tracking progress and prompting user action.</p>
+                <ul className="text-xs space-y-3 mt-auto">
+                  <li className="flex gap-2 items-start"><History size={14} className="shrink-0 text-foreground mt-0.5" /> <b>Submission Log:</b> History of all filed applications & documents</li>
+                  <li className="flex gap-2 items-start"><Scale size={14} className="shrink-0 text-foreground mt-0.5" /> <b>Statutory Deadlines:</b> Enforces the strict 30/45/90 day RTI clock</li>
+                  <li className="flex gap-2 items-start"><MessageSquare size={14} className="shrink-0 text-foreground mt-0.5" /> <b>Next Actions:</b> Intelligent prompts (e.g. "30 days passed, file First Appeal now")</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Software Stack */}
+            <h3 className="font-display text-2xl font-bold mb-6 border-b border-border pb-2 mt-12">2. Technology Stack</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Frontend */}
+              <div className="p-6 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-4">
+                  <Code2 className="text-primary" />
+                  <h4 className="font-bold text-lg">Client Application</h4>
+                </div>
+                <ul className="text-sm space-y-2 text-muted-foreground">
+                  <li><strong className="text-foreground">Framework:</strong> React 19 + TanStack Start (SSR)</li>
+                  <li><strong className="text-foreground">Styling:</strong> Tailwind CSS + Radix UI Primitives</li>
+                  <li><strong className="text-foreground">Visuals:</strong> Three.js (3D Ward Maps)</li>
+                  <li><strong className="text-foreground">Routing:</strong> TanStack Router (Type-safe)</li>
+                </ul>
+              </div>
+
+              {/* AI Infrastructure */}
+              <div className="p-6 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-4">
+                  <BrainCircuit className="text-primary" />
+                  <h4 className="font-bold text-lg">AI Infrastructure</h4>
+                </div>
+                <ul className="text-sm space-y-2 text-muted-foreground">
+                  <li><strong className="text-foreground">Gateway:</strong> Lovable AI Gateway / Groq API</li>
+                  <li><strong className="text-foreground">Primary Model:</strong> GPT-4.1 class (openai/gpt-5.6-sol)</li>
+                  <li><strong className="text-foreground">Fallback Models:</strong> Moonshot MoE & GPT-OSS-120b</li>
+                  <li><strong className="text-foreground">Strategy:</strong> System prompts mapped to Karnataka legal limits</li>
+                </ul>
+              </div>
+
+              {/* Backend & DB */}
+              <div className="p-6 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-4">
+                  <Database className="text-primary" />
+                  <h4 className="font-bold text-lg">Backend & Data</h4>
+                </div>
+                <ul className="text-sm space-y-2 text-muted-foreground">
+                  <li><strong className="text-foreground">Database:</strong> Supabase (PostgreSQL)</li>
+                  <li><strong className="text-foreground">Auth:</strong> Supabase Auth & RLS Policies</li>
+                  <li><strong className="text-foreground">Hosting:</strong> Vercel Edge Serverless</li>
+                  <li><strong className="text-foreground">Validation:</strong> Zod (Strict schema typing)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </section>
 
 
