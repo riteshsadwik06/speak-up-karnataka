@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Wordmark } from "@/components/wordmark";
+import { Wordmark, BRAND_RED } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -81,19 +81,29 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
             }`}
           >
             <div className="flex items-start justify-between gap-3 overflow-hidden">
-              <div
-                className={`min-w-0 transition-opacity duration-200 ${collapsed ? "md:hidden" : ""}`}
+              <Link
+                to="/"
+                className={`block min-w-0 transition-opacity duration-200 hover:opacity-80 ${collapsed ? "md:hidden" : ""}`}
               >
                 <h1>
-                  <Wordmark size="sm" />
+                  <Wordmark size="sm" link={false} />
                 </h1>
                 <p className="rule-heading mt-1.5 whitespace-nowrap">{t("tagline")}</p>
-              </div>
+              </Link>
               {/* Show a mini icon when collapsed */}
               {collapsed && (
-                <div className="hidden md:flex min-w-0 items-center justify-center w-full">
-                  <span className="font-display text-xl font-bold text-accent">ವಿ</span>
-                </div>
+                <Link
+                  to="/"
+                  className="hidden md:flex min-w-0 items-center justify-center w-full hover:opacity-80"
+                >
+                  <span
+                    lang="kn"
+                    className="font-kannada font-medium leading-[1.5] text-[1.375rem]"
+                    style={{ color: BRAND_RED }}
+                  >
+                    ವಿ
+                  </span>
+                </Link>
               )}
               <div className={collapsed ? "md:hidden" : ""}>
                 <LangToggle />
