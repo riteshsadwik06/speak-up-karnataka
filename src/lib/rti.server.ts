@@ -357,6 +357,19 @@ async function callGroqGateway(
   return json.choices?.[0]?.message?.content ?? "";
 }
 
+/**
+ * Some models (notably Groq's fallback, less disciplined about "no markdown"
+ * than the primary gateway) still wrap headings in **bold** or emit leading
+ * "#" headers. A citizen files this text as-is, so strip the markup rather
+ * than leaving literal asterisks/hashes in a formal letter.
+ */
+function stripMarkdownArtifacts(text: string): string {
+  return text
+    .replace(/\*\*([^*]+?)\*\*/g, "$1")
+    .replace(/__([^_]+?)__/g, "$1")
+    .replace(/^ {0,3}#{1,6}\s+/gm, "");
+}
+
 async function callGateway(
   system: string,
   user: string,
@@ -396,7 +409,7 @@ async function callGateway(
     console.error("[rti] gateway returned an empty response");
     throw new Error("The AI returned an empty response. Please try again.");
   }
-  return text.trim();
+  return stripMarkdownArtifacts(text.trim());
 }
 
 function parseJson(raw: string): unknown {
