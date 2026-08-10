@@ -2,7 +2,7 @@
  * Typed accessor for the Bengaluru civic officials dataset.
  *
  * Data: https://github.com/Vonter/city-officials (non-code data: CC BY 4.0).
- * Derived at build time by scripts/build-officials.mjs and served from the CDN,
+ * Derived at build time by scripts/build-officials.mjs and served from public/data,
  * so the ~390KB payload never enters the main bundle — it is fetched lazily on
  * first use and cached for the session.
  */
