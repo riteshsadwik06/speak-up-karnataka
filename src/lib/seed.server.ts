@@ -53,7 +53,8 @@ const SEEDS: SeedApp[] = [
       "Garbage has not been collected from our street for over a week and the pile has spread onto the footpath.",
     language: "en",
     public_authority: "Bengaluru North City Corporation",
-    ward_name: "Yelahanka",
+    ward_name: "Yelahanka Satellite Town",
+    ward_id: "N-005",
     corporation: "Bengaluru North City Corporation",
     generated_requests: [],
     application_body: "",
@@ -71,23 +72,24 @@ const SEEDS: SeedApp[] = [
       "The storm water drain behind our lane has been blocked for months and floods the road every time it rains. Nobody comes to clear it.",
     language: "en",
     public_authority: "Bengaluru East City Corporation",
-    ward_name: "Bellandur",
+    ward_name: "Bellanduru",
+    ward_id: "E-047",
     corporation: "Bengaluru East City Corporation",
     generated_requests: [
       {
-        text: "Provide certified copies of all complaints registered regarding storm water drain blockage in Bellandur ward between 1 January 2025 and the date of this application, along with the action-taken report on each.",
+        text: "Provide certified copies of all complaints registered regarding storm water drain blockage in Bellanduru ward between 1 January 2025 and the date of this application, along with the action-taken report on each.",
         rationale: "Establishes that the authority was on notice and what it recorded doing.",
       },
       {
-        text: "Provide a list of desilting works carried out on storm water drains in Bellandur ward during the financial years 2024-25 and 2025-26, with dates, contractor names and work order numbers.",
+        text: "Provide a list of desilting works carried out on storm water drains in Bellanduru ward during the financial years 2024-25 and 2025-26, with dates, contractor names and work order numbers.",
         rationale: "Work orders reveal whether the desilting was ever executed or only sanctioned.",
       },
       {
-        text: "Provide the total expenditure incurred on storm water drain maintenance in Bellandur ward in the financial years 2024-25 and 2025-26, with supporting bills and measurement book entries.",
+        text: "Provide the total expenditure incurred on storm water drain maintenance in Bellanduru ward in the financial years 2024-25 and 2025-26, with supporting bills and measurement book entries.",
         rationale: "Expenditure records against unexecuted work is the clearest evidence of a gap.",
       },
       {
-        text: "Provide certified copies of the file notings on the drain maintenance file for Bellandur ward for the period 1 April 2025 onwards.",
+        text: "Provide certified copies of the file notings on the drain maintenance file for Bellanduru ward for the period 1 April 2025 onwards.",
         rationale: "File notings show internal reasoning and where the file stalled.",
       },
     ],
@@ -99,20 +101,21 @@ const SEEDS: SeedApp[] = [
     grievance_text:
       "Street lights on our main road have not worked for over a year. Complaints on the helpline go nowhere.",
     language: "en",
-    public_authority: "Bengaluru West City Corporation",
-    ward_name: "Vijayanagar",
-    corporation: "Bengaluru West City Corporation",
+    public_authority: "Bengaluru South City Corporation",
+    ward_name: "Vijaya Bank Layout",
+    ward_id: "S-059",
+    corporation: "Bengaluru South City Corporation",
     generated_requests: [
       {
-        text: "Provide a list of street light repair and replacement works sanctioned in Vijayanagar ward between 1 April 2024 and the date of this application, with work order numbers and sanctioned amounts.",
+        text: "Provide a list of street light repair and replacement works sanctioned in Vijaya Bank Layout ward between 1 April 2024 and the date of this application, with work order numbers and sanctioned amounts.",
         rationale: "Shows what was sanctioned against what exists on the ground.",
       },
       {
-        text: "Provide certified copies of the street light complaint register entries for Vijayanagar ward for the period 1 April 2024 onwards.",
+        text: "Provide certified copies of the street light complaint register entries for Vijaya Bank Layout ward for the period 1 April 2024 onwards.",
         rationale: "The register is the record of the complaints the helpline claims not to have.",
       },
       {
-        text: "Provide the completion certificates and inspection reports for street light maintenance contracts in Vijayanagar ward for the financial year 2024-25.",
+        text: "Provide the completion certificates and inspection reports for street light maintenance contracts in Vijaya Bank Layout ward for the financial year 2024-25.",
         rationale: "Completion certificates for work not done are directly actionable.",
       },
     ],
@@ -155,19 +158,20 @@ const SEEDS: SeedApp[] = [
       "Sewage has been overflowing onto our street from a manhole near the park for months. BWSSB keeps saying it is scheduled.",
     language: "en",
     public_authority: "BWSSB",
-    ward_name: "J P Nagar",
+    ward_name: "J.P Nagar",
+    ward_id: "S-014",
     corporation: "Bengaluru South City Corporation",
     generated_requests: [
       {
-        text: "Provide certified copies of all complaints received by BWSSB regarding sewage overflow in J P Nagar between 1 January 2025 and the date of this application, with the action-taken report on each.",
+        text: "Provide certified copies of all complaints received by BWSSB regarding sewage overflow in J.P Nagar between 1 January 2025 and the date of this application, with the action-taken report on each.",
         rationale: "Establishes the record of notice and response.",
       },
       {
-        text: "Provide a list of sewerage line repair and replacement works sanctioned for J P Nagar during the financial years 2024-25 and 2025-26, with work order numbers, sanctioned amounts and scheduled completion dates.",
+        text: "Provide a list of sewerage line repair and replacement works sanctioned for J.P Nagar during the financial years 2024-25 and 2025-26, with work order numbers, sanctioned amounts and scheduled completion dates.",
         rationale: "'Scheduled' is only meaningful if a work order exists.",
       },
       {
-        text: "Provide certified copies of the inspection reports of the sewerage network in J P Nagar for the period 1 January 2025 onwards.",
+        text: "Provide certified copies of the inspection reports of the sewerage network in J.P Nagar for the period 1 January 2025 onwards.",
         rationale: "Inspection reports record the actual condition officers observed.",
       },
     ],
@@ -181,7 +185,8 @@ const SEEDS: SeedApp[] = [
       "The transformer in our area fails every week and BESCOM has not replaced it despite repeated complaints.",
     language: "en",
     public_authority: "BESCOM",
-    ward_name: "Banashankari",
+    ward_name: "Banashankari Temple Ward",
+    ward_id: "S-004",
     corporation: "Bengaluru South City Corporation",
     generated_requests: [
       {

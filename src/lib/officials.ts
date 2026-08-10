@@ -50,6 +50,12 @@ export const OFFICIALS_CAVEAT =
 let dataPromise: Promise<OfficialsData> | null = null;
 let cached: OfficialsData | null = null;
 let wardIndex: Record<string, WardOfficials> | null = null;
+let wardIndexNormalized: Record<string, WardOfficials> | null = null;
+
+/** Strips everything but letters and digits, so "J.P Nagar" and "J P Nagar" collide. */
+function normalizeWardKey(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 /** Lazily fetch (and cache) the officials asset. */
 export function loadOfficials(): Promise<OfficialsData> {
@@ -61,7 +67,11 @@ export function loadOfficials(): Promise<OfficialsData> {
     .then((d) => {
       cached = d;
       wardIndex = {};
-      for (const [name, block] of Object.entries(d.wards)) wardIndex[name.toLowerCase()] = block;
+      wardIndexNormalized = {};
+      for (const [name, block] of Object.entries(d.wards)) {
+        wardIndex[name.toLowerCase()] = block;
+        wardIndexNormalized[normalizeWardKey(name)] = block;
+      }
       return d;
     })
     .catch((e) => {
@@ -71,10 +81,22 @@ export function loadOfficials(): Promise<OfficialsData> {
   return dataPromise;
 }
 
-/** Ward block matched case-insensitively on the ward name, or null. */
+/**
+ * Ward block matched on the ward name. Tries an exact case-insensitive match
+ * first, then falls back to a normalised match (punctuation/spacing stripped)
+ * so "J P Nagar" still finds the dataset's "J.P Nagar".
+ */
 export async function officialsForWard(wardName: string): Promise<WardOfficials | null> {
   await loadOfficials();
-  return wardIndex?.[wardName.trim().toLowerCase()] ?? null;
+  const trimmed = wardName.trim();
+  const hit =
+    wardIndex?.[trimmed.toLowerCase()] ?? wardIndexNormalized?.[normalizeWardKey(trimmed)] ?? null;
+  // Every ward name shown anywhere in the app (seeded or real) should resolve.
+  // A silent miss here is exactly how a whole demo row loses its officials panel.
+  if (!hit && import.meta.env.DEV) {
+    console.error(`[officials] no officials block resolves for ward name "${wardName}"`);
+  }
+  return hit;
 }
 
 /** Officials for one area within a department block (case-insensitive). */

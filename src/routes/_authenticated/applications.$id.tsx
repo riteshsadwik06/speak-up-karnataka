@@ -43,6 +43,7 @@ import {
 } from "@/lib/rti.functions";
 import { toast } from "sonner";
 import { KN_TEXT, useAuthorityLabel, useChannelLabel, useLang } from "@/lib/i18n";
+import { DICT_DETAIL } from "@/lib/dict/detail";
 import { findPlaceholders, hasPlaceholders } from "@/lib/placeholders";
 import { MissingDetails, PlaceholderBlockNote } from "@/components/missing-details";
 
@@ -237,6 +238,10 @@ function Detail() {
   const wardRecord = WARDS.find((w) => w.ward_id === app.ward_id);
   const wardZone = wardRecord?.zone_name ?? null;
   const wardKn = lang === "kn" ? (wardRecord?.ward_name_kn ?? null) : null;
+  // Some ward names already end in "Ward" / "ವಾರ್ಡ್" (e.g. "Banashankari Temple
+  // Ward") — don't append the label suffix a second time on top of those.
+  const wardLabel = wardKn ?? app.ward_name;
+  const wardAlreadyHasSuffix = /(ward|ವಾರ್ಡ್)\s*$/i.test(wardLabel ?? "");
   const kind = portalAuthorityKind(app.public_authority);
   const autoZone = kind === "bbmp" ? portalZoneForGbaZone(wardZone) : null;
   const savedPortal = app.portal_authority as string | null;
@@ -643,14 +648,18 @@ function Detail() {
         label={t("sectionWhereToSend")}
         summary={
           isComplaint
-            ? (channel ? channelLabel(channel.id, channel.name, channel.note).name : t("channelNotRecorded"))
+            ? channel
+              ? channelLabel(channel.id, channel.name, channel.note).name
+              : t("channelNotRecorded")
             : t("summaryOnlineOrPost")
         }
       >
         {isComplaint ? (
           channel ? (
             <div className="px-1">
-              <p className="text-sm font-medium">{channelLabel(channel.id, channel.name, channel.note).name}</p>
+              <p className="text-sm font-medium">
+                {channelLabel(channel.id, channel.name, channel.note).name}
+              </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {channelLabel(channel.id, channel.name, channel.note).note}
               </p>
@@ -1118,7 +1127,9 @@ function Detail() {
         <h1 className="text-2xl leading-snug sm:text-3xl">{app.grievance_text}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {authorityLabel(app.public_authority)}
-          {app.ward_name ? ` · ${wardKn ?? app.ward_name} ${t("wardSuffix")}` : ""}
+          {app.ward_name
+            ? ` · ${wardLabel}${wardAlreadyHasSuffix ? "" : ` ${t("wardSuffix")}`}`
+            : ""}
           {app.is_seeded ? ` · ${t("demoDataBadge")}` : ""}
         </p>
         {wardKn ? <p className="text-xs text-muted-foreground/70">{app.ward_name}</p> : null}
@@ -1279,143 +1290,157 @@ function Detail() {
         )}
       </div>
 
-      {data.appeals.map((ap) => (
-        <div key={ap.id} className="paper-card mt-5 border-accent/40 p-5">
-          <SectionLabel>
-            <span lang={lang} className={lang === "kn" ? `${KN_TEXT} normal-case` : undefined}>
-              {ap.tier === "first" ? t("firstAppeal") : t("secondAppeal")}
-            </span>{" "}
-            — {ap.tier === "first" ? t("sectionNumberFirst") : t("sectionNumberSecond")}
-          </SectionLabel>
-          <p className="text-xs text-muted-foreground">
-            {t("groundsLabel")}: {ap.grounds}
-            {ap.filed_date
-              ? ` · ${t("filedOnMiddot")} ${ap.filed_date}`
-              : ` · ${t("notFiledYetMiddot")}`}
-            {ap.tier === "first"
-              ? ap.due_date
-                ? ` · ${t("faaDecisionDueMiddot")} ${ap.due_date}`
-                : ""
-              : ` · ${t("noStatutoryDisposalSecond")}`}
-          </p>
-          {ap.tier === "first" && appealGroundLabel(ap.portal_ground) && (
-            <p className="mt-1 text-xs font-medium">
-              {t("portalGroundToSelectLabel")}: {groundLabel(ap.portal_ground)}
+      {data.appeals.map((ap) => {
+        // The seed demo appeal stores plain English grounds/body — matched by exact
+        // text so it renders in the interface language instead of staying frozen
+        // at seed time. Never matches a real, user-drafted appeal's text.
+        const apGrounds =
+          lang === "kn" && ap.grounds === DICT_DETAIL.seedDeemedRefusalGrounds.en
+            ? DICT_DETAIL.seedDeemedRefusalGrounds.kn
+            : ap.grounds;
+        const apBodyKn =
+          ap.body_kn ??
+          (ap.body === DICT_DETAIL.seedFirstAppealDemoBody.en
+            ? DICT_DETAIL.seedFirstAppealDemoBody.kn
+            : null);
+        return (
+          <div key={ap.id} className="paper-card mt-5 border-accent/40 p-5">
+            <SectionLabel>
+              <span lang={lang} className={lang === "kn" ? `${KN_TEXT} normal-case` : undefined}>
+                {ap.tier === "first" ? t("firstAppeal") : t("secondAppeal")}
+              </span>{" "}
+              — {ap.tier === "first" ? t("sectionNumberFirst") : t("sectionNumberSecond")}
+            </SectionLabel>
+            <p className="text-xs text-muted-foreground">
+              {t("groundsLabel")}: {apGrounds}
+              {ap.filed_date
+                ? ` · ${t("filedOnMiddot")} ${ap.filed_date}`
+                : ` · ${t("notFiledYetMiddot")}`}
+              {ap.tier === "first"
+                ? ap.due_date
+                  ? ` · ${t("faaDecisionDueMiddot")} ${ap.due_date}`
+                  : ""
+                : ` · ${t("noStatutoryDisposalSecond")}`}
             </p>
-          )}
-          {ap.registration_number && (
-            <p className="mt-1 font-mono text-xs text-muted-foreground">
-              {t("registrationNumber")}: {ap.registration_number}
-            </p>
-          )}
-          {ap.body_kn ? (
-            <>
-              <p className="mt-3 text-xs text-muted-foreground">
-                {t("portalLatinOnlyNoticeAppeal")}
+            {ap.tier === "first" && appealGroundLabel(ap.portal_ground) && (
+              <p className="mt-1 text-xs font-medium">
+                {t("portalGroundToSelectLabel")}: {groundLabel(ap.portal_ground)}
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  onClick={() => setLetterVersion("kn")}
-                  className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "kn" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
-                >
-                  {t("letterKannadaPostalOnly")}
-                </button>
-                <button
-                  onClick={() => setLetterVersion("en")}
-                  className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "en" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
-                >
-                  {t("letterEnglishPortal")}
-                </button>
-              </div>
-            </>
-          ) : null}
-          <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
-            {ap.body_kn && letterVersion === "kn" ? ap.body_kn : ap.body}
-          </pre>
-          {ap.body_kn && letterVersion === "kn" ? (
-            <p className="mt-2 text-xs text-muted-foreground">{t("postThisVersionNote")}</p>
-          ) : null}
-          {hasPlaceholders(ap.body) ? <PlaceholderBlockNote /> : null}
-          <div className="mt-3">
-            <MissingDetails
-              placeholders={findPlaceholders(ap.body)}
-              busy={appealBusy === ap.id}
-              onFill={(instruction, fields) => void fillAppealBlanks(ap.id, instruction, fields)}
-            />
-          </div>
-
-          {!ap.filed_date && (
+            )}
+            {ap.registration_number && (
+              <p className="mt-1 font-mono text-xs text-muted-foreground">
+                {t("registrationNumber")}: {ap.registration_number}
+              </p>
+            )}
+            {apBodyKn ? (
+              <>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {t("portalLatinOnlyNoticeAppeal")}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setLetterVersion("kn")}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "kn" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("letterKannadaPostalOnly")}
+                  </button>
+                  <button
+                    onClick={() => setLetterVersion("en")}
+                    className={`rounded-md border px-3 py-1.5 text-xs ${letterVersion === "en" ? "border-accent bg-accent/10" : "border-border hover:bg-secondary"}`}
+                  >
+                    {t("letterEnglishPortal")}
+                  </button>
+                </div>
+              </>
+            ) : null}
+            <pre className="mt-3 whitespace-pre-wrap rounded-md bg-secondary/60 p-4 font-mono text-xs leading-relaxed">
+              {apBodyKn && letterVersion === "kn" ? apBodyKn : ap.body}
+            </pre>
+            {apBodyKn && letterVersion === "kn" ? (
+              <p className="mt-2 text-xs text-muted-foreground">{t("postThisVersionNote")}</p>
+            ) : null}
+            {hasPlaceholders(ap.body) ? <PlaceholderBlockNote /> : null}
             <div className="mt-3">
-              <label className="rule-heading block">{t("portalRegNumberOptionalLabel")}</label>
-              <input
-                value={appealReg[ap.id] ?? ""}
-                onChange={(e) => setAppealReg((s) => ({ ...s, [ap.id]: e.target.value }))}
-                placeholder="RTIPM/A/2026/60025"
-                className={inputClass}
+              <MissingDetails
+                placeholders={findPlaceholders(ap.body)}
+                busy={appealBusy === ap.id}
+                onFill={(instruction, fields) => void fillAppealBlanks(ap.id, instruction, fields)}
               />
             </div>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              disabled={hasPlaceholders(ap.body)}
-              onClick={() => {
-                navigator.clipboard.writeText(ap.body);
-                toast.success(t("copied"));
-              }}
-              className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
-            >
-              {t("copy")}
-            </button>
-            <button
-              disabled={hasPlaceholders(ap.body)}
-              onClick={() => {
-                navigator.clipboard.writeText(toPortalSafe(ap.body));
-                toast.success(t("toastPortalSafeCopied"));
-              }}
-              className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
-            >
-              {t("copyPortalSafe")}
-            </button>
-            {ap.body_kn ? (
+
+            {!ap.filed_date && (
+              <div className="mt-3">
+                <label className="rule-heading block">{t("portalRegNumberOptionalLabel")}</label>
+                <input
+                  value={appealReg[ap.id] ?? ""}
+                  onChange={(e) => setAppealReg((s) => ({ ...s, [ap.id]: e.target.value }))}
+                  placeholder="RTIPM/A/2026/60025"
+                  className={inputClass}
+                />
+              </div>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
               <button
-                disabled={hasPlaceholders(ap.body_kn)}
+                disabled={hasPlaceholders(ap.body)}
                 onClick={() => {
-                  navigator.clipboard.writeText(ap.body_kn!);
-                  toast.success(t("toastKannadaCopied"));
+                  navigator.clipboard.writeText(ap.body);
+                  toast.success(t("copied"));
                 }}
                 className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
               >
-                {t("copyKannadaButton")}
+                {t("copy")}
               </button>
-            ) : null}
-            {!ap.filed_date && (
               <button
-                onClick={async () => {
-                  const { error } = await supabase
-                    .from("appeals")
-                    .update({
-                      filed_date: today(),
-                      due_date: ap.tier === "first" ? addDays(today(), 45) : null,
-                      registration_number: appealReg[ap.id]?.trim() || null,
-                    })
-                    .eq("id", ap.id);
-                  if (error) {
-                    toast.error(error.message);
-                    return;
-                  }
-                  await patch({
-                    status: ap.tier === "first" ? "first_appeal_filed" : "second_appeal_filed",
-                  });
-                  toast.success(t("toastMarkedFiled"));
+                disabled={hasPlaceholders(ap.body)}
+                onClick={() => {
+                  navigator.clipboard.writeText(toPortalSafe(ap.body));
+                  toast.success(t("toastPortalSafeCopied"));
                 }}
-                className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+                className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
               >
-                {t("btnMarkAppealFiled")}
+                {t("copyPortalSafe")}
               </button>
-            )}
+              {apBodyKn ? (
+                <button
+                  disabled={hasPlaceholders(apBodyKn)}
+                  onClick={() => {
+                    navigator.clipboard.writeText(apBodyKn);
+                    toast.success(t("toastKannadaCopied"));
+                  }}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"
+                >
+                  {t("copyKannadaButton")}
+                </button>
+              ) : null}
+              {!ap.filed_date && (
+                <button
+                  onClick={async () => {
+                    const { error } = await supabase
+                      .from("appeals")
+                      .update({
+                        filed_date: today(),
+                        due_date: ap.tier === "first" ? addDays(today(), 45) : null,
+                        registration_number: appealReg[ap.id]?.trim() || null,
+                      })
+                      .eq("id", ap.id);
+                    if (error) {
+                      toast.error(error.message);
+                      return;
+                    }
+                    await patch({
+                      status: ap.tier === "first" ? "first_appeal_filed" : "second_appeal_filed",
+                    });
+                    toast.success(t("toastMarkedFiled"));
+                  }}
+                  className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+                >
+                  {t("btnMarkAppealFiled")}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {referenceSections}
     </AppShell>

@@ -173,28 +173,49 @@ export const generateAppealDraft = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    const body = await draftAppeal({
-      tier: data.tier,
-      reason: data.reason,
-      authority: app.public_authority,
-      wardName: app.ward_name,
-      grievance: app.grievance_text,
-      requests: (app.generated_requests as RtiRequest[]) ?? [],
-      filedDate: app.filed_date,
-      dueDate: app.response_due_date,
-      replyDate: app.reply_received_date,
-      replyNotes: app.reply_notes,
-      firstAppealFiledDate: firstAppeal?.filed_date ?? null,
-      applicant: {
-        name: profile?.full_name ?? null,
-        address: profile?.address ?? null,
-        phone: profile?.phone ?? null,
-        email: profile?.email ?? null,
-      },
-    });
+    let body: string;
+    try {
+      body = await draftAppeal({
+        tier: data.tier,
+        reason: data.reason,
+        authority: app.public_authority,
+        wardName: app.ward_name,
+        grievance: app.grievance_text,
+        requests: (app.generated_requests as RtiRequest[]) ?? [],
+        filedDate: app.filed_date,
+        dueDate: app.response_due_date,
+        replyDate: app.reply_received_date,
+        replyNotes: app.reply_notes,
+        firstAppealFiledDate: firstAppeal?.filed_date ?? null,
+        applicant: {
+          name: profile?.full_name ?? null,
+          address: profile?.address ?? null,
+          phone: profile?.phone ?? null,
+          email: profile?.email ?? null,
+        },
+        lang: data.lang,
+      });
+    } catch (err) {
+      console.error(
+        `[rti] draftAppeal failed for application ${data.applicationId}, tier=${data.tier}`,
+        err,
+      );
+      throw err;
+    }
 
-
-    const bodyKn = data.lang === "kn" ? await translateLetterToKannada(body) : null;
+    // The English appeal is already drafted at this point — a failed Kannada
+    // translation should not lose it. Save English-only and log the cause.
+    let bodyKn: string | null = null;
+    if (data.lang === "kn") {
+      try {
+        bodyKn = await translateLetterToKannada(body);
+      } catch (err) {
+        console.error(
+          `[rti] Kannada translation failed for application ${data.applicationId}, tier=${data.tier}`,
+          err,
+        );
+      }
+    }
 
     const { data: inserted, error: insertError } = await context.supabase
       .from("appeals")

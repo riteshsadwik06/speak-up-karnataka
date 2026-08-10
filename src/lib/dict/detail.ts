@@ -167,6 +167,16 @@ export const DICT_DETAIL = {
   btnMarkAppealFiled: { en: "Mark appeal filed today", kn: "ಮೇಲ್ಮನವಿ ಇಂದು ಸಲ್ಲಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿ" },
   toastMarkedFiled: { en: "Marked as filed", kn: "ಸಲ್ಲಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ" },
 
+  // --- Seed demo appeal (matched by exact English text; see applications.$id.tsx) ---
+  seedDeemedRefusalGrounds: {
+    en: "No reply within 30 days — deemed refusal under Section 7(2).",
+    kn: "30 ದಿನಗಳೊಳಗೆ ಉತ್ತರ ಬಾರದಿರುವುದು — ಸೆಕ್ಷನ್ 7(2)ರ ಅಡಿಯಲ್ಲಿ ಭಾವಿತ ನಿರಾಕರಣೆ.",
+  },
+  seedFirstAppealDemoBody: {
+    en: "Demo record — first appeal under Section 19(1) filed with the First Appellate Authority on the ground of deemed refusal under Section 7(2).",
+    kn: "ಮಾದರಿ ದಾಖಲೆ — ಸೆಕ್ಷನ್ 7(2)ರ ಅಡಿಯಲ್ಲಿ ಭಾವಿತ ನಿರಾಕರಣೆಯ ಆಧಾರದ ಮೇಲೆ ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಪ್ರಾಧಿಕಾರಕ್ಕೆ ಸೆಕ್ಷನ್ 19(1)ರ ಅಡಿಯಲ್ಲಿ ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಲಾಗಿದೆ.",
+  },
+
   // --- Timeline (main) ---
   timelineCreated: { en: "Created", kn: "ರಚಿಸಿದ ದಿನಾಂಕ" },
   checkStatusPortalLink: { en: "Check status on the portal", kn: "ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ಸ್ಥಿತಿ ಪರಿಶೀಲಿಸಿ" },
@@ -333,7 +343,7 @@ export const DICT_DETAIL = {
   sectionSecondAppealHeading: { en: "Second appeal — Section 19(3)", kn: "ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ — ಸೆಕ್ಷನ್ 19(3)" },
   secondAppealNotice: {
     en: "The First Appellate Authority must decide within {decisionDays} days, extendable to {maxDays} with recorded reasons. A second appeal lies to the {ksic}, within {windowDays} days, and may be filed once {afterDays} days have elapsed with no decision.",
-    kn: "ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಪ್ರಾಧಿಕಾರವು {decisionDays} ದಿನಗಳೊಳಗೆ ನಿರ್ಣಯಿಸಬೇಕು, ದಾಖಲಿತ ಕಾರಣಗಳೊಂದಿಗೆ {maxDays} ದಿನಗಳವರೆಗೆ ವಿಸ್ತರಿಸಬಹುದು. {ksic}ಗೆ {windowDays} ದಿನಗಳೊಳಗೆ ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಬಹುದು, ಮತ್ತು ನಿರ್ಣಯವಿಲ್ಲದೆ {afterDays} ದಿನಗಳು ಕಳೆದ ನಂತರ ಸಲ್ಲಿಸಬಹುದು.",
+    kn: "ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಪ್ರಾಧಿಕಾರವು {decisionDays} ದಿನಗಳೊಳಗೆ ನಿರ್ಣಯಿಸಬೇಕು, ದಾಖಲಿತ ಕಾರಣಗಳೊಂದಿಗೆ {maxDays} ದಿನಗಳವರೆಗೆ ವಿಸ್ತರಿಸಬಹುದು. {ksic} ಸಂಸ್ಥೆಗೆ {windowDays} ದಿನಗಳೊಳಗೆ ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಸಲ್ಲಿಸಬಹುದು, ಮತ್ತು ನಿರ್ಣಯವಿಲ್ಲದೆ {afterDays} ದಿನಗಳು ಕಳೆದ ನಂತರ ಸಲ್ಲಿಸಬಹುದು.",
   },
   daysSinceFirstAppeal: {
     en: "{n} days since the first appeal was filed.",

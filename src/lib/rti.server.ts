@@ -7,6 +7,13 @@ export type { Applicant };
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
 const MODEL = "openai/gpt-5.6-sol";
 
+// Groq fallback — used when LOVABLE_API_KEY is absent (local dev, Vercel without Lovable creds).
+// moonshotai/kimi-k2-instruct: large MoE, 128K context, strong JSON + multilingual (Kannada).
+// Falls back to openai/gpt-oss-120b if kimi is unavailable.
+const GROQ_GATEWAY = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "moonshotai/kimi-k2-instruct";
+const GROQ_MODEL_FALLBACK = "openai/gpt-oss-120b"; // used if kimi-k2 is unavailable on Groq
+
 export type RtiRequest = { text: string; rationale: string };
 export type RtiFlag = {
   type: "opinion_seeking" | "exemption_risk" | "too_broad" | "wrong_authority";
@@ -261,10 +268,22 @@ Write a complete, formal, ready-to-send appeal letter in plain text. Include: ad
 
 Return ONLY the letter text. No markdown, no commentary, no code fences.`;
 
-async function callGateway(system: string, user: string): Promise<string> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI is not configured for this project.");
+/** No gateway call may hang the caller forever — 30s is generous for a single draft. */
+const GATEWAY_TIMEOUT_MS = 30_000;
 
+function gatewayTimeoutMessage(lang: "en" | "kn"): string {
+  return lang === "kn"
+    ? "AI ಇಷ್ಟು ಸಮಯದೊಳಗೆ ಪ್ರತಿಕ್ರಿಯಿಸಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+    : "The AI did not respond in time. Please try again.";
+}
+
+/** Call the Lovable AI gateway (OpenAI Responses API format). */
+async function callLovableGateway(
+  key: string,
+  system: string,
+  user: string,
+  signal: AbortSignal,
+): Promise<string> {
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
@@ -275,23 +294,108 @@ async function callGateway(system: string, user: string): Promise<string> {
         { role: "user", content: user },
       ],
     }),
+    signal,
   });
-
   if (res.status === 429) throw new Error("Too many requests right now — please try again in a minute.");
   if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Settings → Plans & credits.");
-  if (!res.ok) throw new Error(`AI request failed (${res.status}): ${await res.text()}`);
-
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[rti] lovable gateway returned ${res.status}: ${body}`);
+    throw new Error(`AI request failed (${res.status}): ${body}`);
+  }
   const json = (await res.json()) as {
     output_text?: string;
     output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
   };
-  const text =
+  return (
     json.output_text ??
     (json.output ?? [])
       .flatMap((o) => o.content ?? [])
       .map((c) => c.text ?? "")
-      .join("");
-  if (!text.trim()) throw new Error("The AI returned an empty response. Please try again.");
+      .join("")
+  );
+}
+
+/**
+ * Call Groq via OpenAI-compatible chat completions.
+ * Primary model: moonshotai/kimi-k2-instruct (MoE, 128K ctx, strong JSON + Indic languages).
+ */
+async function callGroqGateway(
+  key: string,
+  system: string,
+  user: string,
+  signal: AbortSignal,
+  model = GROQ_MODEL,
+): Promise<string> {
+  const res = await fetch(GROQ_GATEWAY, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0.2,
+    }),
+    signal,
+  });
+  if (res.status === 429) throw new Error("Too many requests right now — please try again in a minute.");
+  // 404 means this model isn't available in the caller's Groq tier — retry with fallback.
+  if (res.status === 404 && model !== GROQ_MODEL_FALLBACK) {
+    console.warn(`[rti] groq model ${model} not found, retrying with ${GROQ_MODEL_FALLBACK}`);
+    return callGroqGateway(key, system, user, signal, GROQ_MODEL_FALLBACK);
+  }
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[rti] groq gateway returned ${res.status} (model=${model}): ${body}`);
+    throw new Error(`AI request failed (${res.status}): ${body}`);
+  }
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  return json.choices?.[0]?.message?.content ?? "";
+}
+
+async function callGateway(
+  system: string,
+  user: string,
+  lang: "en" | "kn" = "en",
+): Promise<string> {
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const groqKey = process.env["GROQ_API_KEY"];
+
+  if (!lovableKey && !groqKey) {
+    throw new Error("AI is not configured for this project. Set LOVABLE_API_KEY or GROQ_API_KEY.");
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
+
+  let text = "";
+  try {
+    if (lovableKey) {
+      console.info("[rti] using lovable gateway");
+      text = await callLovableGateway(lovableKey, system, user, controller.signal);
+    } else {
+      console.info(`[rti] using groq fallback (${GROQ_MODEL})`);
+      text = await callGroqGateway(groqKey!, system, user, controller.signal);
+    }
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      console.error(`[rti] gateway call timed out after ${GATEWAY_TIMEOUT_MS}ms`);
+      throw new Error(gatewayTimeoutMessage(lang));
+    }
+    console.error("[rti] gateway call failed", err);
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!text.trim()) {
+    console.error("[rti] gateway returned an empty response");
+    throw new Error("The AI returned an empty response. Please try again.");
+  }
   return text.trim();
 }
 
@@ -438,6 +542,7 @@ export async function draftAppeal(input: {
   replyNotes: string | null;
   firstAppealFiledDate?: string | null;
   applicant?: Applicant;
+  lang?: "en" | "kn" | undefined;
 }): Promise<string> {
   const applicant = input.applicant ?? {};
   const user = [
@@ -463,7 +568,10 @@ export async function draftAppeal(input: {
     .filter(Boolean)
     .join("\n");
 
-  return resolveApplicantPlaceholders(await callGateway(APPEAL_SYSTEM_PROMPT, user), applicant);
+  return resolveApplicantPlaceholders(
+    await callGateway(APPEAL_SYSTEM_PROMPT, user, input.lang ?? "en"),
+    applicant,
+  );
 }
 
 export const REVISE_LETTER_SYSTEM_PROMPT = `You revise a formal letter written under the Right to Information Act 2005 for an applicant in Karnataka, India.
@@ -728,5 +836,5 @@ Return ONLY the Kannada letter text. No markdown, no commentary, no transliterat
 
 export async function translateLetterToKannada(englishLetter: string): Promise<string> {
   if (!englishLetter.trim()) return "";
-  return callGateway(KANNADA_LETTER_SYSTEM_PROMPT, englishLetter);
+  return callGateway(KANNADA_LETTER_SYSTEM_PROMPT, englishLetter, "kn");
 }
