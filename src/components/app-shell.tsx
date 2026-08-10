@@ -2,10 +2,20 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { Wordmark } from "@/components/wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, type ReactNode } from "react";
+import {
+  LayoutDashboard,
+  FileText,
+  Map as MapIcon,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { OFFICIALS_SOURCE } from "@/lib/officials";
 import { LangToggle, useLang, T } from "@/lib/i18n";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const navBase = "block px-3 py-2 text-sm font-medium leading-[1.6] transition-colors";
+const navBase =
+  "flex items-center gap-3 px-3 py-2 text-sm font-medium leading-[1.6] transition-colors overflow-hidden";
 const navIdle = `${navBase} text-muted-foreground hover:bg-secondary hover:text-foreground`;
 const navActive = `${navBase} bg-foreground text-background`;
 
@@ -14,7 +24,7 @@ const navActive = `${navBase} bg-foreground text-background`;
  * by a stray Enter: it takes two deliberate activations, and it is last in the
  * sidebar tab order.
  */
-function SignOutButton() {
+function SignOutButton({ collapsed }: { collapsed: boolean }) {
   const router = useRouter();
   const { t } = useLang();
   const [armed, setArmed] = useState(false);
@@ -26,66 +36,132 @@ function SignOutButton() {
   }, [armed]);
 
   return (
-    <button
-      type="button"
-      autoFocus={false}
-      onBlur={() => setArmed(false)}
-      onClick={async () => {
-        if (!armed) {
-          setArmed(true);
-          return;
-        }
-        await supabase.auth.signOut();
-        router.navigate({ to: "/auth" });
-      }}
-      className={`${navIdle} w-full text-left ${armed ? "border border-foreground text-foreground" : ""}`}
-    >
-      {armed ? t("navSignOutConfirm") : t("navSignOut")}
-    </button>
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          autoFocus={false}
+          onBlur={() => setArmed(false)}
+          onClick={async () => {
+            if (!armed) {
+              setArmed(true);
+              return;
+            }
+            await supabase.auth.signOut();
+            router.navigate({ to: "/auth" });
+          }}
+          className={`${navIdle} w-full text-left ${armed ? "border border-foreground text-foreground" : ""}`}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span className={`whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
+            {armed ? t("navSignOutConfirm") : t("navSignOut")}
+          </span>
+        </button>
+      </TooltipTrigger>
+      {collapsed && (
+        <TooltipContent side="right">
+          {armed ? t("navSignOutConfirm") : t("navSignOut")}
+        </TooltipContent>
+      )}
+    </Tooltip>
   );
 }
 
 export function AppShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
   const { t } = useLang();
-
-
-
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
-    <div className="min-h-screen w-full bg-background p-4 md:p-8">
-      <div className="registry-frame mx-auto flex w-full max-w-6xl flex-col md:flex-row">
-        <aside className="w-full shrink-0 border-b border-border bg-background p-6 md:w-60 md:border-b-0 md:border-r">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1>
-                <Wordmark size="sm" />
-              </h1>
-              <p className="rule-heading mt-1.5">{t("tagline")}</p>
+    <TooltipProvider delayDuration={0}>
+      <div className="min-h-screen w-full bg-background p-4 md:p-8">
+        <div className="registry-frame mx-auto flex w-full max-w-6xl flex-col md:flex-row relative">
+          <aside
+            className={`flex flex-col shrink-0 border-b border-border bg-background transition-all duration-300 md:border-b-0 md:border-r relative ${
+              collapsed ? "w-full p-4 md:w-16 md:px-2 md:py-6" : "w-full p-6 md:w-60"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3 overflow-hidden">
+              <div
+                className={`min-w-0 transition-opacity duration-200 ${collapsed ? "md:hidden" : ""}`}
+              >
+                <h1>
+                  <Wordmark size="sm" />
+                </h1>
+                <p className="rule-heading mt-1.5 whitespace-nowrap">{t("tagline")}</p>
+              </div>
+              {/* Show a mini icon when collapsed */}
+              {collapsed && (
+                <div className="hidden md:flex min-w-0 items-center justify-center w-full">
+                  <span className="font-display text-xl font-bold text-accent">ವಿ</span>
+                </div>
+              )}
+              <div className={collapsed ? "md:hidden" : ""}>
+                <LangToggle />
+              </div>
             </div>
-            <LangToggle />
-          </div>
 
-          <nav className="mt-8 space-y-1">
-            <Link to="/dashboard" className={navIdle} activeProps={{ className: navActive }}>
-              {t("navRegistry")}
-            </Link>
-            <Link to="/new" className={navIdle} activeProps={{ className: navActive }}>
-              {t("navNewFiling")}
-            </Link>
-            <Link to="/map" className={navIdle} activeProps={{ className: navActive }}>
-              {t("navWardMap")}
-            </Link>
+            <nav className="mt-8 space-y-1 flex-1">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Link to="/dashboard" className={navIdle} activeProps={{ className: navActive }}>
+                    <LayoutDashboard className="h-4 w-4 shrink-0" />
+                    <span className={`whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
+                      {t("navRegistry")}
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                {collapsed && <TooltipContent side="right">{t("navRegistry")}</TooltipContent>}
+              </Tooltip>
 
-            <SignOutButton />
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Link to="/new" className={navIdle} activeProps={{ className: navActive }}>
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span className={`whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
+                      {t("navNewFiling")}
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                {collapsed && <TooltipContent side="right">{t("navNewFiling")}</TooltipContent>}
+              </Tooltip>
 
-          </nav>
-        </aside>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Link to="/map" className={navIdle} activeProps={{ className: navActive }}>
+                    <MapIcon className="h-4 w-4 shrink-0" />
+                    <span className={`whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
+                      {t("navWardMap")}
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                {collapsed && <TooltipContent side="right">{t("navWardMap")}</TooltipContent>}
+              </Tooltip>
 
-        <main className={`min-w-0 flex-1 ${bare ? "" : "p-6"}`}>{children}</main>
+              <SignOutButton collapsed={collapsed} />
+            </nav>
+
+            <div className="mt-6 hidden md:block border-t border-border pt-4">
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground rounded-md"
+              >
+                {collapsed ? (
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4 shrink-0" />
+                )}
+                <span className={`whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
+                  Collapse
+                </span>
+              </button>
+            </div>
+          </aside>
+
+          <main className={`min-w-0 flex-1 ${bare ? "" : "p-6"}`}>{children}</main>
+        </div>
+        <DataCredit className="mx-auto mt-3 w-full max-w-6xl" />
       </div>
-      <DataCredit className="mx-auto mt-3 w-full max-w-6xl" />
-    </div>
-
+    </TooltipProvider>
   );
 }
 
