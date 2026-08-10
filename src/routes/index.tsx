@@ -1,3 +1,4 @@
+// Landing route.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { WardCity3D } from "@/components/ward-city-3d";
