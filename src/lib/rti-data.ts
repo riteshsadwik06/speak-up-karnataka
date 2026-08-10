@@ -346,10 +346,17 @@ export function clockFor(
     const hasSecond = (appeals ?? []).some((a) => a.tier === "second");
     if (first?.filed_date) {
       const faaSilentDays = daysBetween(first.filed_date);
-      if (faaSilentDays >= LEGAL.secondAppealAfterDays && !hasSecond) {
+      const secondFiled = (appeals ?? []).some((a) => a.tier === "second" && a.filed_date);
+      const hasUnfiledSecond = (appeals ?? []).some((a) => a.tier === "second" && !a.filed_date);
+      
+      if (faaSilentDays >= LEGAL.secondAppealAfterDays && !secondFiled) {
         return {
-          label: `Second appeal available — FAA silent ${faaSilentDays} days`,
-          labelKn: `ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಲಭ್ಯ — ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಪ್ರಾಧಿಕಾರ ${faaSilentDays} ದಿನಗಳಿಂದ ಮೌನ`,
+          label: hasUnfiledSecond 
+            ? `Second appeal drafted — please file it` 
+            : `Second appeal available — FAA silent ${faaSilentDays} days`,
+          labelKn: hasUnfiledSecond
+            ? `ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಕರಡು ಸಿದ್ಧವಾಗಿದೆ — ದಯವಿಟ್ಟು ಸಲ್ಲಿಸಿ`
+            : `ದ್ವಿತೀಯ ಮೇಲ್ಮನವಿ ಲಭ್ಯ — ಪ್ರಥಮ ಮೇಲ್ಮನವಿ ಪ್ರಾಧಿಕಾರ ${faaSilentDays} ದಿನಗಳಿಂದ ಮೌನ`,
           tone: "danger",
           urgency: 0,
         };

@@ -269,7 +269,7 @@ Write a complete, formal, ready-to-send appeal letter in plain text. Include: ad
 Return ONLY the letter text. No markdown, no commentary, no code fences.`;
 
 /** No gateway call may hang the caller forever — 30s is generous for a single draft. */
-const GATEWAY_TIMEOUT_MS = 30_000;
+const GATEWAY_TIMEOUT_MS = 60_000;
 
 function gatewayTimeoutMessage(lang: "en" | "kn"): string {
   return lang === "kn"

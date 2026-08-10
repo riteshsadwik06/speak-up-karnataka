@@ -182,7 +182,17 @@ function NewApplication() {
    */
   const ready = useHydrated();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [restored, setRestored] = useState(false);
+
+  // Auto-scroll the grievance box into view when 'prior' expands
+  useEffect(() => {
+    if (prior) {
+      setTimeout(() => {
+        textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    }
+  }, [prior]);
 
   // Restore anything typed before a reload, hydration reset or stray navigation.
   useEffect(() => {
@@ -765,6 +775,7 @@ function NewApplication() {
             <T id="whatWentWrongHelp" as="p" className="text-sm text-muted-foreground" />
           </div>
           <textarea
+            ref={textareaRef}
             value={grievance}
             onChange={(e) => setGrievance(e.target.value)}
             rows={7}
