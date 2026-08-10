@@ -6,7 +6,6 @@
  * so the ~390KB payload never enters the main bundle — it is fetched lazily on
  * first use and cached for the session.
  */
-import asset from "@/assets/blr-officials.json.asset.json";
 
 export type Official = {
   designation?: string;
@@ -54,7 +53,7 @@ let wardIndex: Record<string, WardOfficials> | null = null;
 
 /** Lazily fetch (and cache) the officials asset. */
 export function loadOfficials(): Promise<OfficialsData> {
-  dataPromise ??= fetch(asset.url)
+  dataPromise ??= fetch("/data/blr-officials.json")
     .then((r) => {
       if (!r.ok) throw new Error(`officials asset ${r.status}`);
       return r.json() as Promise<OfficialsData>;
