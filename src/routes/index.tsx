@@ -123,6 +123,11 @@ function Landing() {
               <T id="ctaAlreadyHaveAccount" />
             </Link>
           </div>
+          
+          <a href="#architecture-section" className="mt-12 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+            <ArrowDown size={16} className="animate-bounce" />
+            <span>Scroll down for product architecture & tech stack</span>
+          </a>
         </section>
 
 
@@ -155,7 +160,7 @@ function Landing() {
           </p>
         </section>
 
-        <section className="border-b border-border bg-background/50 p-6 md:p-10">
+        <section id="architecture-section" className="border-b border-border bg-background/50 p-6 md:p-10 scroll-mt-20">
           <div className="mx-auto max-w-6xl">
             <div className="mb-12 text-left md:text-center">
               <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">Architecture & Platform Flow</h2>
